@@ -1,0 +1,29 @@
+[MultiStep]
+IsEnabled: true
+
+%% Break multibeam
+EnableBreakMultiBeam: true
+FitNotBeam: true
+Chi2Threshold: 5
+MinSpanX: 15
+LengthXToBreak: 10.
+EntranceBeamRegionX: 20
+%% Beam window, in units of PADS
+BeamWindowY: 2
+BeamWindowZ: 3
+
+%%Merge similar tracks
+EnableMerge: true
+MergeDistThreshold: 4
+MergeChi2Threshold: 2
+
+%% Clean pileup
+EnableCleanPileUp: true
+PileUpXPercent: 0.9
+BeamLowerZ: 240
+BeamUpperZ: 280
+
+%% Clean deltas and Zs
+EnableCleanDeltasAndZs: true
+ZDirectionThreshold: 0.95
+ZMinSpanInPlane: 4
