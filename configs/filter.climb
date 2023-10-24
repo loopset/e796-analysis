@@ -1,29 +1,35 @@
 [MultiStep]
 IsEnabled: true
 
-%% Break multibeam
-EnableBreakMultiBeam: true
-FitNotBeam: true
-Chi2Threshold: 5
-MinSpanX: 15
-LengthXToBreak: 10.
-EntranceBeamRegionX: 20
-%% Beam window, in units of PADS
-BeamWindowY: 2
-BeamWindowZ: 3
-
-%%Merge similar tracks
-EnableMerge: true
-MergeDistThreshold: 4
-MergeChi2Threshold: 2
-
 %% Clean pileup
 EnableCleanPileUp: true
 PileUpXPercent: 0.9
-BeamLowerZ: 240
-BeamUpperZ: 280
+BeamLowerZ: 220
+BeamUpperZ: 320
 
-%% Clean deltas and Zs
-EnableCleanDeltasAndZs: true
+%% Clean Zs
+EnableCleanZs: true
 ZDirectionThreshold: 0.95
-ZMinSpanInPlane: 4
+ZMinSpanInPlane: 8
+
+%% Break multibeam
+EnableBreakMultiBeam: true 
+FitNotBeam: true
+Chi2Threshold: 5
+MinSpanX: 15
+LengthXToBreak: 10
+%% Beam window, in units of PADS
+BeamWindowY: 2
+BeamWindowZ: 5
+
+%% Merge similar tracks
+EnableMerge: true
+MergeMinParallelFactor: 0.975
+MergeDistThreshold: 4
+MergeChi2Threshold: 4
+MergeChi2CoverageF: 0.2
+
+%% Clean deltas and remaining wrong clusters (at the end!)
+EnableCleanDeltas: true
+DeltaChi2Threshold: 10
+DeltaMaxVoxels: 25
