@@ -12,6 +12,7 @@
 std::vector<ActRoot::Voxel> GetToyData()
 {
     std::vector<ActRoot::Voxel> ret;
+    double widthY {2};
     double fixedy {68};
     double fixedz {128};
     double q {50};
