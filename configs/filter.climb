@@ -23,12 +23,16 @@ BeamWindowY: 2
 BeamWindowZ: 5
 BreakLengthThreshold: 3
 
+%% Break multitracks depends on BreakBeam
+EnableBreakMultiTracks: true
+BeamWindowScaling: 4
+
 %% Merge similar tracks
 EnableMerge: true
 MergeMinParallelFactor: 0.975
 MergeChi2CoverageF: 1.2
 
 %% Clean deltas and remaining wrong clusters (at the end!)
-EnableCleanDeltas: true
-DeltaChi2Threshold: 10
-DeltaMaxVoxels: 25
+EnableCleanDeltas: false
+DeltaChi2Threshold: 20
+DeltaMaxVoxels: 20
