@@ -3,7 +3,8 @@ IsEnabled: true
 
 %% Clean pileup
 EnableCleanPileUp: true
-PileUpXPercent: 0.9
+%% Number of bins Z can change to still be considered as beam
+PileUpChangeZThresh: 3
 BeamLowerZ: 220
 BeamUpperZ: 320
 
@@ -18,14 +19,15 @@ FitNotBeam: true
 Chi2Threshold: 5
 MinSpanX: 15
 LengthXToBreak: 10
-%% Beam window, in units of Y = PADS / Z = raw TIME BUCKET
+%% Beam window, in un units of Y = NPADS and Z = NBINS of TB
 BeamWindowY: 2
-BeamWindowZ: 5
+BeamWindowZ: 2
 BreakLengthThreshold: 3
 
 %% Break multitracks depends on BreakBeam
 EnableBreakMultiTracks: true
-BeamWindowScaling: 4
+TrackChi2Threshold: 10
+BeamWindowScaling: 3
 
 %% Merge similar tracks
 EnableMerge: true
@@ -33,6 +35,16 @@ MergeMinParallelFactor: 0.975
 MergeChi2CoverageF: 1.2
 
 %% Clean deltas and remaining wrong clusters (at the end!)
-EnableCleanDeltas: false
+EnableCleanDeltas: true
 DeltaChi2Threshold: 20
 DeltaMaxVoxels: 20
+
+%% Determine preliminary RP
+%% and use it to clean unreacted clusters
+EnableRP: true
+UnreactedMinPercentX: 0.95
+UnreactedMinParallelFactor: 0.975
+%% Distance in pads to validate RP
+RPDistThreshold: 5
+RPMaskXY: 8
+RPMaskZ: 8
