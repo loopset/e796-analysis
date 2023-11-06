@@ -1,7 +1,7 @@
 #include "ActDetectorManager.h"
 #include "ActInputData.h"
-#include "ActOutputData.h"
 #include "ActMTExecutor.h"
+#include "ActOutputData.h"
 
 #include "TFile.h"
 #include "TStopwatch.h"
@@ -10,14 +10,14 @@
 #include <iostream>
 void ReadData()
 {
-    //Set MT or not
+    // Set MT or not
     bool enableMT {true};
-    std::cout<<"Is ActRoot MT enabled? "<<std::boolalpha<<enableMT<<'\n';
-    
-    //Set input data
+    std::cout << "Is ActRoot MT enabled? " << std::boolalpha << enableMT << '\n';
+
+    // Set input data
     ActRoot::InputData input;
     input.ReadConfiguration("./configs/e796.runs");
-    //Set output data
+    // Set output data
     ActRoot::OutputData output {input};
     output.ReadConfiguration("./configs/e796.runs");
 
@@ -31,16 +31,17 @@ void ReadData()
     }
     else
     {
-        //Set Detector
+        // Set Detector
         ActRoot::DetectorManager detman;
         detman.ReadConfiguration("./configs/e796.detector");
         detman.ReadCalibrations("./configs/e796.calibrations");
 
-        TStopwatch timer {}; timer.Start();
-        //Run!
+        TStopwatch timer {};
+        timer.Start();
+        // Run!
         for(auto& run : input.GetTreeList())
         {
-            std::cout<<"Building event data for run "<<run<<'\n';
+            std::cout << "Building event data for run " << run << '\n';
             detman.InitializeDataInputRaw(input.GetTree(run), run);
             detman.InitializeDataOutput(output.GetTree(run));
             for(int entry = 0; entry < input.GetTree(run)->GetEntries(); entry++)
@@ -49,10 +50,9 @@ void ReadData()
                 detman.BuildEventData();
                 output.Fill(run);
             }
-            std::cout<<"->Processed events = "<<output.GetTree(run)->GetEntries()<<'\n';
+            std::cout << "->Processed events = " << output.GetTree(run)->GetEntries() << '\n';
         }
-        timer.Stop(); timer.Print();
+        timer.Stop();
+        timer.Print();
     }
-    
-   
 }
