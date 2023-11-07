@@ -19,6 +19,8 @@ void DoCluster()
     // Set output data
     ActRoot::OutputData output {input};
     output.ReadConfiguration("./configs/cluster.runs");
+    // Write metadata to each file
+    output.WriteMetadata("./configs/cluster.climb", "ClIMB opts");
 
     // Run
     if(enableMT)
@@ -38,14 +40,16 @@ void DoCluster()
         {
             std::cout << "Building event cluster for run " << run << '\n';
             detman.InitializeDataInput(input.GetTree(run));
-            detman.InitializePhysicsOutput(input.GetTree(run));
+            detman.InitializePhysicsOutput(output.GetTree(run));
             std::cout << "Entries in run : " << input.GetNEntries(run) << '\n';
             for(int entry  = 0; entry < input.GetNEntries(run); entry++)
             {
                 std::cout << "\r" << "At entry : "<<entry<<std::flush;
                 input.GetEntry(run, entry);
                 detman.BuildEventPhysics();
+                output.Fill(run);
             }
+            output.Close(run);
         }
         std::cout<<std::endl;
         timer.Stop();

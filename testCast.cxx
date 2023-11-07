@@ -1,6 +1,7 @@
 #include "ActTPCDetector.h"
 
 #include "TStopwatch.h"
+#include "TRandom.h"
 
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
@@ -64,9 +65,18 @@ void testCast()
     // timer.Stop();
     // timer.Print();
 
-    for(int i = 4; i < 87; i++)
-        FillWithRange(i);
-
-    std::cout << "Min : " << gMin << '\n';
-    std::cout << "Max : " << gMax << '\n';
+    TStopwatch timer {}; timer.Start();
+    for(int i = 0; i < (int)1e9; i++)
+    {
+        auto rand {gRandom->Uniform()};
+        auto j {(int)rand};
+    }
+    timer.Stop();
+    timer.Print();
+    //
+    // for(int i = 4; i < 87; i++)
+    //     FillWithRange(i);
+    //
+    // std::cout << "Min : " << gMin << '\n';
+    // std::cout << "Max : " << gMax << '\n';
 }

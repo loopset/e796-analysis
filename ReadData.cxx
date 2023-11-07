@@ -50,6 +50,7 @@ void ReadData()
                 detman.BuildEventData();
                 output.Fill(run);
             }
+            output.Write(run);
             std::cout << "->Processed events = " << output.GetTree(run)->GetEntries() << '\n';
         }
         timer.Stop();
