@@ -1,36 +1,29 @@
 #include "ActDetectorManager.h"
 #include "ActInputData.h"
 #include "ActOutputData.h"
-#include "ActMTExecutor.h"
 
 #include "TStopwatch.h"
 
 #include <iostream>
 #include <ostream>
 
-void DoCluster()
+void DoMerge()
 {
     // Set MT or not
-    bool enableMT {true};
+    bool enableMT {false};
 
     // Set input data
     ActRoot::InputData input;
-    input.ReadConfiguration("./configs/cluster.runs");
+    input.ReadConfiguration("./configs/merger.runs");
 
     // Set output data
     ActRoot::OutputData output {input};
-    output.ReadConfiguration("./configs/cluster.runs");
-    // Write metadata to each file
-    output.WriteMetadata("./configs/cluster.climb", "ClIMB opts");
+    output.ReadConfiguration("./configs/merger.runs");
 
     // Run
     if(enableMT)
     {
-        ActRoot::MTExecutor mt;
-        mt.SetInputAndOutput(&input, &output);
-        mt.SetDetectorConfig("./configs/e796.detector", "./configs/e796.calibrations");
-
-        mt.BuildEventPhysics();
+        ;
     }
     else
     {
@@ -44,22 +37,23 @@ void DoCluster()
         for(const auto& run : input.GetTreeList())
         {
             std::cout << "Building event cluster for run " << run << '\n';
-            detman.InitializeDataInput(input.GetTree(run));
-            detman.InitializePhysicsOutput(output.GetTree(run));
+            detman.InitializeMergerInput(input.GetTree(run));
+            detman.InitializeMergerOutput(output.GetTree(run));
             std::cout << "Entries in run : " << input.GetNEntries(run) << '\n';
-            for(int entry  = 0; entry < input.GetNEntries(run); entry++)
+            for(int entry = 0; entry < input.GetNEntries(run); entry++)
             {
-                std::cout << "\r" << "At entry : "<<entry<<std::flush;
+                std::cout << "\r"
+                          << "At entry : " << entry << std::flush;
                 input.GetEntry(run, entry);
-                detman.BuildEventPhysics();
-                output.Fill(run);
+                detman.BuildEventMerger();
+                // output.Fill(run);
             }
             output.Close(run);
         }
-        std::cout<<std::endl;
+        std::cout << std::endl;
         timer.Stop();
         timer.Print();
         // Print inner reports
-        detman.PrintReports();
+        // detman.PrintReports();
     }
 }
