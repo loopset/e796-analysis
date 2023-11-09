@@ -46,7 +46,7 @@ void DoMerge()
                           << "At entry : " << entry << std::flush;
                 input.GetEntry(run, entry);
                 detman.BuildEventMerger();
-                // output.Fill(run);
+                output.Fill(run);
             }
             output.Close(run);
         }
