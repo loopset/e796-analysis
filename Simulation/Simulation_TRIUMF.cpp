@@ -48,9 +48,9 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     const double sigmaAngleLight {0.95 / 2.355};
 
     // Parameters of beam in mm
-    //  Center in Z
-    const double zVertexMean {83.59};
-    const double zVertexSigma {3.79};
+    //Center in Z
+    const double zVertexMean {128.};
+    const double zVertexSigma {4};
     // Center in Y
     const double yVertexMean {128.};
     const double yVertexSigma {4};
@@ -114,7 +114,10 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     auto* hSilPoint {new TH2F("hSilPoint", "Silicon point;X or Y [mm];Z [mm]", 100, -10., 290., 100, -10., 290.)};
     std::vector<TH2F*> hsSP {};
     for(int i = 0; i < maxLayers; i++)
+    {
         hsSP.push_back((TH2F*)hSilPoint->Clone(TString::Format("hSP%d", i)));
+        hsSP.back()->SetTitle(TString::Format("Sil assembly %d", i));
+    }
     auto* hEexAfter {new TH1F("hEex", "Eex with all resolutions", 1000, -10., 40.)};
     auto* hEexBefore {(TH1F*)hEexAfter->Clone("hEexBefore")};
     hEexBefore->SetTitle("Eex without any res.");
@@ -256,7 +259,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
 
         // SILICON0
         auto [eLoss0,
-              T3AfterSil0] {runner.EnergyAfterSilicons(T3EnteringSil, geometry->GetAssemblyUnitWidth(0) * 10.,
+              T3AfterSil0] {runner.EnergyAfterSilicons(T3EnteringSil, geometry->GetAssemblyUnitWidth(hitAssembly0) * 10.,
                                                        thresholdSi0, "lightInSil", silResolution, stragglingInSil)};
         if(hitAssembly0 == 2 && std::isfinite(eLoss0))
         {
