@@ -51,9 +51,10 @@ void BuildTRIUMFGeo(bool draw = true)
 
     // SIDE assembly
     std::map<int, std::pair<double, double>> sidePlacements {
-        {1, std::make_pair(+2 * silicon1Y, +silicon1Z)}, {2, std::make_pair(+0 * silicon1Y, +silicon1Z)},
-        {3, std::make_pair(-2 * silicon1Y, +silicon1Z)}, {4, std::make_pair(-2 * silicon1Y, -silicon1Z)},
-        {5, std::make_pair(+0 * silicon1Y, -silicon1Z)}, {6, std::make_pair(+2 * silicon1Y, -silicon1Z)},
+        {0, {-2 * silicon1Y, +2 * silicon1Z}}, {1, {0 * silicon1Y, +2 * silicon1Z}},
+        {2, {+2 * silicon1Y, +2 * silicon1Z}}, {3, {-2 * silicon1Y, 0 * silicon1Z}},
+        {4, {0 * silicon1Y, 0 * silicon1Z}},   {5, {+2 * silicon1Y, 0 * silicon1Z}},
+        {6, {-2 * silicon1Y, -2 * silicon1Z}}, {7, {0 * silicon1Y, -2 * silicon1Z}},
     };
     ActSim::SilAssembly sideAssembly {3, silUnit, false, true};
     auto sideOffset {10.}; // cm from actar left side
