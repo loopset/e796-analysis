@@ -6,6 +6,7 @@
 #include "ActParticle.h"
 #include "ActRunner.h"
 #include "ActSRIM.h"
+#include "Rtypes.h"
 
 #include "TCanvas.h"
 #include "TFile.h"
@@ -121,6 +122,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     auto* hEexAfter {new TH1F("hEex", "Eex with all resolutions", 1000, -10., 40.)};
     auto* hEexBefore {(TH1F*)hEexAfter->Clone("hEexBefore")};
     hEexBefore->SetTitle("Eex without any res.");
+    auto* hPhiAll {new TH1F("hPhiAll", "Phi in LAB;#phi [deg]", 360, 0, 180)};
+    auto* hPhi {(TH1F*)hPhiAll->Clone("hPhi")};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -200,11 +203,13 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // obtain thetas and energies
         auto* PLight {kingen.GetLorentzVector(0)};
         auto theta3Lab {PLight->Theta()};
+        auto phi3Lab {PLight->Phi()};
         auto T3Lab {PLight->Energy() - p3.GetMass()};
         hKin->Fill(theta3Lab * TMath::RadToDeg(), T3Lab);
         // to compute geometric efficiency by CM interval and with our set reference direction
         double theta3CMBefore {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
         hThetaCMAll->Fill(theta3CMBefore * TMath::RadToDeg());
+        hPhiAll->Fill(phi3Lab * TMath::RadToDeg());
         // 4-> Include thetaLab resolution to compute thetaCM and Ex
         if(thetaResolution) // resolution in
             theta3Lab = runner.GetRand()->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
@@ -212,7 +217,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // std::cout<<"Theta3New = "<<psGenerator.GetThetaFromTLorentzVector(PLight) * TMath::RadToDeg()<<'\n';
         auto theta3CM {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
         // std::cout<<"Theta3CM = "<<theta3CM * TMath::RadToDeg()<<" degree"<<'\n';
-        auto phi3Lab {runner.GetRand()->Uniform(0., 2 * TMath::Pi())};
+        // auto phi3Lab {runner.GetRand()->Uniform(0., 2 * TMath::Pi())};
         auto EexBefore {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Lab, theta3Lab)};
 
         // apply cut in XVertex
@@ -314,6 +319,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
 
             // fill histograms
             hThetaCM->Fill(theta3CM * TMath::RadToDeg());
+            hPhi->Fill(phi3Lab * TMath::RadToDeg());
             hEexBefore->Fill(EexBefore, weight); // with the weight for each TGenPhaseSpace::Generate()
             hDistL0->Fill(distance0);
             hThetaESil->Fill(theta3Lab * TMath::RadToDeg(), eLoss0);
@@ -353,14 +359,18 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     auto* cBefore {new TCanvas("cBefore", "Before implementing most of the resolutions")};
     cBefore->DivideSquare(4);
     cBefore->cd(1);
-    hThetaCM->Draw();
+    hThetaCMAll->Draw();
+    hThetaCM->SetLineColor(kRed);
+    hThetaCM->Draw("sames");
     cBefore->cd(2);
     hDistL0->Draw();
     cBefore->cd(3);
     hEexBefore->Draw("hist");
     cBefore->cd(4);
-    hThetaCMAll->Draw();
-
+    hPhiAll->Draw();
+    hPhi->SetLineColor(kRed);
+    hPhi->Draw("sames");
+    
     // draw theoretical kinematics
     ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
     auto* gtheo {theokin.GetKinematicLine3()};
