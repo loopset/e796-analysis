@@ -128,8 +128,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     // Load SRIM tables
     // The name of the file sets particle + medium
     auto* srim {new ActPhysics::SRIM()};
-    srim->ReadInterpolations("light", "./../Calibrations/SRIMData/transformed/proton_in_deuterium_900mb.dat");
-    srim->ReadInterpolations("beam", "./../Calibrations/SRIMData/transformed/11Li_in_deuterium_900mb.dat");
+    srim->ReadInterpolations("light", "./../Calibrations/SRIMData/transformed/protons_deuterium_900mb.dat");
+    srim->ReadInterpolations("beam", "./../Calibrations/SRIMData/transformed/11Li_deuterium_900mb.dat");
     srim->ReadInterpolations("lightInSil", "./../Calibrations/SRIMData/transformed/proton_in_silicon.dat");
 
     // Load geometry
@@ -258,6 +258,14 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
 
         auto T3EnteringSil {runner.EnergyAfterGas(T3Lab, distance0, "light", stragglingInGas)};
+        // if(hitAssembly0 == 2)
+        // {
+        //     auto RIni {srim->EvalDirect("light", T3Lab)};
+        //     std::cout << "-------------------------------" << '\n';
+        //     std::cout<<"RIni : "<<RIni<<" mm"<<'\n';
+        //     std::cout<<"T3 : "<<T3Lab<<" MeV theta3 : "<<theta3Lab * TMath::RadToDeg()<<" deg"<<'\n';
+        //     std::cout<<"dist : "<<distance0<<" mm"<<'\n';
+        // }
         // nan if stopped in gas
         if(!std::isfinite(T3EnteringSil))
             continue;
@@ -266,10 +274,6 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         auto [eLoss0,
               T3AfterSil0] {runner.EnergyAfterSilicons(T3EnteringSil, geometry->GetAssemblyUnitWidth(hitAssembly0) * 10.,
                                                        thresholdSi0, "lightInSil", silResolution, stragglingInSil)};
-        if(hitAssembly0 == 2 && std::isfinite(eLoss0))
-        {
-            std::cout << "1H reached backwards silicons!!!" << '\n';
-        }
         // nan if bellow threshold
         if(!std::isfinite(eLoss0))
             continue;
@@ -409,6 +413,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     delete rand;
     if(!standalone)
     {
+        delete cSP;
         delete cAfter;
         delete cBefore;
         delete hThetaCM;
@@ -420,6 +425,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         delete hSilPoint;
         delete hEexAfter;
         delete hEexBefore;
+        delete hPhi;
+        delete hPhiAll;
     }
 
 

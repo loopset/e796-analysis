@@ -28,9 +28,9 @@ void Plotter(const std::vector<double>& Exs,
     else
         std::cout<<BOLDCYAN<<"Plotting a phase space"<<RESET<<'\n';
     //Binning settings form TH1,2DModel
-    int nBinsEx {(isPS) ? 1000 : 200};//for PS we need more binning to appreciate the rise after Sn
+    int nBinsEx {(isPS) ? 1000 : 500};//for PS we need more binning to appreciate the rise after Sn
     int nBinsEVertex {120};
-    int nBinsTheta {120};
+    int nBinsTheta {400};
     
     //Save histograms
     std::vector<TH1D*> hsEx {};
@@ -48,7 +48,7 @@ void Plotter(const std::vector<double>& Exs,
                 "Eex", "weight")};
         auto hKin {df.Histo2D({TString::Format("hKin%d", idx),
                                        TString::Format("Ex = %.2f MeV with nPS = %d and pPS = %d;#theta_{Lab} [#circ];E_{Vertex} [MeV]", Ex, neutronPS, protonPS),
-                                       nBinsTheta, 0., 60., nBinsEVertex, 0., 80.},
+                                       nBinsTheta, 0., 180., nBinsEVertex, 0., 80.},
                 "theta3Lab", "EVertex", "weight")};
                 
         //clone in order to save

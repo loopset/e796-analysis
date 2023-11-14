@@ -12,7 +12,7 @@
 // standalone (only applies to simu setting):
 // if true, runs only first item in Ex vector and plots in-simulation results
 // if false, runs all Ex simulations but doesn't plot
-void Runner(TString what = "plot", bool standalone = true)
+void Runner(TString what = "plot", bool standalone = false)
 {
     // Settings
     // Names of particles
@@ -28,7 +28,7 @@ void Runner(TString what = "plot", bool standalone = true)
 
     std::vector<double> Eexs;
     if(neutronPS == 0 && protonPS == 0)
-        Eexs = {0., 0.115};
+        Eexs = {0., 0.130, 0.435, 3.88};
     else if(neutronPS > 0 && protonPS == 0)
         Eexs = {0}; // only gs for n phase space
     else if(neutronPS == 0 && protonPS > 0)
