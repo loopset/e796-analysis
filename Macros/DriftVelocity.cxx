@@ -4,6 +4,7 @@
 
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RVec.hxx"
+#include "Rtypes.h"
 
 #include "TCanvas.h"
 #include "TROOT.h"
@@ -24,7 +25,7 @@ void DriftVelocity()
     // d.Describe().Print();
     // gate on events stopped in first sil layer
     auto df {
-        d.Filter([](const ROOT::VecOps::RVec<std::string>& layers) { return layers.size() == 1; }, {"fSilLayers"})};
+        d.Filter([](const ROOT::VecOps::RVec<std::string>& layers) { return layers.size() == 1 ; }, {"fSilLayers"})};
 
     auto hLeft {df.Filter("fSilLayers.front() == \"l0\"")
                     .Histo2D({"hLeft", "Left;X [pad];Z [tb]", 200, 0, 200, 200, 0, 600}, "fSP.fCoordinates.fX",
@@ -70,4 +71,6 @@ void DriftVelocity()
     hLeft->DrawClone("colz");
     c1->cd(2);
     hFront->DrawClone("colz");
+    cuts.SetLineAttributes(0, kRed, 2);
+    cuts.DrawAll();
 }
