@@ -16,7 +16,7 @@ Column name according to:
 #WARNING: TAKE HEED IN skiprows and skipfooter, because they depend on number of gases set in SRIM!!! (varies between 24-25-26-27)
 def read_convert_write(indirectory, ficheiro, outdirectory):
 
-    df = pd.read_csv(str(indirectory + ficheiro + '.txt'), skiprows = 26, skipfooter = 13,
+    df = pd.read_csv(str(indirectory + ficheiro + '.txt'), skiprows = 24, skipfooter = 13,
                      delim_whitespace = True, header = None, decimal = ',',
                      engine='python')
     
@@ -58,7 +58,7 @@ outdirectory = './transformed/'
 pressures = [140]
 particle = 'protons'
 #files = [particle + '_in_' + str(pressure) + 'mb_butane' for pressure in pressures]
-files = ["20O_in_952mb_mixture"]
+files = ["protons_deuterium_900mb", "11Li_deuterium_900mb"]
 #files = ['alphas_in_50mb_butane']##['protons_in_30mb_butane', 'protons_in_100mb_butane', 'protons_in_500mb_butane']
 dfs = []
 for file in files:
