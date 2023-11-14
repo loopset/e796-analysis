@@ -16,10 +16,10 @@ void ReadData()
 
     // Set input data
     ActRoot::InputData input;
-    input.ReadConfiguration("./configs/e796.runs");
+    input.ReadConfiguration("./configs/read.runs");
     // Set output data
     ActRoot::OutputData output {input};
-    output.ReadConfiguration("./configs/e796.runs");
+    output.ReadConfiguration("./configs/read.runs");
 
     if(enableMT)
     {
