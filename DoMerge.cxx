@@ -1,6 +1,7 @@
 #include "ActDetectorManager.h"
 #include "ActInputData.h"
 #include "ActOutputData.h"
+#include "ActMTExecutor.h"
 
 #include "TStopwatch.h"
 
@@ -10,7 +11,7 @@
 void DoMerge()
 {
     // Set MT or not
-    bool enableMT {false};
+    bool enableMT {true};
 
     // Set input data
     ActRoot::InputData input;
@@ -23,7 +24,11 @@ void DoMerge()
     // Run
     if(enableMT)
     {
-        ;
+        ActRoot::MTExecutor mt;
+        mt.SetInputAndOutput(&input, &output);
+        mt.SetDetectorConfig("./configs/e796.detector", "./configs/e796.calibrations");
+
+        mt.BuildEventMerger();
     }
     else
     {

@@ -27,16 +27,17 @@ void DriftVelocity()
     auto df {
         d.Filter([](const ROOT::VecOps::RVec<std::string>& layers) { return layers.size() == 1 ; }, {"fSilLayers"})};
 
+    // Config histograms
     auto hLeft {df.Filter("fSilLayers.front() == \"l0\"")
-                    .Histo2D({"hLeft", "Left;X [pad];Z [tb]", 200, 0, 200, 200, 0, 600}, "fSP.fCoordinates.fX",
+                    .Histo2D({"hLeft", "Left;X [pad];Z [tb]", 200, -20, 150, 200, -20, 150}, "fSP.fCoordinates.fX",
                              "fSP.fCoordinates.fZ")};
 
     auto hFront {df.Filter("fSilLayers.front() == \"f0\"")
-                     .Histo2D({"hFront", "Front;Y [pad];Z [tb]", 200, 0, 200, 200, 0, 600}, "fSP.fCoordinates.fY",
+                     .Histo2D({"hFront", "Front;Y [pad];Z [tb]", 200, -20, 150, 200, -20, 150}, "fSP.fCoordinates.fY",
                               "fSP.fCoordinates.fZ")};
 
     auto hFront1 {df.Filter("fSilLayers.front() == \"f1\"")
-                      .Histo2D({"hFront1", "Front 1;Y [pad];Z [tb]", 200, 0, 200, 200, 0, 600}, "fSP.fCoordinates.fY",
+                      .Histo2D({"hFront1", "Front 1;Y [pad];Z [tb]", 200, -20, 150, 200, -20, 150}, "fSP.fCoordinates.fY",
                                "fSP.fCoordinates.fZ")};
 
     auto hRun {df.Histo1D("fRun")};
