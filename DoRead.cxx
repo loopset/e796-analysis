@@ -8,7 +8,7 @@
 
 #include <ios>
 #include <iostream>
-void ReadData()
+void DoRead()
 {
     // Set MT or not
     bool enableMT {true};
