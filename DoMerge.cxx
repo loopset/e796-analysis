@@ -14,8 +14,7 @@ void DoMerge()
     bool enableMT {true};
 
     // Set input data
-    ActRoot::InputData input;
-    input.ReadConfiguration("./configs/merger.runs");
+    ActRoot::InputData input {"./configs/merger.runs"};
 
     // Set output data
     ActRoot::OutputData output {input};

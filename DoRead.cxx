@@ -15,8 +15,7 @@ void ReadData()
     std::cout << "Is ActRoot MT enabled? " << std::boolalpha << enableMT << '\n';
 
     // Set input data
-    ActRoot::InputData input;
-    input.ReadConfiguration("./configs/read.runs");
+    ActRoot::InputData input {"./configs/read.runs"};
     // Set output data
     ActRoot::OutputData output {input};
     output.ReadConfiguration("./configs/read.runs");

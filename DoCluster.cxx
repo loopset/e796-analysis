@@ -14,8 +14,7 @@ void DoCluster()
     bool enableMT {true};
 
     // Set input data
-    ActRoot::InputData input;
-    input.ReadConfiguration("./configs/cluster.runs");
+    ActRoot::InputData input {"./configs/cluster.runs"};
 
     // Set output data
     ActRoot::OutputData output {input};
