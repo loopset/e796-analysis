@@ -1,43 +1,31 @@
 #include "ActDetectorManager.h"
 #include "ActInputData.h"
+#include "ActModularData.h"
 #include "ActOutputData.h"
-#include "ActMTExecutor.h"
+#include "ActSilData.h"
+#include "ActTPCData.h"
+#include "ActTPCPhysics.h"
 
-#include "TStopwatch.h"
+#include "TFile.h"
+#include "TTree.h"
 
 #include <iostream>
-#include <ostream>
-
-void DoMerge()
+#include <memory>
+void testInput()
 {
-    // Set MT or not
-    bool enableMT {true};
-
-    // Set input data
-    ActRoot::InputData input {"./configs/merger.runs"};
-
-    // Set output data
-    ActRoot::OutputData output {input};
-    output.ReadConfiguration("./configs/merger.runs");
-
-    // Run
-    if(enableMT)
+    for(int i = 0; i < 10; i++)
     {
-        ActRoot::MTExecutor mt;
-        mt.SetInputAndOutput(&input, &output);
-        mt.SetDetectorConfig("./configs/e796.detector", "./configs/e796.calibrations");
+        std::cout<<"====================================================================="<<'\n';
+        std::cout<<"Repetition : "<<i<<'\n';
+        // Set input data
+        ActRoot::InputData input {"./configs/merger.runs"};
 
-        mt.BuildEventMerger();
-    }
-    else
-    {
+        // Set output data
+        ActRoot::OutputData output {input};
+        output.ReadConfiguration("./configs/merger.runs");
         // Init detector
         ActRoot::DetectorManager detman;
         detman.ReadConfiguration("./configs/e796.detector");
-
-        // Timers
-        TStopwatch timer {};
-        timer.Start();
         for(const auto& run : input.GetTreeList())
         {
             std::cout << "Building event cluster for run " << run << '\n';
@@ -56,10 +44,5 @@ void DoMerge()
             output.Close(run);
             std::cout << '\n';
         }
-        std::cout << std::endl;
-        timer.Stop();
-        timer.Print();
-        // Print inner reports
-        // detman.PrintReports();
     }
 }

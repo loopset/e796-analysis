@@ -54,6 +54,7 @@ void DoCluster()
                 output.Fill(run);
             }
             output.Close(run);
+            input.Close(run);
         }
         std::cout<<std::endl;
         timer.Stop();

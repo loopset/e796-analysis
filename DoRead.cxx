@@ -50,6 +50,7 @@ void DoRead()
                 output.Fill(run);
             }
             output.Close(run);
+            input.Close(run);
             std::cout << "->Processed events = " << output.GetTree(run)->GetEntries() << '\n';
         }
         timer.Stop();
