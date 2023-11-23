@@ -7,42 +7,25 @@
 #include "ActTPCPhysics.h"
 
 #include "TFile.h"
+#include "TH1.h"
 #include "TTree.h"
 
 #include <iostream>
 #include <memory>
+struct S 
+{
+    TH1F fHist {};
+
+    void Reset(){*this = S{};}
+};
 void testInput()
 {
+    S st {};
     for(int i = 0; i < 10; i++)
     {
-        std::cout<<"====================================================================="<<'\n';
-        std::cout<<"Repetition : "<<i<<'\n';
-        // Set input data
-        ActRoot::InputData input {"./configs/merger.runs"};
+        auto h {TH1F("hProfile", "Profile", 100, 0, 100)};
+        st.fHist = h;
 
-        // Set output data
-        ActRoot::OutputData output {input};
-        output.ReadConfiguration("./configs/merger.runs");
-        // Init detector
-        ActRoot::DetectorManager detman;
-        detman.ReadConfiguration("./configs/e796.detector");
-        for(const auto& run : input.GetTreeList())
-        {
-            std::cout << "Building event cluster for run " << run << '\n';
-            detman.InitializeMergerInput(input.GetTree(run));
-            detman.InitializeMergerOutput(output.GetTree(run));
-            std::cout << "Entries in run : " << input.GetNEntries(run) << '\n';
-            for(int entry = 0; entry < input.GetNEntries(run); entry++)
-            {
-                std::cout << "\r"
-                          << "At entry : " << entry << std::flush;
-                input.GetEntry(run, entry);
-                detman.BuildEventMerger(run, entry);
-                output.Fill(run);
-            }
-            input.Close(run);
-            output.Close(run);
-            std::cout << '\n';
-        }
-    }
+        st.Reset();
+    } 
 }
