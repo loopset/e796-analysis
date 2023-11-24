@@ -1,7 +1,7 @@
 #include "ActDetectorManager.h"
 #include "ActInputData.h"
-#include "ActOutputData.h"
 #include "ActMTExecutor.h"
+#include "ActOutputData.h"
 
 #include "TStopwatch.h"
 
@@ -41,8 +41,8 @@ void DoMerge()
         for(const auto& run : input.GetTreeList())
         {
             std::cout << "Building event cluster for run " << run << '\n';
-            detman.InitializeMergerInput(input.GetTree(run));
-            detman.InitializeMergerOutput(output.GetTree(run));
+            detman.InitInputMerger(input.GetTree(run));
+            detman.InitOutputMerger(output.GetTree(run));
             std::cout << "Entries in run : " << input.GetNEntries(run) << '\n';
             for(int entry = 0; entry < input.GetNEntries(run); entry++)
             {
