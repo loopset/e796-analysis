@@ -12,7 +12,7 @@
 // standalone (only applies to simu setting):
 // if true, runs only first item in Ex vector and plots in-simulation results
 // if false, runs all Ex simulations but doesn't plot
-void Runner(TString what = "plot", bool standalone = false)
+void Runner(TString what = "plot", bool standalone = true)
 {
     // Settings
     // Names of particles
@@ -24,11 +24,11 @@ void Runner(TString what = "plot", bool standalone = false)
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
     int neutronPS {0}; // number of neutrons in final state
     int protonPS {0};  // number of protons in final state
-    double T1 {5.5};    // Beam energy: 35 MeV / u
+    double T1 {5.5};    // Beam energy: 5.5 MeV / u
 
     std::vector<double> Eexs;
     if(neutronPS == 0 && protonPS == 0)
-        Eexs = {0., 0.130, 0.435, 3.88};
+        Eexs = {0., 0.130, 0.435};
     else if(neutronPS > 0 && protonPS == 0)
         Eexs = {0}; // only gs for n phase space
     else if(neutronPS == 0 && protonPS > 0)

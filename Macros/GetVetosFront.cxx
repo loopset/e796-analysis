@@ -52,13 +52,13 @@ void GetVetosFront()
     double minZ {-10};
     double maxZ {300};
 
-    auto hAnti {antiveto.Define("corrZ", "fSP.fCoordinates.fZ - 74.4")
-                    .Histo2D({"hAnti", "Antiveto histogram", nbinsY, minY, maxY, nbinsZ, minZ, maxZ},
-                             "fSP.fCoordinates.fY", "corrZ")};
+    antiveto = antiveto.Define("coorZ", "fSP.fCoordinates.fZ - 76.");
+    auto hAnti {antiveto.Histo2D({"hAnti", "Antiveto histogram", nbinsY, minY, maxY, nbinsZ, minZ, maxZ},
+                                 "fSP.fCoordinates.fY", "corrZ")};
     // Count events
     std::cout << "N events antiveto : " << antiveto.Count().GetValue() << '\n';
 
-    // Plot old cuts
+    // Old cuts are still valid
     ActRoot::CutsManager<int> cuts;
     for(int i = 0; i <= 10; i++)
         cuts.ReadCut(i, TString::Format("../Cuts/veto_sil%d.root", i));

@@ -16,6 +16,7 @@ void PlotSP()
 
     // Gate on events stopped in first layer
     auto df {d.Filter("fSilLayers.size() == 1")};
+    auto hes {df.Filter("fSilEs.front() > 15.")};
 
     // Book histograms
     auto hF0 {
@@ -30,6 +31,9 @@ void PlotSP()
             .Histo1D({"hZOff", "ZOffset", hF0->GetNbinsY(), hF0->GetYaxis()->GetXmin(), hF0->GetYaxis()->GetXmax()},
                      "fSP.fCoordinates.fZ")};
 
+    auto hHes {hes.Histo2D({"hHes", "SP for He-likes;Y [mm];Z [mm]", 200, -20, 300, 200, -20, 300},
+                           "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
+
     // plotting
     auto* c1 {new TCanvas("c1", "Silicon points canvas")};
     c1->DivideSquare(4);
@@ -39,4 +43,6 @@ void PlotSP()
     hL0->DrawClone("colz");
     c1->cd(3);
     hZOff->DrawClone();
+    c1->cd(4);
+    hHes->DrawClone("colz");
 }

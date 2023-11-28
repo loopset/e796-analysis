@@ -41,15 +41,20 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         gROOT->SetBatch();
 
     // Set number of Si layers
+    // Named after BuildGeoTRIUMF when constructing the SiliconAssebly variables
     // must be [0, max) in ActRoot::Geometry
+    // Must iterate in this range to get in which layer we have an impact
     const int maxLayers {4};
 
     // SIGMAS
-    const double sigmaSil {0.060 / 2.355};
-    const double sigmaPercentBeam {0.008};
-    const double sigmaAngleLight {0.95 / 2.355};
+    // Resolutions to be implemented as gaussians
+    const double sigmaSil {0.060 / 2.355};       // Si resolution
+    const double sigmaPercentBeam {0.008};       // Energy res of beam (Energy = Energy +- Energy * sigmaPerccentBeam)
+    const double sigmaAngleLight {0.95 / 2.355}; // Sigma in angle (obtained by Juan during experimental analysis)
 
     // Parameters of beam in mm
+    // Beam has to be manually placed in the simulation
+    // Centered in Z and Y with a width of 4 mm
     // Center in Z
     const double zVertexMean {128.};
     const double zVertexSigma {4};
@@ -58,6 +63,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     const double yVertexSigma {4};
 
     // THRESHOLDS FOR SILICONS
+    // Minimum energy deposit to be detected in Sil
     const double thresholdSi0 {1.};
     const double thresholdSi1 {1.};
 
@@ -69,34 +75,32 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     const int iterations {static_cast<int>(1e6)};
 
     // ACTIVATE STRAGGLING OR NOT
+    // Flag to activate / deactivate different parameters of simu
     bool stragglingInGas {true};
     bool stragglingInSil {true};
     bool silResolution {true};
     bool thetaResolution {true};
 
-    // CUTS ON SILICON ENERGY: disabled, allow enter any range of eLoss in layer 0
-    std::pair<double, double> eLoss0Cut {0, 1000};
-
-    // CUTS ON SILICON INDEX
-    std::set<int> silIndexCut {};
-    const double zOffsetGraphCuts {-50.}; // lower silPoint to graphical cuts, in mm
-
     //---- SIMULATION STARTS HERE
     ROOT::EnableImplicitMT();
 
-    // timer
+    // timer: count how much time to execute this program
     TStopwatch timer {};
     timer.Start();
 
-    // Init particles
+    // Init particles, passed as strings in func arguments
     ActPhysics::Particle p1 {beam};
     ActPhysics::Particle p2 {target};
     ActPhysics::Particle p3 {light};
     ActPhysics::Particle p4 {heavy};
-    // Init kinematics generator
+    // Init kinematics generator: wrapper to TGenPhaseSpace
+    // Allows simulation of n-body reactions, but does not allow input of
+    // different cross section appart from constant. Delete it!
+    // For now on, we will focus only on 2-body (we have to figure out sth for 3-body afterwards)
     ActSim::KinematicGenerator kingen {p1, p2, p3, p4, protonPS, neutronPS};
     kingen.Print();
     // get threshold energy
+    // Beam losses energy in gas, but since this reaction has a Tbeam threshold. Compute it here since it is constant
     auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, Ex).GetT1Thresh()};
 
     // Histograms
@@ -134,6 +138,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     srim->ReadInterpolations("lightInSil", "./../Calibrations/SRIMData/transformed/protons_silicon.dat");
 
     // Load geometry
+    // Assure having executed BuildGeoTRIUMF macro before
     auto* geometry {new ActSim::Geometry()};
     geometry->ReadGeometry("./Geometries/", "triumf");
 
@@ -141,8 +146,10 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     auto* rand {new TRandom3()};
     rand->SetSeed(); // random path in each execution of macro
 
-    // Runner: contains utility funcstions to execute multiple actions
+    // Runner: contains utility functions to execute multiple actions
     ActSim::Runner runner(srim, geometry, rand, sigmaSil);
+    // get SRIM, Geo, TRandom using runner.GetXXXXX
+    // using built-in GetEnergyAfterSilicons automatically implements Sil resolutions passed as sigmaSil
 
     // Output from simulation!
     // We only store a few things in the TTree
@@ -166,7 +173,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     outTree->Branch("theta3Lab", &theta3Lab_tree);
 
     // RUN!
-    // print fancy info
+    // print fancy info (dont pay attention to this)
     std::cout << BOLDMAGENTA << "Running for Ex = " << Ex << " MeV" << RESET << '\n';
     std::cout << BOLDGREEN;
     const int percentPrint {5};
@@ -183,7 +190,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             std::cout.flush();
             nextPrint += step;
         }
-        // 1-> Sample vertex
+        // 1-> Sample vertex: just taking a random point in X c [0, 256 ]mm; y and z obtained by the previously defined
+        // parameters
         auto vertex {runner.SampleVertex(yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, nullptr)};
         // std::cout<<"Vertex = "<<vertex<<" mm"<<'\n';
         // 2-> Beam energy according to its sigma
@@ -192,17 +200,24 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             sigmaPercentBeam * T1 * p1.GetAMU())}; // T1 in Mev / u * mass of beam in u = total kinetic energy
         // Slow down it according to vertex position
         TBeam = runner.EnergyAfterGas(TBeam, vertex.X(), "beam");
+        // runner energy functions return std::nan when the particle is stopped in the gas!
         // if nan (aka stopped in gas, continue)
         // if not stopped but beam energy below kinematic threshold, continue
         if(std::isnan(TBeam) || TBeam < beamThreshold)
             continue;
         // std::cout<<"TBeam = "<<TBeam<<" MeV"<<'\n';
         // 3-> Run kinematics!
+        // This is to be replaced by ActSim::Kinematics
+        // 3.1-> Construct the object passing particles and Tbeam and Ex
+        // 3.2-> Build yourself the thetaCM and phiCM using uniform distrib
+        // 3.3-> Set kinematics through SetRecoilKinematics(thetaCM, phiCM, 3, true)
+        // in that call to function, 3 is the particle whose angle are being set; the light in this case
         kingen.SetBeamAndExEnergies(TBeam, Ex);
         double weight {kingen.Generate()};
         // focus on recoil 3 (light)
         // obtain thetas and energies
         auto* PLight {kingen.GetLorentzVector(0)};
+        // 3.4-> The you have the kinematics in the lab by just calling the getters: GetTheta3Lab(), GetT3Lab(), etc
         auto theta3Lab {PLight->Theta()};
         auto phi3Lab {PLight->Phi()};
         auto T3Lab {PLight->Energy() - p3.GetMass()};
@@ -221,9 +236,6 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // auto phi3Lab {runner.GetRand()->Uniform(0., 2 * TMath::Pi())};
         auto EexBefore {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Lab, theta3Lab)};
 
-        // apply cut in XVertex
-        // if(!(40. <= vertex.X() && vertex.X() <= 200.))
-        //     continue;
         // 5-> Propagate track from vertex to silicon wall using Geometry class
         ROOT::Math::XYZVector direction {TMath::Cos(theta3Lab), TMath::Sin(theta3Lab) * TMath::Sin(phi3Lab),
                                          TMath::Sin(theta3Lab) * TMath::Cos(phi3Lab)};
@@ -236,7 +248,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // Assembly 0
         int hitAssembly0 {};
         int assemblyIndex {0};
-        for(int i = 0; i < maxLayers; i++)
+        for(int i = 0; i < maxLayers; i++) // iterate over the layer to find in which the track impacts (if does)
         {
             runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, i, side0, distance0, silType0,
                                                           silIndex0, silPoint0);
@@ -250,81 +262,77 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         distance0 *= 10.;
 
         // skip tracks that doesn't reach silicons or are in silicon index cut
-        if(silIndex0 == -1 || (silIndexCut.find(silIndex0) != silIndexCut.end()))
+        if(silIndex0 == -1)
         {
             hThetaLabDebug->Fill(theta3Lab * TMath::RadToDeg());
             continue;
         }
-        // cut with TCutG!
+        // Moving from ActSim::Geometry reference frame to ACTAR standard frame: (0, 0) = (padx = 0, pady = 0)
         auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
 
+        // Obtain energy loss from vertex until silicon impact point
         auto T3EnteringSil {runner.EnergyAfterGas(T3Lab, distance0, "light", stragglingInGas)};
-        // if(hitAssembly0 == 2)
-        // {
-        //     auto RIni {srim->EvalDirect("light", T3Lab)};
-        //     std::cout << "-------------------------------" << '\n';
-        //     std::cout<<"RIni : "<<RIni<<" mm"<<'\n';
-        //     std::cout<<"T3 : "<<T3Lab<<" MeV theta3 : "<<theta3Lab * TMath::RadToDeg()<<" deg"<<'\n';
-        //     std::cout<<"dist : "<<distance0<<" mm"<<'\n';
-        // }
+
         // nan if stopped in gas
         if(!std::isfinite(T3EnteringSil))
             continue;
 
-        // SILICON0
+        // First layer of silicons!
+        // This func returns a pair of values: first = energy loss in silicon, second = energy after silicon
         auto [eLoss0, T3AfterSil0] {
             runner.EnergyAfterSilicons(T3EnteringSil, geometry->GetAssemblyUnitWidth(hitAssembly0) * 10., thresholdSi0,
                                        "lightInSil", silResolution, stragglingInSil)};
-        // nan if bellow threshold
+        // does not consider angle of track in silicons... we will have to modify it to do so
+
+        // nan if bellow threshold (experimental sil detectors have a threshold energy below which particles are not
+        // detected)
         if(!std::isfinite(eLoss0))
             continue;
-        // 6-> Same but to silicon layer 1
-        // SILICON1
-        double T3AfterInterGas {};
-        double distance1 {};
-        int silIndex1 {};
-        int silType1 {};
-        bool side1 {};
-        ROOT::Math::XYZPoint silPoint1 {};
-        double eLoss1 {};
-        double T3AfterSil1 {};
-        if(T3AfterSil0 > 0 && hitAssembly0 == 0)
-        {
-            // first, propagate in gas
-            assemblyIndex = 1;
-            runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, assemblyIndex, side1, distance1,
-                                                          silType1, silIndex1, silPoint1, false);
-            if(silIndex1 == -1)
-                continue;
-
-            distance1 *= 10.;
-            distance1 -= distance0; // distanceIntergas = distance1 - distance0
-            T3AfterInterGas = runner.EnergyAfterGas(T3AfterSil0, distance1, "light", stragglingInGas);
-            if(!std::isfinite(T3AfterInterGas))
-                continue;
-
-            // now, silicon if we have energy left
-            if(T3AfterInterGas > 0)
-            {
-                auto results {runner.EnergyAfterSilicons(T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10.,
-                                                         thresholdSi1, "lightInSil", silResolution, stragglingInSil)};
-                eLoss1 = results.first;
-                T3AfterSil1 = results.second;
-            }
-        }
+        // 6-> Same but to silicon layer 1: SKIP THIS BECAUSE WE ARE NOT CONSIDERING PUNCHTHROUGH
+        // // SILICON1
+        // double T3AfterInterGas {};
+        // double distance1 {};
+        // int silIndex1 {};
+        // int silType1 {};
+        // bool side1 {};
+        // ROOT::Math::XYZPoint silPoint1 {};
+        // double eLoss1 {};
+        // double T3AfterSil1 {};
+        // if(T3AfterSil0 > 0 && hitAssembly0 == 0)
+        // {
+        //     // first, propagate in gas
+        //     assemblyIndex = 1;
+        //     runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, assemblyIndex, side1,
+        //     distance1,
+        //                                                   silType1, silIndex1, silPoint1, false);
+        //     if(silIndex1 == -1)
+        //         continue;
+        //
+        //     distance1 *= 10.;
+        //     distance1 -= distance0; // distanceIntergas = distance1 - distance0
+        //     T3AfterInterGas = runner.EnergyAfterGas(T3AfterSil0, distance1, "light", stragglingInGas);
+        //     if(!std::isfinite(T3AfterInterGas))
+        //         continue;
+        //
+        //     // now, silicon if we have energy left
+        //     if(T3AfterInterGas > 0)
+        //     {
+        //         auto results {runner.EnergyAfterSilicons(T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10.,
+        //                                                  thresholdSi1, "lightInSil", silResolution,
+        //                                                  stragglingInSil)};
+        //         eLoss1 = results.first;
+        //         T3AfterSil1 = results.second;
+        //     }
+        // }
 
         // 7->
         // we are ready to reconstruct Eex with all resolutions implemented
         // force delete punchthrough (no energy after first layer in any side)
-        bool cutPunchThrough {true};//{T3AfterSil0 == 0.};
-        if(hitAssembly0 != 0)
+        bool cutPunchThrough {T3AfterSil0 == 0.};
+        if(cutPunchThrough) // fill histograms
         {
-            cutPunchThrough = (T3AfterSil0 == 0);
-        }
-        bool cutELoss0 {eLoss0Cut.first <= eLoss0 && eLoss0 <= eLoss0Cut.second};
-        if(cutPunchThrough && cutELoss0) // fill histograms
-        {
-            auto T3Recon {runner.EnergyBeforeGas(eLoss0 + eLoss1, distance0, "light")};
+            // Here we go back in time! From sil energy after implementing all resolutions to Ex
+            auto T3Recon {runner.EnergyBeforeGas(eLoss0, distance0, "light")};
             auto EexAfter {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Recon, theta3Lab)};
 
             // fill histograms
@@ -335,6 +343,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             hThetaESil->Fill(theta3Lab * TMath::RadToDeg(), eLoss0);
             hThetaEVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
             hEexAfter->Fill(EexAfter, weight);
+            // Here we fill the silicon point histograms
+            // Note that some of them require to fill .X() or .Y() depending on their orientation
             if(hitAssembly0 == 0 || hitAssembly0 == 1 || hitAssembly0 == 2)
                 hsSP[hitAssembly0]->Fill(silPoint0InMM.Y(), silPoint0InMM.Z());
             else
@@ -354,6 +364,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     std::cout << RESET << '\n';
 
     // compute geometric efficiency as the division of two histograms: thetaCM after all cuts and before them
+    // for now, do now pay attention to this
     std::vector<std::pair<double, double>> geoEff {};
     std::vector<std::pair<double, double>> ugeoEff {};
     for(int bin = 1; bin <= hThetaCMAll->GetNbinsX(); bin++)
