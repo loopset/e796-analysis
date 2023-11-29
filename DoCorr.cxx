@@ -1,5 +1,6 @@
 #include "ActDetectorManager.h"
 #include "ActInputData.h"
+#include "ActMTExecutor.h"
 #include "ActOutputData.h"
 
 #include "TStopwatch.h"
@@ -8,7 +9,7 @@
 
 void DoCorr()
 {
-    bool enableMT {false};
+    bool enableMT {true};
 
     ActRoot::InputData input;
     input.SetRunListFrom("./configs/merger.runs");
@@ -18,7 +19,12 @@ void DoCorr()
     output.ReadConfiguration("./configs/corrections.runs");
 
     if(enableMT)
-        ;
+    {
+        ActRoot::MTExecutor mt;
+        mt.SetInputAndOutput(&input, &output);
+        mt.SetDetectorConfig("./configs/e796.detector", "./configs/e796.calibrations");
+        mt.BuildEventCorr();
+    }
     else
     {
         ActRoot::DetectorManager detman {"./configs/e796.detector"};
