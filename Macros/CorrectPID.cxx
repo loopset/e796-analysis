@@ -1,19 +1,23 @@
 #include "ActCutsManager.h"
 #include "ActJoinData.h"
 #include "ActMergerData.h"
+#include "ActPIDCorrector.h"
 
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RVec.hxx"
 
 #include "TCanvas.h"
+#include "TH2.h"
 #include "TROOT.h"
 
 #include <fstream>
 #include <string>
+#include <utility>
+
 void CorrectPID()
 {
     ActRoot::JoinData data {"../configs/merger.runs"};
-    // ROOT::EnableImplicitMT();
+    ROOT::EnableImplicitMT();
     ROOT::RDataFrame d {*data.Get()};
 
     // Just for front now with ESil f1 = 0
@@ -43,30 +47,62 @@ void CorrectPID()
 
     // Book histograms
     auto hPID {vetof0.Define("x", "fSilEs.front()")
-                   .Histo2D({"hPID", "PID for front layer;E_{Si0} [MeV];Q_{ave} [mm^{-1}]", 300, 0, 40, 500, 0, 2000},
+                   .Histo2D({"hPID", "PID for front layer;E_{Si0} [MeV];Q_{ave} [mm^{-1}]", 500, 0, 40, 800, 0, 2000},
                             "x", "fQave")};
     auto hSP {vetof0.Histo2D({"hSP", "Vetoed SP;Y [mm];Z [mm]", 150, -10, 270, 150, -10, 270}, "fSP.fCoordinates.fY",
                              "corrZ")};
-    // store a few in dat file
-    ActRoot::CutsManager<int> cut;
-    cut.ReadCut(0, "./debug_hes.root");
-    std::ofstream streamer {"./debug_hes.dat"};
+
+    // Read preliminary PID cuts
+    ActRoot::CutsManager<std::string> cuts;
+    // cuts.ReadCut("p", "./Cuts/pid_protons_f0.root");
+    // cuts.ReadCut("d", "./Cuts/pid_deuterons_f0.root");
+    cuts.ReadCut("t", "./Cuts/pid_tritons_f0.root");
+    // cuts.ReadCut("4He", "./Cuts/pid_4He_f0.root");
+
+    // Init PIDCorrector
+    auto* hModel {new TH2D("hModel", "PID Corr", 100, -10, 300, 400, 0, 2000)};
+    std::pair<double, double> silELimits {3.5, 4.};
+    ActPhysics::PIDCorrector pc {"front", cuts.GetListOfKeys(), hModel};
+    // Fill it
     vetof0.Foreach(
-        [&](const ActRoot::MergerData& d)
+        [&](const ActRoot::MergerData& data)
         {
-            if(cut.IsInside(0, d.fSilEs.front(), d.fQave))
-                streamer << d.fRun << " " << d.fEntry << '\n';
+            auto silE {data.fSilEs.front()};
+            auto z {data.fSP.Z()};
+            auto q {data.fQave};
+            if(auto key {cuts.GetKeyIsInside(silE, q)}; key.has_value())
+                pc.FillHisto(key.value(), z, q, silE, silELimits.first, silELimits.second);
         },
         {"MergerData"});
-    streamer.close();
+    // Execute functions
+    pc.GetProfiles();
+    pc.FitProfiles(75, 275);
+    auto pidcorr {pc.GetCorrection()};
+    // Save it
+    pidcorr.Write("../Calibrations/Actar/pid_corr_tritons_f0.root");
+
+    // Apply correction
+    vetof0 = vetof0.Define("corrQave",
+                           [&](const ActRoot::MergerData& data) { return pidcorr.Apply(data.fQave, data.fSP.Z()); },
+                           {"MergerData"});
+
+    // Book corrected histogram
+    auto hPIDCorr {vetof0.Define("x", "fSilEs.front()")
+                       .Histo2D({"hPIDCorr", "Corrected PID;E_{Si0} [MeV];Q_{ave} [mm]", 500, 0, 40, 800, 0, 2000}, "x",
+                                "corrQave")};
 
     // plot
     auto* c1 {new TCanvas("c1", "PID canvas")};
-    c1->DivideSquare(2);
+    c1->DivideSquare(4);
     c1->cd(1);
     hPID->DrawClone("colz");
-    cut.DrawAll();
+    cuts.DrawAll();
     c1->cd(2);
+    hPIDCorr->DrawClone("colz");
+    c1->cd(3);
     hSP->DrawClone("colz");
     vetos.DrawAll();
+
+    // PIDCorrector canvas
+    pc.Draw();
 }
