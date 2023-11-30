@@ -1,10 +1,16 @@
 #include "ActJoinData.h"
 
 #include "ROOT/RDataFrame.hxx"
+#include "ROOT/RVec.hxx"
 
 #include "TCanvas.h"
 #include "TH2.h"
 #include "TROOT.h"
+#include "TString.h"
+
+#include "Math/Point3D.h"
+
+#include <vector>
 
 void PlotSP()
 {
@@ -16,7 +22,6 @@ void PlotSP()
 
     // Gate on events stopped in first layer
     auto df {d.Filter("fSilLayers.size() == 1")};
-    auto hes {df.Filter("fSilEs.front() > 15.")};
 
     // Book histograms
     auto hF0 {
@@ -31,8 +36,21 @@ void PlotSP()
             .Histo1D({"hZOff", "ZOffset", hF0->GetNbinsY(), hF0->GetYaxis()->GetXmin(), hF0->GetYaxis()->GetXmax()},
                      "fSP.fCoordinates.fZ")};
 
-    auto hHes {hes.Histo2D({"hHes", "SP for He-likes;Y [mm];Z [mm]", 200, -20, 300, 200, -20, 300},
-                           "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
+    int nsils {11};
+    std::vector<TH2D*> hs(nsils);
+    for(int s = 0; s < nsils; s++)
+        hs[s] = new TH2D(TString::Format("hSil%d", s), TString::Format("SP for sil %d;Y [mm];Z [mm]", s), 200, -20, 300,
+                         200, -20, 300);
+
+    // Fill them
+    df.Foreach(
+        [&](const ROOT::VecOps::RVec<std::string>& silL, const ROOT::RVecF& silN, const ROOT::Math::XYZPointF& sp)
+        {
+            if(silL.front() == "f0")
+                hs[silN.front()]->Fill(sp.Y(), sp.Z());
+        },
+        {"fSilLayers", "fSilNs", "fSP"});
+
 
     // plotting
     auto* c1 {new TCanvas("c1", "Silicon points canvas")};
@@ -43,6 +61,21 @@ void PlotSP()
     hL0->DrawClone("colz");
     c1->cd(3);
     hZOff->DrawClone();
-    c1->cd(4);
-    hHes->DrawClone("colz");
+
+    std::vector<TCanvas*> cs(3);
+    int idx {0};
+    for(int c = 0; c < cs.size(); c++)
+    {
+        cs[c] = new TCanvas(TString::Format("cSP%d", c));
+        cs[c]->DivideSquare(4);
+        for(int p = 0; p < 4; p++)
+        {
+            if(idx < hs.size())
+            {
+                cs[c]->cd(p + 1);
+                hs[idx]->Draw("colz");
+            }
+            idx++;
+        }
+    }
 }
