@@ -33,33 +33,29 @@ void GetCorrectedPID()
     f0 = f0.Define("ESil0", "fSilEs.front()");
 
     // Read veto cuts
-    ActRoot::CutsManager<int> vetos;
-    for(int i = 0; i < 11; i++)
-        vetos.ReadCut(i, TString::Format("../Cuts/veto_sil%d.root", i));
+    ActRoot::CutsManager<int> cut;
+    cut.ReadCut(0, "./Cuts/debug_banana.root");
 
     // Apply them
-    auto bv {f0.Filter(
-        [&](const ROOT::RVecF& silN, const ROOT::Math::XYZPointF& sp)
-        {
-            return true; // vetos.IsInside(silN.front(), sp.Y(), sp.Z());
-        },
-        {"fSilNs", "fSP"})};
+    auto debug {f0.Filter([&](const ROOT::RVecF& silE, float q) { return cut.IsInside(0, silE.front(), q); },
+                          {"fSilEs", "fQave"})};
 
-    auto vetoed {bv.Filter("fSilNs.front() == 10")};
     // Book histograms
-    auto hPID {vetoed.Histo2D({"hPID", "PID for front layer;E_{Si0} [MeV];Q_{ave} [mm^{-1}]", 500, 0, 40, 800, 0, 2000},
-                              "ESil0", "fQave")};
-    auto hSP {vetoed.Histo2D({"hSP", "Vetoed SP;Y [mm];Z [mm]", 200, -20, 300, 200, -20, 300}, "fSP.fCoordinates.fY",
-                             "fSP.fCoordinates.fZ")};
+    auto hPID {f0.Histo2D({"hPID", "PID for front layer;E_{Si0} [MeV];Q_{ave} [mm^{-1}]", 500, 0, 40, 800, 0, 2000},
+                          "ESil0", "fQave")};
+    auto hSP {f0.Histo2D({"hSP", "ESil1 == 0 SP;Y [mm];Z [mm]", 200, -20, 300, 200, -20, 300}, "fSP.fCoordinates.fY",
+                         "fSP.fCoordinates.fZ")};
+
+    // With cut
+    auto hDebug {debug.Histo2D({"hDebug", "SPs from cut;Y [mm];Z [mm]", 200, -20, 300, 200, -20, 300},
+                               "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
 
     // Write to streamer
-    // std::ofstream streamer {"./debug_banana.dat"};
-    // ActRoot::CutsManager<int> cuts;
-    // cuts.ReadCut(0, "./Cuts/debug_banana.root");
-    // vetoed.Foreach(
+    // std::ofstream streamer {"./debug_hes.dat"};
+    // debug.Foreach(
     //     [&](const ActRoot::MergerData& d)
     //     {
-    //         if(cuts.IsInside(0, d.fSilEs.front(), d.fQave))
+    //         if(cut.IsInside(0, d.fSilEs.front(), d.fQave))
     //             streamer << d.fRun << " " << d.fEntry << '\n';
     //     },
     //     {"MergerData"});
@@ -67,11 +63,18 @@ void GetCorrectedPID()
 
     // plot
     auto* c1 {new TCanvas("c1", "PID canvas")};
-    c1->DivideSquare(2);
+    c1->DivideSquare(4);
     c1->cd(1);
     hPID->DrawClone("colz");
-    // cuts.DrawAll();
+    cut.DrawAll();
     c1->cd(2);
     hSP->DrawClone("colz");
-    vetos.DrawAll();
+    // vetos.DrawAll();
+    c1->cd(3);
+    hDebug->DrawClone("colz");
+    c1->cd(4);
+    hSP->DrawClone("colz");
+    hDebug->SetMarkerColor(kRed);
+    hDebug->SetMarkerStyle(6);
+    hDebug->DrawClone("scat same");
 }

@@ -19,6 +19,8 @@ void DoMerge()
     // Set output data
     ActRoot::OutputData output {input};
     output.ReadConfiguration("./configs/merger.runs");
+    output.WriteMetadata("./configs/multistep.conf", "MultiStep");
+    output.WriteMetadata("./configs/merger.conf", "Merger");
 
     // Run
     if(enableMT)

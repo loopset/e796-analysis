@@ -17,7 +17,7 @@ void GetVetosFront()
     ROOT::EnableImplicitMT();
 
     // Get data from merger
-    ActRoot::JoinData data {"../configs/merger.runs"};
+    ActRoot::JoinData data {"../configs/merger.runs", "../configs/corrections.runs"};
     ROOT::RDataFrame d {*data.Get()};
 
     // Get ANTIVETO condition
@@ -52,9 +52,8 @@ void GetVetosFront()
     double minZ {-10};
     double maxZ {300};
 
-    antiveto = antiveto.Define("coorZ", "fSP.fCoordinates.fZ - 76.");
-    auto hAnti {antiveto.Histo2D({"hAnti", "Antiveto histogram", nbinsY, minY, maxY, nbinsZ, minZ, maxZ},
-                                 "fSP.fCoordinates.fY", "corrZ")};
+    auto hAnti {antiveto.Histo2D({"hAnti", "Antiveto histogram;Y [mm];Z [mm]", nbinsY, minY, maxY, nbinsZ, minZ, maxZ},
+                                 "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
     // Count events
     std::cout << "N events antiveto : " << antiveto.Count().GetValue() << '\n';
 
