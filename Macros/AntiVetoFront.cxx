@@ -28,15 +28,19 @@ void AntiVetoFront()
             bool isInF1 {std::find(siL.begin(), siL.end(), "f1") != siL.end()};
             // Impacted silicons by index
             bool isMasked {};
+            // Force coincidence of index in 0 and 1
+            bool shareIndex {};
             if(isInF0 && isInF1)
             {
+                shareIndex = (siN[0] == siN[1]);
+
                 for(const auto& mask : maskedSiN)
                 {
                     if(siN.front() == mask)
                         isMasked = true;
                 }
             }
-            return isInF0 && isInF1 && !isMasked;
+            return isInF0 && isInF1 && shareIndex &&!isMasked;
         },
         {"fSilLayers", "fSilNs"})};
 
@@ -51,19 +55,21 @@ void AntiVetoFront()
                           zlims.first, zlims.second},
                          "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
 
-    // // Write cut to file
-    // std::ofstream streamer {"./debug_sp.dat"};
-    // ActRoot::CutsManager<int> cut;
-    // cut.ReadCut(0, "./Cuts/debug_sp.root");
-    // df.Foreach(
-    //     [&](const ActRoot::MergerData& d)
-    //     {
-    //         if(cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
-    //             streamer << d.fRun << " " << d.fEntry << '\n';
-    //     },
-    //     {"MergerData"});
-    // streamer.close();
+    // Write cut to file
+    std::ofstream streamer {"./debug_antiveto.dat"};
+    ActRoot::CutsManager<int> cut;
+    cut.ReadCut(0, "./Cuts/debug_antiveto.root");
+    df.Foreach(
+        [&](const ActRoot::MergerData& d)
+        {
+            if(cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
+                streamer << d.fRun << " " << d.fEntry << '\n';
+        },
+        {"MergerData"});
+    streamer.close();
+
     // plot
     auto* c1 {new TCanvas("c1", "Veto mode 3He and 4He")};
     hSP->DrawClone("colz");
+    cut.DrawAll();
 }

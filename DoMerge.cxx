@@ -62,6 +62,6 @@ void DoMerge()
         timer.Stop();
         timer.Print();
         // Print inner reports
-        // detman.PrintReports();
+        detman.PrintReports();
     }
 }
