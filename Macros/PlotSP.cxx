@@ -1,4 +1,6 @@
+#include "ActCutsManager.h"
 #include "ActJoinData.h"
+#include "ActMergerData.h"
 
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RVec.hxx"
@@ -9,12 +11,14 @@
 #include "TString.h"
 
 #include "Math/Point3D.h"
+#include "Math/Point3Dfwd.h"
 
+#include <fstream>
 #include <vector>
 
 void PlotSP()
 {
-    ROOT::EnableImplicitMT();
+    // ROOT::EnableImplicitMT();
 
     ActRoot::JoinData data {"../configs/merger.runs"};
     ROOT::RDataFrame d {*data.Get()};
@@ -35,6 +39,19 @@ void PlotSP()
         df.Filter("fSilLayers.front() == \"f0\"")
             .Histo1D({"hZOff", "ZOffset", hF0->GetNbinsY(), hF0->GetYaxis()->GetXmin(), hF0->GetYaxis()->GetXmax()},
                      "fSP.fCoordinates.fZ")};
+
+    // Write
+    std::ofstream streamer {"./debug_central.dat"};
+    ActRoot::CutsManager<int> cut;
+    cut.ReadCut(0, "./Cuts/debug_central.root");
+    df.Foreach(
+        [&](const ActRoot::MergerData& d)
+        {
+            if(cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
+                streamer << d.fRun << " " << d.fEntry << '\n';
+        },
+        {"MergerData"});
+    streamer.close();
 
     int nsils {11};
     std::vector<TH2D*> hs(nsils);
