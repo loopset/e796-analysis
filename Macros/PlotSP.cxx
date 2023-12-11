@@ -41,13 +41,13 @@ void PlotSP()
                      "fSP.fCoordinates.fZ")};
 
     // Write
-    std::ofstream streamer {"./debug_central.dat"};
+    std::ofstream streamer {"./debug_sp_sil1.dat"};
     ActRoot::CutsManager<int> cut;
-    cut.ReadCut(0, "./Cuts/debug_central.root");
+    cut.ReadCut(0, "./Cuts/debug_sp_sil1.root");
     df.Foreach(
         [&](const ActRoot::MergerData& d)
         {
-            if(cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
+            if(d.fSilNs.front() == 1 && cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
                 streamer << d.fRun << " " << d.fEntry << '\n';
         },
         {"MergerData"});
