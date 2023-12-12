@@ -127,7 +127,7 @@ void PlotAll(TCanvas* c, ProjMap& hs)
 
 void FitsAntiVeto()
 {
-    const std::string which {""};
+    const std::string which {"_part1"};
     auto fin {std::make_unique<TFile>(("./RootFiles/antiveto_histograms" + which + ".root").c_str())};
     // fin->ls();
     std::vector<int> idxs {0, 2, 3, 4, 5, 7, 8, 10};
@@ -152,7 +152,7 @@ void FitsAntiVeto()
     auto nzs {FitToScaleFunc(pzs, zlimits)};
 
     // Fit to contour
-    double thresh {0.4};
+    double thresh {0.65};
     double width {15};
     // Y
     auto ypoints {FitToCountour(nys, thresh, width)};
