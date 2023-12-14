@@ -18,7 +18,7 @@
 
 void PlotSP()
 {
-    // ROOT::EnableImplicitMT();
+    ROOT::EnableImplicitMT();
 
     ActRoot::JoinData data {"../configs/merger.runs"};
     ROOT::RDataFrame d {*data.Get()};
@@ -41,17 +41,17 @@ void PlotSP()
                      "fSP.fCoordinates.fZ")};
 
     // Write
-    std::ofstream streamer {"./debug_sp_sil1.dat"};
-    ActRoot::CutsManager<int> cut;
-    cut.ReadCut(0, "./Cuts/debug_sp_sil1.root");
-    df.Foreach(
-        [&](const ActRoot::MergerData& d)
-        {
-            if(d.fSilNs.front() == 1 && cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
-                streamer << d.fRun << " " << d.fEntry << '\n';
-        },
-        {"MergerData"});
-    streamer.close();
+    // std::ofstream streamer {"./debug_sp_sil1.dat"};
+    // ActRoot::CutsManager<int> cut;
+    // cut.ReadCut(0, "./Cuts/debug_sp_sil1.root");
+    // df.Foreach(
+    //     [&](const ActRoot::MergerData& d)
+    //     {
+    //         if(d.fSilNs.front() == 1 && cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
+    //             streamer << d.fRun << " " << d.fEntry << '\n';
+    //     },
+    //     {"MergerData"});
+    // streamer.close();
 
     int nsils {11};
     std::vector<TH2D*> hs(nsils);

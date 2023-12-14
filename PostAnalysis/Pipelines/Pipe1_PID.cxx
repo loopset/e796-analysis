@@ -1,3 +1,5 @@
+#include "ActColors.h"
+#include "ActCutsManager.h"
 #include "ActJoinData.h"
 #include "ActMergerData.h"
 #include "ActSilMatrix.h"
@@ -7,10 +9,14 @@
 
 #include "TCanvas.h"
 #include "TROOT.h"
+#include "TString.h"
 
+#include <fstream>
+#include <iostream>
 #include <string>
 
 #include "../HistConfig.h"
+#include "../Utils.cxx"
 
 void Pipe1_PID(const std::string& beam, const std::string& target, const std::string& light, bool isSide)
 {
@@ -38,7 +44,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     else
     {
         // Read matrix
-        sm.Read("/media/Data/E796v2/Macros/silmatrix.root");
+        sm.Read("/media/Data/E796v2/Macros/antiveto_matrix.root");
         auto veto {[&](const ActRoot::MergerData& d)
                    {
                        // Check size
@@ -56,13 +62,43 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
 
     // Book histograms
     auto hPID {vetoed.Define("ESil0", "fSilEs.front()").Histo2D(HistConfig::PID, "ESil0", "fQave")};
-    auto hSP {vetoed.Histo2D(HistConfig::SP, "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
+    auto hSP {vetoed.Histo2D(HistConfig::SP, (isSide) ? "fSP.fCoordinates.fX" : "fSP.fCoordinates.fY",
+                             "fSP.fCoordinates.fZ")};
+
+    // Read PID cut
+    ActRoot::CutsManager<std::string> cut;
+    TString srimfile {};
+    if(isSide)
+        srimfile = TString::Format("./Cuts/pid_%s_side.root", light.c_str());
+    else
+        srimfile = TString::Format("./Cuts/pid_%s.root", light.c_str());
+    cut.ReadCut(light, srimfile);
+
+    if(cut.GetCut(light))
+    {
+        // Filter
+        auto pid {vetoed.Filter([&](const ActRoot::MergerData& d)
+                                { return cut.IsInside(light, d.fSilEs.front(), d.fQave); },
+                                {"MergerData"})};
+        auto filename {E796Utils::GetFileName(1, beam, target, light, isSide)};
+        std::cout << BOLDGREEN << "Saving PID_Tree in file : " << filename << '\n';
+        pid.Snapshot("PID_Tree", filename);
+
+        // // Write
+        // std::ofstream streamer {"./debug_2H.dat"};
+        // pid.Foreach([&](const ActRoot::MergerData& d) { streamer << d.fRun << " " << d.fEntry << '\n'; },
+        //             {"MergerData"});
+        // streamer.close();
+    }
 
     // plotting
     auto* c10 {new TCanvas("c10", "Pipe1 canvas 0")};
     c10->DivideSquare(2);
     c10->cd(1);
     hPID->DrawClone("colz");
+    cut.DrawAll();
     c10->cd(2);
     hSP->DrawClone("colz");
+    sm.SetSyle();
+    sm.Draw(true);
 }

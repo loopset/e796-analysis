@@ -35,7 +35,7 @@ void GetCorrectedPID()
 
     // Read veto cuts
     ActPhysics::SilMatrix sm;
-    sm.Read("./silmatrix.root");
+    sm.Read("./antiveto_matrix.root");
 
     auto vetoed {f0.Filter([&](const ActRoot::MergerData& d)
                            { return sm.IsInside(d.fSilNs.front(), d.fSP.Y(), d.fSP.Z()); },

@@ -46,7 +46,7 @@ void AntiVetoFront()
                 shareIndex = (siN[0] == siN[1]);
 
                 for(const auto& mask : maskedSiN)
-                {
+        {
                     if(siN.front() == mask)
                         isMasked = true;
                 }

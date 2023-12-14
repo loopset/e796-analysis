@@ -36,7 +36,7 @@ void CorrectPID()
 
     // Read cuts
     ActPhysics::SilMatrix sm;
-    sm.Read("./silmatrix.root");
+    sm.Read("./veto_matrix.root");
 
     // Apply cuts
     auto vetof0 {f0.Filter([&](const ROOT::RVecF& silN, float y, float z)
@@ -47,7 +47,7 @@ void CorrectPID()
     auto hPID {vetof0.Define("x", "fSilEs.front()")
                    .Histo2D({"hPID", "PID for front layer;E_{Si0} [MeV];Q_{ave} [mm^{-1}]", 500, 0, 40, 800, 0, 2000},
                             "x", "fQave")};
-    auto hSP {vetof0.Histo2D({"hSP", "Vetoed SP;Y [mm];Z [mm]", 150, -10, 300, 150, -10, 300}, "fSP.fCoordinates.fY",
+    auto hSP {vetof0.Histo2D({"hSP", "Vetoed SP;Y [mm];Z [mm]", 200, -10, 300, 200, -10, 300}, "fSP.fCoordinates.fY",
                              "fSP.fCoordinates.fZ")};
 
     // Read preliminary PID cuts
