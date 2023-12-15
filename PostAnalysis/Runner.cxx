@@ -10,8 +10,8 @@
 void Runner(TString what = "1")
 {
     std::string beam {"20O"};
-    std::string target {"1H"};
-    std::string light {"2H"};
+    std::string target {"2H"};
+    std::string light {"3H"};
     bool isSide {false}; // else isFront
 
     if(what.Contains("1"))

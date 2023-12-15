@@ -13,7 +13,9 @@
 #include "TString.h"
 
 #include <iostream>
+#include <mutex>
 #include <string>
+#include <vector>
 
 #include "../HistConfig.h"
 #include "../Utils.cxx"
@@ -35,6 +37,10 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
         light,
         TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_in_952mb_mixture.dat", light.c_str())
             .Data());
+    srim->ReadInterpolations(
+        beam,
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_in_952mb_mixture.dat", beam.c_str())
+            .Data());
 
     // Build energy at vertex
     auto def = df.Define("EVertex",
@@ -45,17 +51,38 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                              return srim->EvalInverse(light, RVertex);
                          },
                          {"MergerData"});
-    // Init Kinematics
+
+    // Init particles
     ActPhysics::Particle pb {beam};
-    ActPhysics::Kinematics kin {beam, target, light, 35. * pb.GetAMU(), 0};
-    kin.Print();
-    def = def.Define("Ex",
-                     [&](const ActRoot::MergerData& d, double EVertex)
-                     { return kin.ReconstructExcitationEnergy(EVertex, d.fThetaLight * TMath::DegToRad()); },
-                     {"MergerData", "EVertex"});
+    ActPhysics::Particle pt {target};
+    ActPhysics::Particle pl {light};
+
+    // Build beam energy
+    def = def.Define("EBeam",
+                     [&](const ActRoot::MergerData& d)
+                     {
+                         double RIni {srim->EvalDirect(beam, 35 * pb.GetAMU())};
+                         double RVertex {RIni - d.fRP.X()};
+                         return srim->EvalInverse(beam, RVertex);
+                     },
+                     {"MergerData"});
+
+    ActPhysics::Kinematics kin {pb, pt, pl, 35 * pb.GetAMU()};
+    // Vector of kinematics as one object is needed per
+    // processing slot (since we are changing EBeam in each entry)
+    std::vector<ActPhysics::Kinematics> vkins {def.GetNSlots()};
+    for(auto& k : vkins)
+        k = kin;
+    def = def.DefineSlot("Ex",
+                         [&](unsigned int slot, const ActRoot::MergerData& d, double EVertex, double EBeam)
+                         {
+                             vkins[slot].SetBeamEnergy(EBeam);
+                             return vkins[slot].ReconstructExcitationEnergy(EVertex, d.fThetaLight * TMath::DegToRad());
+                         },
+                         {"MergerData", "EVertex", "EBeam"});
 
     // Book new histograms
-    auto hKin {def.Histo2D(HistConfig::Kin, "fThetaLight", "EVertex")};
+    auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin, "fThetaLight", "EVertex")};
     auto hEx {def.Histo1D(HistConfig::Ex, "Ex")};
 
     // Save!

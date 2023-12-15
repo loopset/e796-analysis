@@ -1,4 +1,5 @@
 #include "ActKinematics.h"
+#include "ActParticle.h"
 
 #include "ROOT/RDF/InterfaceUtils.hxx"
 #include "ROOT/RDFHelpers.hxx"
@@ -65,14 +66,19 @@ void Plotter()
     // Book histograms
     std::vector<ROOT::RDF::RResultPtr<TH2D>> hsKin;
     std::vector<ROOT::RDF::RResultPtr<TH1D>> hsEx;
+    std::vector<ActPhysics::Kinematics> vkins;
     int counter {-1};
     for(auto& df : dfs)
     {
         counter++;
         auto [b, t, l] {signatures[counter]};
+        bool isSide {t == l}; // preliminary!
+        ActPhysics::Particle beam {b};
+        vkins.push_back(ActPhysics::Kinematics {b, t, l, 35 * beam.GetAMU(), 0});
         auto sig {TString::Format("%s(%s, %s)", b.c_str(), t.c_str(), l.c_str())};
         hsKin.emplace_back(
-            df.Histo2D(HistConfig::ChangeTitle(HistConfig::Kin, "Kinematics " + sig), "fThetaLight", "EVertex"));
+            df.Histo2D(HistConfig::ChangeTitle((isSide) ? HistConfig::KinEl : HistConfig::Kin, "Kinematics " + sig),
+                       "fThetaLight", "EVertex"));
         hsEx.emplace_back(df.Histo1D(HistConfig::ChangeTitle(HistConfig::Ex, "Ex " + sig), "Ex"));
     }
 
@@ -90,6 +96,7 @@ void Plotter()
         cs[c]->DivideSquare(2);
         cs[c]->cd(1);
         hsKin[c]->DrawClone("colz");
+        vkins[c].GetKinematicLine3()->Draw("same");
         cs[c]->cd(2);
         hsEx[c]->DrawClone();
     }
