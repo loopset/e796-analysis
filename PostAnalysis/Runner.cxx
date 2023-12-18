@@ -1,5 +1,6 @@
+#include "ActColors.h"
+
 #include "TString.h"
-#include "TSystem.h"
 
 #include <string>
 
@@ -7,12 +8,26 @@
 #include "./Pipelines/Pipe2_Ex.cxx"
 #include "./Plotter.cxx"
 
-void Runner(TString what = "1")
+void Print(const std::string& beam, const std::string& target, const std::string& light, bool isSide,
+           const std::string& what = "")
+{
+    std::cout << BOLDGREEN << "···· Runner ····" << '\n';
+    std::cout << "-> Beam   : " << beam << '\n';
+    std::cout << "-> Target : " << target << '\n';
+    std::cout << "-> Light  : " << light << '\n';
+    std::cout << "-> IsSide ? " << std::boolalpha << isSide << '\n';
+    std::cout << "-> What   : " << what << '\n';
+    std::cout << "······························" << RESET << '\n';
+}
+
+void Runner(TString what = "plot")
 {
     std::string beam {"20O"};
     std::string target {"2H"};
     std::string light {"3H"};
     bool isSide {false}; // else isFront
+    // Nice print
+    Print(beam, target, light, isSide, what.Data());
 
     if(what.Contains("1"))
         Pipe1_PID(beam, target, light, isSide);

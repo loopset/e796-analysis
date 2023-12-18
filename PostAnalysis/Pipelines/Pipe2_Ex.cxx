@@ -1,4 +1,5 @@
 #include "ActColors.h"
+#include "ActCutsManager.h"
 #include "ActKinematics.h"
 #include "ActMergerData.h"
 #include "ActParticle.h"
@@ -12,6 +13,7 @@
 #include "TROOT.h"
 #include "TString.h"
 
+#include <fstream>
 #include <iostream>
 #include <mutex>
 #include <string>
@@ -84,6 +86,19 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     // Book new histograms
     auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin, "fThetaLight", "EVertex")};
     auto hEx {def.Histo1D(HistConfig::Ex, "Ex")};
+
+    // // Write
+    // ActRoot::CutsManager<int> cut;
+    // cut.ReadCut(0, "/media/Data/E796v2/PostAnalysis/Cuts/debug_d_d.root");
+    // std::ofstream streamer {"/media/Data/E796v2/PostAnalysis/debug_d_d.dat"};
+    // def.Foreach(
+    //     [&](const ActRoot::MergerData& d, double EVertex)
+    //     {
+    //         if(cut.IsInside(0, d.fThetaLight, EVertex))
+    //             streamer << d.fRun << " " << d.fEntry << '\n';
+    //     },
+    //     {"MergerData", "EVertex"});
+    // streamer.close();
 
     // Save!
     auto outfile {E796Utils::GetFileName(2, beam, target, light, isSide)};

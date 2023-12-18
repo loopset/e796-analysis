@@ -3,6 +3,8 @@
 
 #include "TString.h"
 
+#include <ios>
+#include <iostream>
 #include <string>
 namespace E796Utils
 {
@@ -19,6 +21,6 @@ namespace E796Utils
                                    light.c_str());
         return path + name;
     }
+
 } // namespace E796Utils
 #endif // !Utils_cxx
-#define Utils_cxx
