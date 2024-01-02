@@ -1,11 +1,9 @@
 #include "ActColors.h"
-#include "ActCutsManager.h"
 #include "ActKinematics.h"
 #include "ActMergerData.h"
 #include "ActParticle.h"
 #include "ActSRIM.h"
 
-#include "ROOT/RDFHelpers.hxx"
 #include "ROOT/RDataFrame.hxx"
 
 #include "TCanvas.h"
@@ -13,9 +11,8 @@
 #include "TROOT.h"
 #include "TString.h"
 
-#include <fstream>
+#include <ios>
 #include <iostream>
-#include <mutex>
 #include <string>
 #include <vector>
 
@@ -24,11 +21,16 @@
 
 void Pipe2_Ex(const std::string& beam, const std::string& target, const std::string& light, bool isSide)
 {
+    bool debug {false};
+    std::cout << BOLDRED << "is DebugTheta enabled ? " << std::boolalpha << debug << '\n';
     auto filename {E796Utils::GetFileName(1, beam, target, light, isSide)};
     std::cout << BOLDGREEN << "Reading file: " << filename << RESET << '\n';
     // Read
     ROOT::EnableImplicitMT();
     ROOT::RDataFrame df {"PID_Tree", filename};
+    // TODO: debug resolution as function of RP:X(),
+    // as likely its wosening is due to the wrong determination of the angle
+    // at the beginning of the chamber
 
     // Book histograms
     auto hPID {df.Define("ESil0", "fSilEs.front()").Histo2D(HistConfig::PID, "ESil0", "fQave")};
@@ -79,13 +81,17 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                          [&](unsigned int slot, const ActRoot::MergerData& d, double EVertex, double EBeam)
                          {
                              vkins[slot].SetBeamEnergy(EBeam);
-                             return vkins[slot].ReconstructExcitationEnergy(EVertex, d.fThetaLight * TMath::DegToRad());
+                             return vkins[slot].ReconstructExcitationEnergy(
+                                 EVertex, ((debug) ? d.fThetaDebug : d.fThetaLight) * TMath::DegToRad());
                          },
                          {"MergerData", "EVertex", "EBeam"});
 
     // Book new histograms
-    auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin, "fThetaLight", "EVertex")};
+    auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin, (debug) ? "fThetaDebug" : "fThetaLight",
+                           "EVertex")};
     auto hEx {def.Histo1D(HistConfig::Ex, "Ex")};
+
+    auto hTheta {def.Histo1D((debug) ? "fThetaDebug" : "fThetaLight")};
 
     // // Write
     // ActRoot::CutsManager<int> cut;
@@ -107,6 +113,9 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     // plot
     auto* c20 {new TCanvas("c20", "Pipe2 canvas 0")};
     hPID->DrawClone("colz");
+
+    auto* c22 {new TCanvas("c22", "Pipe2 canvas 2")};
+    hTheta->DrawClone();
 
     auto* c21 {new TCanvas("c21", "pipe2 canvas 1")};
     c21->DivideSquare(2);

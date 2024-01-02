@@ -7,6 +7,7 @@
 #include "./Pipelines/Pipe1_PID.cxx"
 #include "./Pipelines/Pipe2_Ex.cxx"
 #include "./Plotter.cxx"
+#include "./WriteEntries.cxx"
 
 void Print(const std::string& beam, const std::string& target, const std::string& light, bool isSide,
            const std::string& what = "")
@@ -35,4 +36,6 @@ void Runner(TString what = "plot")
         Pipe2_Ex(beam, target, light, isSide);
     if(what.Contains("plot"))
         Plotter();
+    if(what.Contains("write"))
+        WriteEntries(beam, target, light, isSide);
 }
