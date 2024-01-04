@@ -28,9 +28,6 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     // Read
     ROOT::EnableImplicitMT();
     ROOT::RDataFrame df {"PID_Tree", filename};
-    // TODO: debug resolution as function of RP:X(),
-    // as likely its wosening is due to the wrong determination of the angle
-    // at the beginning of the chamber
 
     // Book histograms
     auto hPID {df.Define("ESil0", "fSilEs.front()").Histo2D(HistConfig::PID, "ESil0", "fQave")};
@@ -93,6 +90,13 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
 
     auto hTheta {def.Histo1D((debug) ? "fThetaDebug" : "fThetaLight")};
 
+    auto hThetaBeam {def.Histo2D(
+        {"hThetaBeam", "Theta beam dependence on RP.X;RP.X() [mm];#theta_{Beam} [#circ]", 200, -5, 270, 200, -1, 10},
+        "fRP.fCoordinates.fX", "fThetaBeam")};
+
+    auto hRP {def.Histo2D({"hRP", "RP in pad;X [mm];Y [mm]", 200, 0, 270, 200, 0, 270},
+                          "fRP.fCoordinates.fX", "fRP.fCoordinates.fY")};
+
     // // Write
     // ActRoot::CutsManager<int> cut;
     // cut.ReadCut(0, "/media/Data/E796v2/PostAnalysis/Cuts/debug_d_d.root");
@@ -115,7 +119,13 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     hPID->DrawClone("colz");
 
     auto* c22 {new TCanvas("c22", "Pipe2 canvas 2")};
+    c22->DivideSquare(4);
+    c22->cd(1);
     hTheta->DrawClone();
+    c22->cd(2);
+    hThetaBeam->DrawClone("colz");
+    c22->cd(3);
+    hRP->DrawClone("colz");
 
     auto* c21 {new TCanvas("c21", "pipe2 canvas 1")};
     c21->DivideSquare(2);
