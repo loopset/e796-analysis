@@ -42,6 +42,33 @@
 // The generated code does not explicitly qualify STL entities
 namespace std {} using namespace std;
 
+namespace MyNamespace {
+   namespace ROOTDict {
+      inline ::ROOT::TGenericClassInfo *GenerateInitInstance();
+      static TClass *MyNamespace_Dictionary();
+
+      // Function generating the singleton type initializer
+      inline ::ROOT::TGenericClassInfo *GenerateInitInstance()
+      {
+         static ::ROOT::TGenericClassInfo 
+            instance("MyNamespace", 0 /*version*/, "f.h", 6,
+                     ::ROOT::Internal::DefineBehavior((void*)nullptr,(void*)nullptr),
+                     &MyNamespace_Dictionary, 0);
+         return &instance;
+      }
+      // Insure that the inline function is _not_ optimized away by the compiler
+      ::ROOT::TGenericClassInfo *(*_R__UNIQUE_DICT_(InitFunctionKeeper))() = &GenerateInitInstance;  
+      // Static variable to force the class initialization
+      static ::ROOT::TGenericClassInfo *_R__UNIQUE_DICT_(Init) = GenerateInitInstance(); R__UseDummy(_R__UNIQUE_DICT_(Init));
+
+      // Dictionary for non-ClassDef classes
+      static TClass *MyNamespace_Dictionary() {
+         return GenerateInitInstance()->GetClass();
+      }
+
+   }
+}
+
 namespace {
   void TriggerDictionaryInitialization_dict_Impl() {
     static const char* headers[] = {
@@ -71,8 +98,9 @@ extern int __Cling_AutoLoading_Map;
 #undef  _BACKWARD_BACKWARD_WARNING_H
 )DICTPAYLOAD";
     static const char* classesHeaders[] = {
-"MyNamespace::naive", payloadCode, "@",
+"MyNamespace::inner", payloadCode, "@",
 "MyNamespace::over", payloadCode, "@",
+"outer", payloadCode, "@",
 nullptr
 };
     static bool isInitialized = false;

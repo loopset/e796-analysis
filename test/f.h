@@ -1,6 +1,8 @@
 #ifndef MyHeader
 #define MyHeader
 
+inline void outer() {};
+
 namespace MyNamespace
 {
     template <typename T>
@@ -10,7 +12,7 @@ namespace MyNamespace
     void over(double val){};
     void over(float val){};
 
-    void naive(){};
+    void inner(){};
 
 }
 
