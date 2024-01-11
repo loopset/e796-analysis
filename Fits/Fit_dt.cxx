@@ -19,8 +19,9 @@ void Fit_dt()
 {
     ROOT::EnableImplicitMT();
     
-    gROOT->SetStyle("Plain");
-    ROOT::RDataFrame df {"yield_tree", "/media/miguel/FICA_4/JuanCode/20O_dt_19O_21_Feb_23_v1.root"};
+    // gROOT->SetStyle("Plain");
+    // ROOT::RDataFrame df {"yield_tree", "/media/miguel/FICA_4/JuanCode/20O_dt_19O_21_Feb_23_v1.root"};
+    ROOT::RDataFrame df {"Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Pipe2/tree_beam_20O_target_2H_light_3H_front.root"};
     //df.Describe().Print();std::cout<<'\n';
     //Apply mass cuts from Juan
     auto applyMassCuts = [&](double AmassH, double thetaCM, double Ex)
@@ -44,7 +45,8 @@ void Fit_dt()
 
         return (A3cut && thetaCMcut && Excut);
     };
-    auto gated {df.Filter(applyMassCuts, {"Amass_Hlike", "ThetaCM", "Ex"})};
+    // auto gated {df.Filter(applyMassCuts, {"Amass_Hlike", "ThetaCM", "Ex"})};
+    auto gated {df};
     std::cout<<"Counts after cuts = "<<gated.Count().GetValue()<<'\n';
     
     int nbins {100};
@@ -150,7 +152,7 @@ void Fit_dt()
     gfit->SetLineColor(pubcol[5]); gfit->SetLineWidth(2);
     gfit->Draw("same");
     int idx {};
-    std::vector<int> colors {pubcol[4], pubcol[3], pubcol[2], pubcol[0], pubcol[1],
+    std::vector<int> colors {pubcol[0], pubcol[3], pubcol[2], pubcol[0], pubcol[1],
         pubcol[4], pubcol[3]};
     std::vector<int> fs {3244, 3295, 3245, 3254, 3205,
         3244, 3295};

@@ -15,7 +15,7 @@ void WriteEntries(const std::string& beam, const std::string& target, const std:
     ROOT::RDataFrame d {"Final_Tree", E796Utils::GetFileName(2, beam, target, light, isSide)};
     
     // Apply any filter function
-    auto df {d.Filter("fThetaBeam > 1.5")};// in deg
+    auto df {d.Filter("fThetaBeam < 0.25 && 20 <= fRP.fCoordinates.fX && fRP.fCoordinates.fX <= 40")};// in deg
 
     // Write to file
     std::ofstream streamer {TString::Format("/media/Data/E796v2/PostAnalysis/Cuts/entries_%s_%s_%s.dat", beam.c_str(),

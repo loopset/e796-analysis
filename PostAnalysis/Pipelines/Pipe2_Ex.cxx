@@ -79,23 +79,27 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                          {
                              vkins[slot].SetBeamEnergy(EBeam);
                              return vkins[slot].ReconstructExcitationEnergy(
-                                 EVertex, ((debug) ? d.fThetaDebug : d.fThetaLight) * TMath::DegToRad());
+                                 EVertex, ((debug) ? d.fThetaDebug : ((isSide) ? d.fThetaLegacy : d.fThetaLight)) *
+                                              TMath::DegToRad());
                          },
                          {"MergerData", "EVertex", "EBeam"});
 
     // Book new histograms
-    auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin, (debug) ? "fThetaDebug" : "fThetaLight",
+    auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin,
+                           (debug)    ? "fThetaDebug"
+                           : (isSide) ? "fThetaLegacy"
+                                      : "fThetaLight",
                            "EVertex")};
     auto hEx {def.Histo1D(HistConfig::Ex, "Ex")};
 
-    auto hTheta {def.Histo1D((debug) ? "fThetaDebug" : "fThetaLight")};
+    auto hTheta {def.Histo1D((debug) ? "fThetaDebug" : (isSide) ? "fThetaLegacy" : "fThetaLight")};
 
     auto hThetaBeam {def.Histo2D(
-        {"hThetaBeam", "Theta beam dependence on RP.X;RP.X() [mm];#theta_{Beam} [#circ]", 200, -5, 270, 200, -1, 10},
+        {"hThetaBeam", "#theta_{Beam} dependence on RP.X;RP.X() [mm];#theta_{Beam} [#circ]", 200, -5, 270, 200, -1, 10},
         "fRP.fCoordinates.fX", "fThetaBeam")};
 
-    auto hRP {def.Histo2D({"hRP", "RP in pad;X [mm];Y [mm]", 200, 0, 270, 200, 0, 270},
-                          "fRP.fCoordinates.fX", "fRP.fCoordinates.fY")};
+    auto hRP {def.Histo2D({"hRP", "RP in pad;X [mm];Y [mm]", 200, 0, 270, 200, 0, 270}, "fRP.fCoordinates.fX",
+                          "fRP.fCoordinates.fY")};
 
     // // Write
     // ActRoot::CutsManager<int> cut;

@@ -78,7 +78,7 @@ void Plotter()
         auto sig {TString::Format("%s(%s, %s)", b.c_str(), t.c_str(), l.c_str())};
         hsKin.emplace_back(
             df.Histo2D(HistConfig::ChangeTitle((isSide) ? HistConfig::KinEl : HistConfig::Kin, "Kinematics " + sig),
-                       "fThetaLight", "EVertex"));
+                       (isSide) ? "fThetaLegacy" : "fThetaLight", "EVertex"));
         hsEx.emplace_back(df.Histo1D(HistConfig::ChangeTitle(HistConfig::Ex, "Ex " + sig), "Ex"));
     }
 
