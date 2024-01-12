@@ -20,6 +20,7 @@
 #include "TString.h"
 #include "TTree.h"
 #include "TVirtualPad.h"
+#include "TEfficiency.h"
 
 #include "Math/Point3D.h"
 #include "Math/Vector3D.h"
@@ -375,6 +376,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         geoEff.push_back({x, y / y0});
         ugeoEff.push_back({x, TMath::Sqrt(y) / y0});
     }
+    // another way:
+    auto* eff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
 
     // plotting
     auto* cBefore {new TCanvas("cBefore", "Before implementing most of the resolutions")};

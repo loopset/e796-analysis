@@ -84,6 +84,7 @@ void ActSim::CrossSectionSampler::Init()
     }
     // Convert to Spline
     fCDF = new TSpline3 {"fCDF", &(fCDFData[0]), &(fXData[0]), (int)fCDFData.size(), "b2,e2", 0, 0};
+    fCDF->SetTitle("CDF;r;#theta_{CM} [#circ]");
 }
 
 void ActSim::CrossSectionSampler::Draw() const

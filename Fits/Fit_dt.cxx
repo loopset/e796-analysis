@@ -55,7 +55,7 @@ void Fit_dt()
                 nbins, hmin, hmax},
             "Ex")};
     //Read PS
-    ROOT::RDataFrame phase {"simulated_tree", "/media/miguel/FICA_4/FitJuan/20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
+    ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/FitJuan/20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
     auto hPS {phase.Histo1D({"hPS", "PS 1n;E_{x} [MeV]", nbins, hmin, hmax}, "Ex_cal")};
     //Format phase space
     hPS->Smooth(20);
@@ -147,7 +147,7 @@ void Fit_dt()
     //Settings for juan's presentation
     hEx->SetStats(false);
     hEx->SetLineWidth(2);
-    hEx->DrawClone("hist");
+    hEx->DrawClone("e");
     //1->Draw global fit
     gfit->SetLineColor(pubcol[5]); gfit->SetLineWidth(2);
     gfit->Draw("same");

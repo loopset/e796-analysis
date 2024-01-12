@@ -13,9 +13,9 @@
 void WriteEntries(const std::string& beam, const std::string& target, const std::string& light, bool isSide)
 {
     ROOT::RDataFrame d {"Final_Tree", E796Utils::GetFileName(2, beam, target, light, isSide)};
-    
+
     // Apply any filter function
-    auto df {d.Filter("fThetaBeam < 0.25 && 20 <= fRP.fCoordinates.fX && fRP.fCoordinates.fX <= 40")};// in deg
+    auto df {d.Filter("0 < fSilEs.front() && fSilEs.front() < 14")}; // in deg
 
     // Write to file
     std::ofstream streamer {TString::Format("/media/Data/E796v2/PostAnalysis/Cuts/entries_%s_%s_%s.dat", beam.c_str(),
@@ -23,6 +23,9 @@ void WriteEntries(const std::string& beam, const std::string& target, const std:
     df.Foreach([&](const ActRoot::MergerData& data) { streamer << data.fRun << " " << data.fEntry << '\n'; },
                {"MergerData"});
     streamer.close();
+
+    df.Snapshot("HesTree", "/media/Data/E796v2/PostAnalysis/HesTree.root",
+                {"Ex", "fThetaLight", "fThetaLegacy", "EBeam", "EVertex", "fEntry", "fRun"});
 
     std::cout << "Written " << df.Count().GetValue() << " entries to file!" << '\n';
 }
