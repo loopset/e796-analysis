@@ -45,9 +45,9 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     {
         // Read matrix
         if(light == "3He" || light == "4He")
-            sm.Read("/media/Data/E796v2/Macros/veto_matrix.root");
+            sm.Read("/media/Data/E796v2/Macros/Outputs/veto_matrix.root");
         else
-            sm.Read("/media/Data/E796v2/Macros/antiveto_matrix.root");
+            sm.Read("/media/Data/E796v2/Macros/Outputs/antiveto_matrix.root");
         auto veto {[&](const ActRoot::MergerData& d)
                    {
                        // Check size
