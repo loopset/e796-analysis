@@ -10,6 +10,7 @@
 #include "Rtypes.h"
 
 #include "TCanvas.h"
+#include "TEfficiency.h"
 #include "TFile.h"
 #include "TH1F.h"
 #include "TH2F.h"
@@ -20,15 +21,12 @@
 #include "TString.h"
 #include "TTree.h"
 #include "TVirtualPad.h"
-#include "TEfficiency.h"
 
 #include "Math/Point3D.h"
 #include "Math/Vector3D.h"
 
 #include <cmath>
 #include <iostream>
-#include <set>
-#include <stdexcept>
 #include <string>
 #include <sys/types.h>
 #include <utility>
@@ -376,7 +374,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         geoEff.push_back({x, y / y0});
         ugeoEff.push_back({x, TMath::Sqrt(y) / y0});
     }
-    // another way:
+    // another way, using built-in ROOT class:
     auto* eff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
 
     // plotting
