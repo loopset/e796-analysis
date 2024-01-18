@@ -8,6 +8,7 @@
 #include "ActSilMatrix.h"
 
 #include "TCanvas.h"
+#include "TEfficiency.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
@@ -17,7 +18,6 @@
 #include "TStopwatch.h"
 #include "TString.h"
 #include "TTree.h"
-#include "TVirtualPad.h"
 
 #include "Math/Point3D.h"
 #include "Math/Vector3D.h"
@@ -25,32 +25,38 @@
 #include <cmath>
 #include <iostream>
 #include <set>
-#include <stdexcept>
 #include <string>
-#include <sys/types.h>
 #include <utility>
 #include <vector>
+
+#include "/media/Data/E796v2/Simulation/Utils.cxx"
 
 void Simulation_E796(const std::string& beam, const std::string& target, const std::string& light,
                      const std::string& heavy, int neutronPS, int protonPS, double T1, double Ex, bool standalone)
 {
     // set batch mode if not an independent function
     if(!standalone)
-        gROOT->SetBatch();
+        gROOT->SetBatch(true);
 
     // SIGMAS
     const double sigmaSil {0.060 / 2.355};
     const double sigmaPercentBeam {0.008};
     const double sigmaAngleLight {0.95 / 2.355};
-    const double zVertexMean {83.59};
-    const double zVertexSigma {3.79};
+    // Parameters of beam in mm
+    // Beam has to be manually placed in the simulation
+    // Centered in Z and Y with a width of 4 mm
+    // Center in Z
+    const double zVertexMean {128.};
+    const double zVertexSigma {4};
+    // Center in Y
+    const double yVertexMean {128.};
+    const double yVertexSigma {4};
+    // const double zVertexMean {83.59};
+    // const double zVertexSigma {3.79};
 
     // THRESHOLDS FOR SILICONS
     const double thresholdSi0 {1.};
     const double thresholdSi1 {1.};
-
-    // NAME OF OUTPUT FILE
-    TString fileName {TString::Format("./Outputs/transfer_d4He_Eex_%.3f_nPS_%d_pPS_%d.root", Ex, neutronPS, protonPS)};
 
     // number of iterations
     const int iterations {static_cast<int>(1e6)};
@@ -62,7 +68,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     bool thetaResolution {true};
 
     // CUTS ON SILICON ENERGY, depending on particle
-    std::pair<double, double> eLoss0Cut {6.5, 27.};
+    std::pair<double, double> eLoss0Cut {2, 1000}; //{6.5, 27.};
 
     // Silicon masks
     ActPhysics::SilMatrix sm {};
@@ -70,19 +76,22 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         sm.Read("/media/Data/E796v2/Macros/Outputs/antiveto_matrix.root"); // antiveto for d and t
     else
         sm.Read("/media/Data/E796v2/Macros/Outputs/veto_matrix.root"); // veto for Hes
-    auto silIndxs {sm.GetSilIndexes()};
+    // auto silIndxs {sm.GetSilIndexes()};
+    std::set<int> silIndxs {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
+    // Move Z of silicons to match centre of chamber. The centred silicons are 3 and 4
+    sm.MoveZTo(zVertexMean, {3, 4});
 
-    // histogram file
-    auto* histfile {new TFile("./Inputs/BeamY_ThetaXY_and_XZ_space_3Dhisto.root")};
-    auto* hBeam {histfile->Get<TH3F>("h_Y_thetaXY_thetaXZ")};
-    if(!hBeam)
-        throw std::runtime_error("Could not load beam emittance histogram");
-    // closing hBeam file and coming back to main ROOT directory
-    gROOT->cd();
-    hBeam->SetDirectory(nullptr);
-    histfile->Close();
-    delete histfile;
-    histfile = nullptr;
+    // // // histogram file
+    // auto* histfile {new TFile("./Inputs/BeamY_ThetaXY_and_XZ_space_3Dhisto.root")};
+    // auto* hBeam {histfile->Get<TH3F>("h_Y_thetaXY_thetaXZ")};
+    // if(!hBeam)
+    //     throw std::runtime_error("Could not load beam emittance histogram");
+    // // closing hBeam file and coming back to main ROOT directory
+    // gROOT->cd();
+    // hBeam->SetDirectory(nullptr);
+    // histfile->Close();
+    // delete histfile;
+    // histfile = nullptr;
 
     //---- SIMULATION STARTS HERE
     ROOT::EnableImplicitMT();
@@ -121,9 +130,18 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Load SRIM tables
     // The name of the file sets particle + medium
     auto* srim {new ActPhysics::SRIM()};
-    srim->ReadInterpolations("light", "/media/Data/E796v2/Calibrations/SRIMData/transformed/4He_in_952mb_mixture.dat");
-    srim->ReadInterpolations("beam", "/media/Data/E796v2/Calibrations/SRIMData/transformed/20O_in_952mb_mixture.dat");
-    srim->ReadInterpolations("lightInSil", "/media/Data/E796v2/Calibrations/SRIMData/transformed/4He_in_silicon.dat");
+    srim->ReadInterpolations(
+        "light",
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_in_952mb_mixture.dat", light.c_str())
+            .Data());
+    srim->ReadInterpolations(
+        "beam",
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_in_952mb_mixture.dat", beam.c_str())
+            .Data());
+    srim->ReadInterpolations(
+        "lightInSil",
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_silicon.dat", light.c_str())
+            .Data());
 
     // Load geometry
     auto* geometry {new ActSim::Geometry()};
@@ -144,7 +162,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // variables need to be weighted by this value. For binary reactions, weight = 1
     // 4-> Energy at vertex
     // 5-> Theta in Lab frame
-    auto* outFile {new TFile(fileName, "recreate")};
+    auto* outFile {new TFile(E796Simu::GetFile(beam, target, light, Ex, neutronPS, protonPS), "recreate")};
     auto* outTree {new TTree("SimulationTTree", "A TTree containing only our Eex obtained by simulation")};
     double theta3CM_tree {};
     outTree->Branch("theta3CM", &theta3CM_tree);
@@ -170,13 +188,13 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // Print progress
         if(reaction >= nextPrint)
         {
-            percent = 100 * reaction / iterations;
+            percent = 100 * (reaction + 1) / iterations;
             std::cout << "\r" << std::string(percent / percentPrint, '|') << percent << "%";
             std::cout.flush();
             nextPrint += step;
         }
         // 1-> Sample vertex
-        auto vertex {runner.SampleVertex(-1, -1, zVertexMean, zVertexSigma, hBeam)};
+        auto vertex {runner.SampleVertex(yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, nullptr)};
         // std::cout<<"Vertex = "<<vertex<<" mm"<<'\n';
         // 2-> Beam energy according to its sigma
         auto TBeam {runner.RandomizeBeamEnergy(
@@ -205,8 +223,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         auto EexBefore {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Lab, theta3Lab)};
 
         // apply cut in XVertex
-        if(!(40. <= vertex.X() && vertex.X() <= 200.))
-            continue;
+        // if(!(40. <= vertex.X() && vertex.X() <= 200.))
+        //     continue;
         // 5-> Propagate track from vertex to silicon wall using Geometry class
         ROOT::Math::XYZVector direction {TMath::Cos(theta3Lab), TMath::Sin(theta3Lab) * TMath::Sin(phi3Lab),
                                          TMath::Sin(theta3Lab) * TMath::Cos(phi3Lab)};
@@ -321,6 +339,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         geoEff.push_back({x, y / y0});
         ugeoEff.push_back({x, TMath::Sqrt(y) / y0});
     }
+    // another way to compute efficiency in root
+    auto* teff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
+    teff->SetName("eff");
 
     // plotting
     auto* cBefore {new TCanvas("cBefore", "Before implementing most of the resolutions")};
@@ -354,8 +375,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // SAVING
     outFile->cd();
     outTree->Write();
-    outFile->WriteObject(&geoEff, "efficiency");
-    outFile->WriteObject(&ugeoEff, "uefficiency");
+    outFile->WriteObject(&geoEff, "veff");
+    outFile->WriteObject(&ugeoEff, "vueff");
+    teff->Write();
     outFile->Close();
     delete outFile;
     outFile = nullptr;
@@ -378,7 +400,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         delete hEexAfter;
         delete hEexBefore;
     }
-
 
     timer.Stop();
     timer.Print();
