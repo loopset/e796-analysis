@@ -36,11 +36,11 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     auto* srim {new ActPhysics::SRIM};
     srim->ReadInterpolations(
         light,
-        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_in_952mb_mixture.dat", light.c_str())
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", light.c_str())
             .Data());
     srim->ReadInterpolations(
         beam,
-        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_in_952mb_mixture.dat", beam.c_str())
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", beam.c_str())
             .Data());
 
     // Build energy at vertex

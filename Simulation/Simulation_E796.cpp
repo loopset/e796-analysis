@@ -29,6 +29,7 @@
 #include <utility>
 #include <vector>
 
+#include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
 #include "/media/Data/E796v2/Simulation/Utils.cxx"
 
 void Simulation_E796(const std::string& beam, const std::string& target, const std::string& light,
@@ -59,7 +60,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double thresholdSi1 {1.};
 
     // number of iterations
-    const int iterations {static_cast<int>(1e6)};
+    const int iterations {static_cast<int>(1e7)};
 
     // ACTIVATE STRAGGLING OR NOT
     bool stragglingInGas {true};
@@ -68,7 +69,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     bool thetaResolution {true};
 
     // CUTS ON SILICON ENERGY, depending on particle
-    std::pair<double, double> eLoss0Cut {2, 1000}; //{6.5, 27.};
+    std::pair<double, double> eLoss0Cut {0, 1000}; //{6.5, 27.};
 
     // Silicon masks
     ActPhysics::SilMatrix sm {};
@@ -111,37 +112,32 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // Histograms
     // To compute a fine-grain efficiency, we require at least a binning width of 0.25 degrees!
-    auto* hThetaCM {new TH1F("hThetaCM", "ThetaCM;#theta_{CM} [degree]", 720, 0., 180.)};
-    auto* hThetaCMAll {(TH1F*)hThetaCM->Clone("hThetaCMAll")};
-    hThetaCMAll->SetTitle("All thetaCM");
-    auto* hThetaLabDebug {(TH1F*)hThetaCM->Clone("hThetaLabDebug")};
-    hThetaLabDebug->SetTitle("Theta discriminated in layer 0;#theta_{Lab} [degree]");
-    auto* hDistL0 {new TH1F("hDistL0", "Distance vertex to L0;dist [mm]", 300, 0., 600.)};
-    auto* hThetaESil {new TH2F("hThetaELab", "Theta vs Energy in Sil0;#theta_{LAB} [degree];E_{Sil0} [MeV]", 70, 0.,
-                               90., 100, 0., 60.)};
-    auto* hThetaEVertex {(TH2F*)hThetaESil->Clone("hThetaEVertex")};
-    hThetaEVertex->SetTitle("Theta vs EVertex; #theta [degree];E_{Vertex} [MeV]");
-    auto* hSilPoint {
-        new TH2F("hSilPoint", "Silicon point & graph cuts;Y [mm];Z [mm]", 100, -10., 290., 100, -10., 290.)};
-    auto* hEexAfter {new TH1F("hEex", "Eex with all resolutions", 1000, -10., 40.)};
-    auto* hEexBefore {(TH1F*)hEexAfter->Clone("hEexBefore")};
-    hEexBefore->SetTitle("Eex without any res.");
+    auto hThetaCM {HistConfig::ThetaCM.GetHistogram()};
+    auto hThetaCMAll {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all", "All").GetHistogram()};
+
+    auto hDistL0 {HistConfig::ChangeTitle(HistConfig::TL, "Distance to L0").GetHistogram()};
+
+    auto hKinVertex {HistConfig::ChangeTitle(HistConfig::KinSimu, "Kinematics at vertex").GetHistogram()};
+
+    auto hSP {HistConfig::SP.GetHistogram()};
+
+    auto hEexBefore {HistConfig::ChangeTitle(HistConfig::Ex, "Ex before resolutions", "Bef").GetHistogram()};
+    auto hEexAfter {HistConfig::ChangeTitle(HistConfig::Ex, "Ex after resolutions", "After").GetHistogram()};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
     auto* srim {new ActPhysics::SRIM()};
     srim->ReadInterpolations(
         "light",
-        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_in_952mb_mixture.dat", light.c_str())
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", light.c_str())
             .Data());
     srim->ReadInterpolations(
         "beam",
-        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_in_952mb_mixture.dat", beam.c_str())
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", beam.c_str())
             .Data());
     srim->ReadInterpolations(
         "lightInSil",
-        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_silicon.dat", light.c_str())
-            .Data());
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_silicon.dat", light.c_str()).Data());
 
     // Load geometry
     auto* geometry {new ActSim::Geometry()};
@@ -209,6 +205,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         auto* PLight {kingen.GetLorentzVector(0)};
         auto theta3Lab {PLight->Theta()};
         auto T3Lab {PLight->Energy() - p3.GetMass()};
+        auto EexBefore {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Lab, theta3Lab)};
         // to compute geometric efficiency by CM interval and with our set reference direction
         double theta3CMBefore {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
         hThetaCMAll->Fill(theta3CMBefore * TMath::RadToDeg());
@@ -220,7 +217,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         auto theta3CM {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
         // std::cout<<"Theta3CM = "<<theta3CM * TMath::RadToDeg()<<" degree"<<'\n';
         auto phi3Lab {runner.GetRand()->Uniform(0., 2 * TMath::Pi())};
-        auto EexBefore {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Lab, theta3Lab)};
 
         // apply cut in XVertex
         // if(!(40. <= vertex.X() && vertex.X() <= 200.))
@@ -243,10 +239,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
         // skip tracks that doesn't reach silicons or are in silicon index cut
         if(silIndex0 == -1 || (silIndxs.find(silIndex0) == silIndxs.end()))
-        {
-            hThetaLabDebug->Fill(theta3Lab * TMath::RadToDeg());
             continue;
-        }
         // cut with TCutG!
         auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
         if(!sm.IsInside(silIndex0, silPoint0InMM.Y(), silPoint0InMM.Z()))
@@ -310,10 +303,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             hThetaCM->Fill(theta3CM * TMath::RadToDeg());
             hEexBefore->Fill(EexBefore, weight); // with the weight for each TGenPhaseSpace::Generate()
             hDistL0->Fill(distance0);
-            hThetaESil->Fill(theta3Lab * TMath::RadToDeg(), eLoss0);
-            hThetaEVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
+            hKinVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
             hEexAfter->Fill(EexAfter, weight);
-            hSilPoint->Fill(silPoint0InMM.Y(), silPoint0InMM.Z());
+            hSP->Fill(silPoint0InMM.Y(), silPoint0InMM.Z());
 
             // write to TTree
             Eex_tree = EexAfter;
@@ -341,36 +333,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
     // another way to compute efficiency in root
     auto* teff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
-    teff->SetName("eff");
-
-    // plotting
-    auto* cBefore {new TCanvas("cBefore", "Before implementing most of the resolutions")};
-    cBefore->DivideSquare(4);
-    cBefore->cd(1);
-    hThetaCM->Draw();
-    cBefore->cd(2);
-    hDistL0->Draw();
-    cBefore->cd(3);
-    hEexBefore->Draw();
-    cBefore->cd(4);
-    hThetaCMAll->Draw();
-
-    // draw theoretical kinematics
-    ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
-    auto* gtheo {theokin.GetKinematicLine3()};
-    auto* cAfter {new TCanvas("cAfter", "After implementing all")};
-    cAfter->DivideSquare(4);
-    cAfter->cd(1);
-    hThetaESil->Draw("col");
-    cAfter->cd(2);
-    hThetaEVertex->Draw("col");
-    gtheo->Draw("same");
-    cAfter->cd(3);
-    hEexAfter->Draw("hist");
-    cAfter->cd(4);
-    hSilPoint->Draw("col");
-    sm.SetSyle(true);
-    sm.Draw(true);
+    teff->SetNameTitle("eff", "Efficiency in #theta_{CM}");
 
     // SAVING
     outFile->cd();
@@ -382,24 +345,44 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     delete outFile;
     outFile = nullptr;
 
+
+    // plotting
+    if(standalone)
+    {
+        auto* c0 {new TCanvas("c0", "Canvas for inspection 0")};
+        c0->DivideSquare(4);
+        c0->cd(1);
+        hThetaCM->DrawClone();
+        c0->cd(2);
+        hDistL0->DrawClone();
+        c0->cd(3);
+        hEexBefore->DrawClone("hist");
+        c0->cd(4);
+        hThetaCMAll->DrawClone();
+
+        // draw theoretical kinematics
+        ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
+        auto* gtheo {theokin.GetKinematicLine3()};
+
+        auto* c1 {new TCanvas("cAfter", "Canvas for inspection 1")};
+        c1->DivideSquare(4);
+        c1->cd(1);
+        hKinVertex->DrawClone("colz");
+        gtheo->Draw("same");
+        c1->cd(2);
+        hSP->DrawClone("col");
+        sm.SetSyle(true);
+        sm.Draw(true);
+        c1->cd(3);
+        hEexAfter->DrawClone("hist");
+        c1->cd(4);
+        teff->Draw("apl");
+    }
+
     // deleting news
     delete geometry;
     delete srim;
     delete rand;
-    if(!standalone)
-    {
-        delete cAfter;
-        delete cBefore;
-        delete hThetaCM;
-        delete hThetaCMAll;
-        delete hThetaLabDebug;
-        delete hDistL0;
-        delete hThetaESil;
-        delete hThetaEVertex;
-        delete hSilPoint;
-        delete hEexAfter;
-        delete hEexBefore;
-    }
 
     timer.Stop();
     timer.Print();

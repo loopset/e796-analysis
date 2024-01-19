@@ -18,8 +18,8 @@ void Runner(TString what = "plot", bool standalone = true)
     // Names of particles
     std::string beam {"20O"};
     std::string target {"2H"};
-    std::string light {"4He"};
-    std::string heavy {"18N"};
+    std::string light {"3H"};
+    std::string heavy {"19O"};
     // Phase space reactions: when the heavy decays by proton or neutron emission
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
     int neutronPS {0}; // number of neutrons in final state
@@ -28,7 +28,7 @@ void Runner(TString what = "plot", bool standalone = true)
 
     std::vector<double> Eexs;
     if(neutronPS == 0 && protonPS == 0)
-        Eexs = {0., 1.47, 3.24};
+        Eexs = {0., 1.47, 3.24, 4.4, 5.2, 6.9};
     else if(neutronPS > 0 && protonPS == 0)
         Eexs = {0}; // only gs for n phase space
     else if(neutronPS == 0 && protonPS > 0)
