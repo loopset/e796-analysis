@@ -27,6 +27,10 @@ namespace HistConfig
 
     const TH1DModel ThetaCM {"hThetaCM", "ThetaCM;#theta_{CM} [#circ]", 300, 0, 180};
 
+    const TH2DModel ZThetaZ {"hZThetaZ", "Emittance along Z;Z [mm];#theta_{Z} [#circ]", 200, 0, 270, 600, -10, 10};
+
+    const TH2DModel YPhiY {"hYPhiY", "Emittance along Y;Y [mm];#phi_{Y} [#circ]", 200, 0, 270, 600, -10, 10};
+
     template <typename T>
     T ChangeTitle(T model, const TString& title, const TString& label = "");
 } // namespace HistConfig
