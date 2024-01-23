@@ -1,3 +1,6 @@
+#ifndef Pipe1_PID_cxx
+#define Pipe1_PID_cxx
+
 #include "ActColors.h"
 #include "ActCutsManager.h"
 #include "ActJoinData.h"
@@ -11,10 +14,10 @@
 #include "TROOT.h"
 #include "TString.h"
 
-#include <fstream>
 #include <iostream>
 #include <string>
 
+#include "../Gates.cxx"
 #include "../HistConfig.h"
 #include "../Utils.cxx"
 
@@ -26,38 +29,21 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     ROOT::RDataFrame df {*in.Get()};
 
     // Apply cuts
-    ActPhysics::SilMatrix sm;
+    ActPhysics::SilMatrix* sm {};
     ROOT::RDF::RNode vetoed {df};
     if(isSide)
-    {
-        auto veto {[&](const ActRoot::MergerData& d)
-                   {
-                       // Check size
-                       bool hasSize {d.fSilLayers.size() == 1};
-                       if(!hasSize)
-                           return hasSize;
-                       bool isL0 {d.fSilLayers.front() == "l0"};
-                       return isL0;
-                   }};
-        vetoed = vetoed.Filter(veto, {"MergerData"});
-    }
+        vetoed = vetoed.Filter(E796Gates::left0, {"MergerData"});
     else
     {
         // Read matrix
-        if(light == "3He" || light == "4He")
-            sm.Read("/media/Data/E796v2/Macros/Outputs/veto_matrix.root");
-        else
-            sm.Read("/media/Data/E796v2/Macros/Outputs/antiveto_matrix.root");
+        sm = E796Utils::GetEffSilMatrix(light);
+        // Build extra lambda to apply silicon matrix
         auto veto {[&](const ActRoot::MergerData& d)
                    {
-                       // Check size
-                       bool hasSize {d.fSilLayers.size() == 1};
-                       if(!hasSize)
-                           return hasSize;
-                       bool isF0 {d.fSilLayers.front() == "f0"};
+                       bool isF0 {E796Gates::front0(d)};
                        if(!isF0)
                            return isF0;
-                       bool isVetoed {sm.IsInside(d.fSilNs.front(), d.fSP.Y(), d.fSP.Z())};
+                       bool isVetoed {sm->IsInside(d.fSilNs.front(), d.fSP.Y(), d.fSP.Z())};
                        return isVetoed;
                    }};
         vetoed = vetoed.Filter(veto, {"MergerData"});
@@ -70,12 +56,13 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
 
     // Read PID cut
     ActRoot::CutsManager<std::string> cut;
-    TString srimfile {};
+    TString pidfile {};
     if(isSide)
-        srimfile = TString::Format("./Cuts/pid_%s_side.root", light.c_str());
+        pidfile = TString::Format("./Cuts/pid_%s_side.root", light.c_str());
     else
-        srimfile = TString::Format("./Cuts/pid_%s.root", light.c_str());
-    cut.ReadCut(light, srimfile);
+        pidfile = TString::Format("./Cuts/pid_%s.root", light.c_str());
+    cut.ReadCut(light, pidfile);
+    std::cout << BOLDCYAN << "Reading light PID in : " << pidfile << RESET << '\n';
 
     if(cut.GetCut(light))
     {
@@ -84,7 +71,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
                                 { return cut.IsInside(light, d.fSilEs.front(), d.fQave); },
                                 {"MergerData"})};
         auto filename {E796Utils::GetFileName(1, beam, target, light, isSide)};
-        std::cout << BOLDGREEN << "Saving PID_Tree in file : " << filename << '\n';
+        std::cout << BOLDCYAN << "Saving PID_Tree in file : " << filename << '\n';
         pid.Snapshot("PID_Tree", filename);
 
         // // Write
@@ -102,6 +89,6 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     cut.DrawAll();
     c10->cd(2);
     hSP->DrawClone("colz");
-    sm.SetSyle();
-    sm.Draw(true);
+    sm->Draw();
 }
+#endif

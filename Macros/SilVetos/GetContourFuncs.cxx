@@ -1,6 +1,5 @@
 #include "ActInputParser.h"
 
-#include "RtypesCore.h"
 
 #include "TCanvas.h"
 #include "TF1.h"
@@ -12,7 +11,6 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include <vector>
 
 // Declare types
 typedef std::map<int, TH1D*> ProjMap;

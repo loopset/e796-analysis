@@ -1,3 +1,5 @@
+#ifndef Plotter_cxx
+#define Plotter_cxx
 #include "ActKinematics.h"
 #include "ActParticle.h"
 
@@ -17,69 +19,58 @@
 
 #include <iostream>
 #include <string>
-#include <tuple>
 #include <vector>
 
-std::string GetParticleName(const std::string& str, const std::string& what)
-{
-    auto base {str.find(what)};
-    auto init {str.find_first_of('_', base) + 1};
-    auto end {str.find_first_of('_', init)};
-    return str.substr(init, (end - init));
-}
+#include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
 
-struct Signature
-{
-    std::string beam {};
-    std::string target {};
-    std::string light {};
-};
-
-Signature ExtractName(const std::string& file)
-{
-    auto beam {GetParticleName(file, "beam")};
-    auto target {GetParticleName(file, "target")};
-    auto light {GetParticleName(file, "light")};
-    return {beam, target, light};
-}
-
-void Plotter()
+void Plotter(const std::string& beam = "", const std::string& target = "", const std::string& light = "",
+             bool isSide = false)
 {
     ROOT::EnableImplicitMT();
 
-    // List all files
-    TString dirname {"/media/Data/E796v2/PostAnalysis/RootFiles/Pipe2/"};
-    TString ext {".root"};
-    TSystemDirectory dir {dirname, dirname};
     std::vector<ROOT::RDF::RNode> dfs;
-    std::vector<Signature> signatures;
-    for(auto* file : *dir.GetListOfFiles())
+    std::vector<E796Utils::Signature> signatures;
+    // If called from Runner
+    if(beam.length() > 0)
     {
-        TString fname {file->GetName()};
-        if(file->IsFolder() && !fname.EndsWith(ext))
-            continue;
-        std::cout << "Name : " << fname << '\n';
-        dfs.push_back(ROOT::RDataFrame {"Final_Tree", (dirname + fname)});
-        signatures.push_back(ExtractName(fname.Data()));
+        dfs.push_back(ROOT::RDataFrame {"Final_Tree", E796Utils::GetFileName(2, beam, target, light, isSide)});
+        signatures.push_back({beam, target, light, isSide});
+    }
+    else
+    {
+        // List all files
+        TString dirname {"/media/Data/E796v2/PostAnalysis/RootFiles/Pipe2/"};
+        TString ext {".root"};
+        TSystemDirectory dir {dirname, dirname};
+        for(auto* file : *dir.GetListOfFiles())
+        {
+            TString fname {file->GetName()};
+            if(file->IsFolder() && !fname.EndsWith(ext))
+                continue;
+            std::cout << "Name : " << fname << '\n';
+            dfs.push_back(ROOT::RDataFrame {"Final_Tree", (dirname + fname)});
+            signatures.push_back(E796Utils::ExtractSignature(fname.Data()));
+        }
     }
 
     // Book histograms
-    std::vector<ROOT::RDF::RResultPtr<TH2D>> hsKin;
+    std::vector<ROOT::RDF::RResultPtr<TH2D>> hsKin, hsSP;
     std::vector<ROOT::RDF::RResultPtr<TH1D>> hsEx;
     std::vector<ActPhysics::Kinematics> vkins;
     int counter {-1};
     for(auto& df : dfs)
     {
         counter++;
-        auto [b, t, l] {signatures[counter]};
-        bool isSide {t == l}; // preliminary!
+        auto [b, t, l, isEl] {signatures[counter]};
         ActPhysics::Particle beam {b};
         vkins.push_back(ActPhysics::Kinematics {b, t, l, 35 * beam.GetAMU(), 0});
         auto sig {TString::Format("%s(%s, %s)", b.c_str(), t.c_str(), l.c_str())};
-        hsKin.emplace_back(
-            df.Histo2D(HistConfig::ChangeTitle((isSide) ? HistConfig::KinEl : HistConfig::Kin, "Kinematics " + sig),
-                       (isSide) ? "fThetaLegacy" : "fThetaLight", "EVertex"));
-        hsEx.emplace_back(df.Histo1D(HistConfig::ChangeTitle(HistConfig::Ex, "Ex " + sig), "Ex"));
+        hsKin.push_back(
+            df.Histo2D(HistConfig::ChangeTitle((isEl) ? HistConfig::KinEl : HistConfig::Kin, "Kinematics " + sig),
+                       (isEl) ? "fThetaLegacy" : "fThetaLight", "EVertex"));
+        hsSP.push_back(df.Histo2D(HistConfig::ChangeTitle(HistConfig::SP, "SP " + sig),
+                                  (isEl) ? "fSP.fCoordinates.fX" : "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ"));
+        hsEx.push_back(df.Histo1D(HistConfig::ChangeTitle(HistConfig::Ex, "Ex " + sig), "Ex"));
     }
 
     // Run
@@ -93,11 +84,18 @@ void Plotter()
     for(int c = 0; c < cs.size(); c++)
     {
         cs[c] = new TCanvas(TString::Format("c%d", c), TString::Format("Canvas %d", c));
-        cs[c]->DivideSquare(2);
+        cs[c]->DivideSquare(4);
         cs[c]->cd(1);
         hsKin[c]->DrawClone("colz");
         vkins[c].GetKinematicLine3()->Draw("same");
         cs[c]->cd(2);
         hsEx[c]->DrawClone();
+        cs[c]->cd(3);
+        hsSP[c]->DrawClone("colz");
+        if(!signatures[c].isSide)
+        {
+            E796Utils::GetEffSilMatrix(signatures[c].light)->Draw();
+        }
     }
 }
+#endif

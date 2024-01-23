@@ -1,3 +1,6 @@
+#ifndef Pipe2_Ex_cxx
+#define Pipe2_Ex_cxx
+
 #include "ActColors.h"
 #include "ActKinematics.h"
 #include "ActMergerData.h"
@@ -22,9 +25,9 @@
 void Pipe2_Ex(const std::string& beam, const std::string& target, const std::string& light, bool isSide)
 {
     bool debug {false};
-    std::cout << BOLDRED << "is DebugTheta enabled ? " << std::boolalpha << debug << '\n';
+    std::cout << BOLDYELLOW << "is DebugTheta enabled ? " << std::boolalpha << debug << '\n';
     auto filename {E796Utils::GetFileName(1, beam, target, light, isSide)};
-    std::cout << BOLDGREEN << "Reading file: " << filename << RESET << '\n';
+    std::cout << BOLDMAGENTA << "Reading file: " << filename << RESET << '\n';
     // Read
     ROOT::EnableImplicitMT();
     ROOT::RDataFrame df {"PID_Tree", filename};
@@ -39,9 +42,8 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
         TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", light.c_str())
             .Data());
     srim->ReadInterpolations(
-        beam,
-        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", beam.c_str())
-            .Data());
+        beam, TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", beam.c_str())
+                  .Data());
 
     // Build energy at vertex
     auto def = df.Define("EVertex",
@@ -94,12 +96,9 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
 
     auto hTheta {def.Histo1D((debug) ? "fThetaDebug" : (isSide) ? "fThetaLegacy" : "fThetaLight")};
 
-    auto hThetaBeam {def.Histo2D(
-        {"hThetaBeam", "#theta_{Beam} dependence on RP.X;RP.X() [mm];#theta_{Beam} [#circ]", 200, -5, 270, 200, -1, 10},
-        "fRP.fCoordinates.fX", "fThetaBeam")};
+    auto hThetaBeam {def.Histo2D(HistConfig::ThetaBeam, "fRP.fCoordinates.fX", "fThetaBeam")};
 
-    auto hRP {def.Histo2D({"hRP", "RP in pad;X [mm];Y [mm]", 200, 0, 270, 200, 0, 270}, "fRP.fCoordinates.fX",
-                          "fRP.fCoordinates.fY")};
+    auto hRP {def.Histo2D(HistConfig::RP, "fRP.fCoordinates.fX", "fRP.fCoordinates.fY")};
 
     // // Write
     // ActRoot::CutsManager<int> cut;
@@ -116,6 +115,7 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
 
     // Save!
     auto outfile {E796Utils::GetFileName(2, beam, target, light, isSide)};
+    std::cout << BOLDCYAN << "Writing in file : " << outfile << RESET << '\n';
     def.Snapshot("Final_Tree", outfile);
 
     // plot
@@ -131,7 +131,7 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     c22->cd(3);
     hRP->DrawClone("colz");
 
-    auto* c21 {new TCanvas("c21", "pipe2 canvas 1")};
+    auto* c21 {new TCanvas("c21", "Pipe2 canvas 1")};
     c21->DivideSquare(2);
     c21->cd(1);
     hKin->DrawClone("colz");
@@ -140,3 +140,4 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     c21->cd(2);
     hEx->DrawClone();
 }
+#endif

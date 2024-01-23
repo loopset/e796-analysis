@@ -47,7 +47,7 @@ void Runner(TString what = "plot")
     {
         func = "Plotter";
         gROOT->LoadMacro("./" + func + ext);
-        gROOT->ProcessLine(func + "()");
+        gROOT->ProcessLine(func + args);
     }
     if(what.Contains("write"))
     {

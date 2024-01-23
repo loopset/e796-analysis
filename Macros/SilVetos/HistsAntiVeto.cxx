@@ -1,6 +1,4 @@
-#include "ActCutsManager.h"
 #include "ActJoinData.h"
-#include "ActMergerData.h"
 
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RResultPtr.hxx"
@@ -11,19 +9,16 @@
 #include "TROOT.h"
 #include "TString.h"
 
-#include "Math/Point3Dfwd.h"
-
 #include <algorithm>
-#include <fstream>
 #include <iostream>
-#include <iterator>
 #include <memory>
 #include <utility>
 #include <vector>
-void AntiVetoFront()
+
+void HistsAntiVeto()
 {
     ROOT::EnableImplicitMT();
-    ActRoot::JoinData join {"../configs/merger.runs"};
+    ActRoot::JoinData join {"./../../configs/merger.runs"};
     ROOT::RDataFrame d {*join.Get()};
 
     // VETO using only ESi0 > 0, suitable for
@@ -46,7 +41,7 @@ void AntiVetoFront()
                 shareIndex = (siN[0] == siN[1]);
 
                 for(const auto& mask : maskedSiN)
-        {
+                {
                     if(siN.front() == mask)
                         isMasked = true;
                 }
@@ -55,7 +50,7 @@ void AntiVetoFront()
         },
         {"fSilLayers", "fSilNs"})};
 
-    auto df = antiveto;//.Filter("fRP.fCoordinates.fX > 170");
+    auto df = antiveto; //.Filter("fRP.fCoordinates.fX > 170");
     df = df.Define("ESil0", "fSilEs[0]").Define("ESil1", "fSilEs[1]").Define("ESum", "fSilEs[0] + fSilEs[1]");
 
     // Book histograms
@@ -67,27 +62,6 @@ void AntiVetoFront()
                           zlims.first, zlims.second},
                          "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
     auto hPID {df.Histo2D({"hPID", "PID in gas;E_{Sil0} [MeV];Q_{ave}", 200, 0, 50, 500, 0, 2000}, "ESil0", "fQave")};
-
-    // Write cut to file
-    // std::ofstream streamer {"./debug_antiveto.dat"};
-    // ActRoot::CutsManager<int> cut;
-    // cut.ReadCut(0, "./Cuts/debug_anti.root");
-    // auto debug {df.Filter([&](const ROOT::Math::XYZPointF& sp) { return cut.IsInside(0, sp.Y(), sp.Z()); },
-    // {"fSP"})}; df.Foreach(
-    //     [&](const ActRoot::MergerData& d)
-    //     {
-    //         if(cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
-    //             streamer << d.fRun << " " << d.fEntry << '\n';
-    //     },
-    //     {"MergerData"});
-    // streamer.close();
-
-    // auto hQaveESil {
-    //     debug.Histo2D({"hQaveESil", ";E_{Sil0} + E_{Sil1} [MeV];Q_{ave}", 200, 0, 50, 500, 0, 2000}, "ESum",
-    //     "fQave")};
-    // auto hQaveE0 {debug.Histo2D({"hQaveE0", ";E_{Sil0} [MeV];Q_{ave}", 200, 0, 50, 500, 0, 2000}, "ESil0", "fQave")};
-    // auto hTwoSils {
-    //     debug.Histo2D({"hTwoSils", ";E_{Sil1} [MeV];E_{Sil0} [MeV]", 200, 0, 50, 200, 0, 50}, "ESil1", "ESil0")};
 
     // Get projections
     std::vector<int> idxs {0, 2, 3, 4, 5, 7, 8, 10};
@@ -107,27 +81,6 @@ void AntiVetoFront()
             cut.Histo1D({TString::Format("pz%d", idx), TString::Format("Z proj for %d;Z [mm]", idx), 250, -20, 300},
                         "fSP.fCoordinates.fZ");
     }
-    // // Compare the two methods
-    // std::vector<TH1D*> aux(idxs.size());
-    // for(int i = 0; i < aux.size(); i++)
-    // {
-    //     aux[i] = new TH1D(TString::Format("aux%d", idxs[i]), TString::Format("Aux for %d", idxs[i]), 250, -20, 300);
-    // }
-    // df.Foreach(
-    //     [&](const ActRoot::MergerData& d)
-    //     {
-    //         auto it {std::find(idxs.begin(), idxs.end(), d.fSilNs.front())};
-    //         if(it != idxs.end())
-    //         {
-    //             auto i {std::distance(idxs.begin(), it)};
-    //             aux[i]->Fill(d.fSP.Y());
-    //         }
-    //     }, {"MergerData"});
-    // // Print stats
-    // for(int i = 0; i < aux.size(); i++)
-    // {
-    //     std::cout << "Aux i : " << idxs[i] << " count : " << aux[i]->GetEntries() << '\n';
-    // }
 
     // plot
     auto* c1 {new TCanvas("c1", "Veto mode 3He and 4He")};
@@ -151,7 +104,7 @@ void AntiVetoFront()
     }
 
     // Write them
-    auto fout {std::make_unique<TFile>("./RootFiles/antiveto_histograms.root", "recreate")};
+    auto fout {std::make_unique<TFile>("./Inputs/antiveto_histograms.root", "recreate")};
     fout->cd();
     for(auto& h : pys)
         h->Write();

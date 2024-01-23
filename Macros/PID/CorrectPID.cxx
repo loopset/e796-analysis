@@ -7,56 +7,44 @@
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RVec.hxx"
 
-#include "TAttLine.h"
 #include "TCanvas.h"
 #include "TH2.h"
 #include "TROOT.h"
 
-#include <fstream>
 #include <string>
 #include <utility>
 
-void CorrectPID()
+#include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
+#include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
+#include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
+
+void CorrectPID(bool write)
 {
-    ActRoot::JoinData data {"../configs/merger.runs"};
+    ActRoot::JoinData data {"./../../configs/merger.runs"};
     ROOT::EnableImplicitMT();
     ROOT::RDataFrame d {*data.Get()};
 
     // Just for front now with ESil f1 = 0
-    auto f0 {d.Filter(
-        [](const ROOT::VecOps::RVec<std::string>& silL)
-        {
-            bool onlyOne {silL.size() == 1};
-            bool isF0 {};
-            if(onlyOne)
-                isF0 = (silL.front() == "f0");
-            return onlyOne && isF0;
-        },
-        {"fSilLayers"})};
+    auto f0 {d.Filter(E796Gates::front0, {"MergerData"})};
 
-    // Read cuts
-    ActPhysics::SilMatrix sm;
-    sm.Read("./veto_matrix.root");
+    // Which particle to gate on?
+    std::string light {"3H"};
+    // Read silicon matrix
+    auto* sm {E796Utils::GetEffSilMatrix(light)};
 
     // Apply cuts
-    auto vetof0 {f0.Filter([&](const ROOT::RVecF& silN, float y, float z)
-                           { return sm.IsInside(silN.front(), y, z); },
+    auto vetof0 {f0.Filter([&](const ROOT::RVecF& silN, float y, float z) { return sm->IsInside(silN.front(), y, z); },
                            {"fSilNs", "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ"})};
 
     // Book histograms
-    auto hPID {vetof0.Define("x", "fSilEs.front()")
-                   .Histo2D({"hPID", "PID for front layer;E_{Si0} [MeV];Q_{ave} [mm^{-1}]", 500, 0, 40, 800, 0, 2000},
-                            "x", "fQave")};
-    auto hSP {vetof0.Histo2D({"hSP", "Vetoed SP;Y [mm];Z [mm]", 200, -10, 300, 200, -10, 300}, "fSP.fCoordinates.fY",
-                             "fSP.fCoordinates.fZ")};
+    auto hPID {vetof0.Define("x", "fSilEs.front()").Histo2D(HistConfig::PID, "x", "fQave")};
+    auto hSP {vetof0.Histo2D(HistConfig::SP, "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
 
     // Read preliminary PID cuts
     ActRoot::CutsManager<std::string> cuts;
-    // // cuts.ReadCut("p", "./Cuts/pid_protons_f0.root");
-    // // cuts.ReadCut("d", "./Cuts/pid_deuterons_f0.root");
-    cuts.ReadCut("t", "./Cuts/unpid_tritons_f0.root");
-    // // cuts.ReadCut("4He", "./Cuts/pid_4He_f0.root");
-    //
+    cuts.ReadCut(light, "./Cuts/unpid_tritons_f0.root");
+
+
     // Init PIDCorrector
     auto* hModel {new TH2D("hModel", "PID Corr", 100, -10, 300, 400, 0, 2000)};
     std::pair<double, double> silELimits {3.5, 4.};
@@ -72,12 +60,14 @@ void CorrectPID()
                 pc.FillHisto(key.value(), z, q, silE, silELimits.first, silELimits.second);
         },
         {"MergerData"});
+
     // Execute functions
     pc.GetProfiles();
     pc.FitProfiles(75, 275);
     auto pidcorr {pc.GetCorrection()};
     // Save it
-    pidcorr.Write("../Calibrations/Actar/pid_corr_tritons_f0.root");
+    if(write)
+        pidcorr.Write("/media/Data/E796v2/Calibrations/Actar/pid_corr_tritons_f0.root");
 
     // Apply correction
     vetof0 = vetof0.Define("corrQave",
@@ -86,8 +76,7 @@ void CorrectPID()
 
     // Book corrected histogram
     auto hPIDCorr {vetof0.Define("x", "fSilEs.front()")
-                       .Histo2D({"hPIDCorr", "Corrected PID;E_{Si0} [MeV];Q_{ave} [mm]", 500, 0, 40, 800, 0, 2000}, "x",
-                                "corrQave")};
+                       .Histo2D(HistConfig::ChangeTitle(HistConfig::PID, "Corrected PID"), "x", "corrQave")};
 
     // plot
     auto* c1 {new TCanvas("c1", "PID canvas")};
@@ -97,8 +86,7 @@ void CorrectPID()
     cuts.DrawAll();
     c1->cd(2);
     hSP->DrawClone("colz");
-    sm.SetSyle(true, kSolid, 2, 0);
-    sm.Draw(true);
+    sm->Draw();
     c1->cd(3);
     hPIDCorr->DrawClone("colz");
     // c1->cd(4);

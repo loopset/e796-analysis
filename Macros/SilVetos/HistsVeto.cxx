@@ -11,10 +11,12 @@
 
 #include <utility>
 #include <vector>
-void VetoFront()
+
+
+void HistsVeto()
 {
     ROOT::EnableImplicitMT();
-    ActRoot::JoinData join {"../configs/merger.runs"};
+    ActRoot::JoinData join {"./../../configs/merger.runs"};
     ROOT::RDataFrame d {*join.Get()};
 
     // VETO using only ESi0 > 0, suitable for
@@ -78,7 +80,7 @@ void VetoFront()
     }
 
     // Write them
-    auto fout {std::make_unique<TFile>("./RootFiles/veto_histograms.root", "recreate")};
+    auto fout {std::make_unique<TFile>("./Inputs/veto_histograms.root", "recreate")};
     fout->cd();
     for(auto& h : pys)
         h->Write();

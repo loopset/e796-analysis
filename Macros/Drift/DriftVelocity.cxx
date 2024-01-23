@@ -44,7 +44,7 @@ void DriftVelocity()
     // ROOT::EnableImplicitMT();
 
     // Get data
-    ActRoot::JoinData join {"./../configs/merger.runs"};
+    ActRoot::JoinData join {"./../../configs/merger.runs"};
     // join->Print();
     ROOT::RDataFrame d {*join.Get()};
     // ROOT::RDataFrame d {"ACTAR_Merged", "./../RootFiles/Merger/Merger_Run_0156.root"};

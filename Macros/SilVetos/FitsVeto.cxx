@@ -1,31 +1,17 @@
-#include "./GetContourFuncs.cxx"
-
 #include "ActSilMatrix.h"
 
-#include "RtypesCore.h"
-
-#include "TAttLine.h"
-#include "TCanvas.h"
-#include "TF1.h"
 #include "TFile.h"
-#include "TGraph.h"
-#include "TH1.h"
-#include "TH1D.h"
-#include "TString.h"
 
-#include <iostream>
 #include <map>
 #include <memory>
-#include <stdexcept>
-#include <string>
-#include <utility>
-#include <vector>
 
-void FitsAntiVeto()
+#include "./GetContourFuncs.cxx"
+
+void FitsVeto()
 {
-    const std::string which {""};
-    auto fin {std::make_unique<TFile>(("./RootFiles/antiveto_histograms" + which + ".root").c_str())};
-    // fin->ls();
+    // Read data
+    auto fin {std::make_unique<TFile>("./Inputs/veto_histograms.root")};
+    // Set histograms to process
     std::vector<int> idxs {0, 2, 3, 4, 5, 7, 8, 10};
     std::map<int, TH1D*> pys, pzs;
     for(auto& idx : idxs)
@@ -38,6 +24,7 @@ void FitsAntiVeto()
         pzs[idx]->SetDirectory(nullptr);
     }
 
+
     // Read limits
     auto [ylimits, zlimits] {ReadFile("./antiveto_fits.dat")};
 
@@ -47,6 +34,7 @@ void FitsAntiVeto()
     // Z
     auto nzs {FitToScaleFunc(pzs, zlimits)};
 
+
     // Fit to contour
     double thresh {0.65};
     double width {15};
@@ -55,8 +43,9 @@ void FitsAntiVeto()
     // Z
     auto zpoints {FitToCountour(nzs, thresh, width)};
 
+
     // Build class to store them
-    auto* smatrix {new ActPhysics::SilMatrix {"antiveto"}};
+    auto* smatrix {new ActPhysics::SilMatrix {"veto"}};
     for(auto& [i, ypoint] : ypoints)
     {
         const auto& zpoint {zpoints[i]};
@@ -76,9 +65,8 @@ void FitsAntiVeto()
     auto* cnz {new TCanvas("cnz", "Normalized Z canvas")};
     PlotAll(cnz, nzs);
 
-    // Check SilMatrix works
+
     auto* cm {new TCanvas("cm", "Sil matrix")};
-    smatrix->Write(("./antiveto_matrix" + which + ".root"));
-    smatrix->SetSyle(true, kSolid, 2, 0);
-    smatrix->Draw();
+    smatrix->Write(("./Outputs/veto_matrix.root"));
+    smatrix->Draw(false);
 }
