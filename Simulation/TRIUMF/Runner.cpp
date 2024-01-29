@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-#include "./Plotter.cpp"
+#include "../Plotter.cpp"
 #include "./Simulation_TRIUMF.cpp"
 // what
 // if simu = runs simulation

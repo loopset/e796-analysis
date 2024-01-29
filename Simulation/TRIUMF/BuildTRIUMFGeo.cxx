@@ -14,7 +14,7 @@ void BuildTRIUMFGeo(bool draw = true)
     double driftZ {25.6 / 2};
     ActSim::DriftChamber actar(driftX, driftY, driftZ);
     // unit silicon size
-    double silicon1X {5.0E-2 / 2}; // cm
+    double silicon1X {0.15 / 2}; // 1500 um to cm
     double silicon1Y {8. / 2};
     double silicon1Z {5.0 / 2};
     ActSim::SilUnit silUnit(0, silicon1X, silicon1Y, silicon1Z);
@@ -72,7 +72,7 @@ void BuildTRIUMFGeo(bool draw = true)
     geo.Print();
 
     // SAVE GEO
-    std::string path {"./Geometries/"};
+    std::string path {"./Geo/"};
     geo.WriteGeometry(path, "triumf");
 
     // and draw it if necessary
