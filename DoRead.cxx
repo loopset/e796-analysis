@@ -72,7 +72,7 @@ void DoRead()
     bool enableMT {true};
 
     // CLUSTER: TPCData
-    ReadWhat("./configs/read_clusters.runs", enableMT);
+    // ReadWhat("./configs/read_clusters.runs", enableMT);
     // DATA : Sil + Modular
     ReadWhat("./configs/read_data.runs", enableMT);
 }

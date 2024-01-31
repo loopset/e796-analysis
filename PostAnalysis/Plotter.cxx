@@ -54,7 +54,7 @@ void Plotter(const std::string& beam = "", const std::string& target = "", const
     }
 
     // Book histograms
-    std::vector<ROOT::RDF::RResultPtr<TH2D>> hsKin, hsSP;
+    std::vector<ROOT::RDF::RResultPtr<TH2D>> hsKin, hsSP, hsExZ;
     std::vector<ROOT::RDF::RResultPtr<TH1D>> hsEx;
     std::vector<ActPhysics::Kinematics> vkins;
     int counter {-1};
@@ -71,6 +71,7 @@ void Plotter(const std::string& beam = "", const std::string& target = "", const
         hsSP.push_back(df.Histo2D(HistConfig::ChangeTitle(HistConfig::SP, "SP " + sig),
                                   (isEl) ? "fSP.fCoordinates.fX" : "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ"));
         hsEx.push_back(df.Histo1D(HistConfig::ChangeTitle(HistConfig::Ex, "Ex " + sig), "Ex"));
+        hsExZ.push_back(df.Histo2D(HistConfig::ExZ, "fSP.fCoordinates.fZ", "Ex"));
     }
 
     // Run
@@ -96,6 +97,8 @@ void Plotter(const std::string& beam = "", const std::string& target = "", const
         {
             E796Utils::GetEffSilMatrix(signatures[c].light)->Draw();
         }
+        cs[c]->cd(4);
+        hsExZ[c]->DrawClone("colz");
     }
 }
 #endif

@@ -14,7 +14,7 @@ namespace HistConfig
     const TH2DModel PIDTwo {"hPIDTwo", "PID with two silicons;E_{Si1} [MeV];E_{Si0} [MeV]", 500, 0, 40, 500, 0, 40};
 
     const TH2DModel SP {"hSP", "SP;X or Y [mm];Z [mm]", 200, -10, 300, 200, -10, 300};
-    
+
     const TH2DModel RP {"hRP", "RP;X [mm];Y [mm]", 200, -10, 300, 200, -10, 300};
 
     const TH1DModel TL {"hTL", "Track length; TL [mm]", 300, 0, 600};
@@ -37,6 +37,8 @@ namespace HistConfig
 
     const TH2DModel ThetaBeam {
         "hThetaBeam", "#theta_{Beam} against on RP.X;RP.X() [mm];#theta_{Beam} [#circ]", 200, -5, 270, 200, -1, 10};
+
+    const TH2DModel ExZ {"hExZ", "E_{x} dependence on SP.Z();SP.Z() [mm];E_{x} [MeV]", 200, -10, 300, 200, -10, 20};
 
     template <typename T>
     T ChangeTitle(T model, const TString& title, const TString& label = "");
