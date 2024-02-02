@@ -37,22 +37,17 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
 
     // Init SRIM
     auto* srim {new ActPhysics::SRIM};
-    srim->ReadInterpolations(
+    srim->ReadTable(
         light,
-        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", light.c_str())
-            .Data());
-    srim->ReadInterpolations(
-        beam, TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", beam.c_str())
-                  .Data());
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_952mb_mixture.txt", light.c_str()).Data());
+    srim->ReadTable(
+        beam,
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_952mb_mixture.txt", beam.c_str()).Data());
 
     // Build energy at vertex
     auto def = df.Define("EVertex",
                          [&](const ActRoot::MergerData& d)
-                         {
-                             double RIni {srim->EvalDirect(light, d.fSilEs.front())};
-                             double RVertex {RIni + d.fTrackLength};
-                             return srim->EvalInverse(light, RVertex);
-                         },
+                         { return srim->EvalInitialEnergy(light, d.fSilEs.front(), d.fTrackLength); },
                          {"MergerData"});
 
     // Init particles
@@ -61,14 +56,9 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     ActPhysics::Particle pl {light};
 
     // Build beam energy
-    def = def.Define("EBeam",
-                     [&](const ActRoot::MergerData& d)
-                     {
-                         double RIni {srim->EvalDirect(beam, 35 * pb.GetAMU())};
-                         double RVertex {RIni - d.fRP.X()};
-                         return srim->EvalInverse(beam, RVertex);
-                     },
-                     {"MergerData"});
+    def =
+        def.Define("EBeam", [&](const ActRoot::MergerData& d) { return srim->Slow(beam, 35 * pb.GetAMU(), d.fRP.X()); },
+                   {"MergerData"});
 
     ActPhysics::Kinematics kin {pb, pt, pl, 35 * pb.GetAMU()};
     // Vector of kinematics as one object is needed per
@@ -92,6 +82,8 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                            : (isSide) ? "fThetaLegacy"
                                       : "fThetaLight",
                            "EVertex")};
+
+    auto hEBeam {def.Histo1D("EBeam")};
     auto hEx {def.Histo1D(HistConfig::Ex, "Ex")};
 
     auto hTheta {def.Histo1D((debug) ? "fThetaDebug" : (isSide) ? "fThetaLegacy" : "fThetaLight")};
@@ -130,6 +122,8 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     hThetaBeam->DrawClone("colz");
     c22->cd(3);
     hRP->DrawClone("colz");
+    c22->cd(4);
+    hEBeam->DrawClone();
 
     auto* c21 {new TCanvas("c21", "Pipe2 canvas 1")};
     c21->DivideSquare(2);

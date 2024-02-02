@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
+#include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
 #include "/media/Data/E796v2/Simulation/Utils.cxx"
 
 void Simulation_E796(const std::string& beam, const std::string& target, const std::string& light,
@@ -72,15 +73,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     std::pair<double, double> eLoss0Cut {0, 1000}; //{6.5, 27.};
 
     // Silicon masks
-    ActPhysics::SilMatrix sm {};
-    if(light == "2H" || light == "3H")
-        sm.Read("/media/Data/E796v2/Macros/Outputs/antiveto_matrix.root"); // antiveto for d and t
-    else
-        sm.Read("/media/Data/E796v2/Macros/Outputs/veto_matrix.root"); // veto for Hes
+    auto sm {E796Utils::GetEffSilMatrix(light)};
     // auto silIndxs {sm.GetSilIndexes()};
     std::set<int> silIndxs {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
     // Move Z of silicons to match centre of chamber. The centred silicons are 3 and 4
-    sm.MoveZTo(zVertexMean, {3, 4});
+    sm->MoveZTo(zVertexMean, {3, 4});
 
     // // // histogram file
     // auto* histfile {new TFile("./Inputs/BeamY_ThetaXY_and_XZ_space_3Dhisto.root")};
@@ -127,17 +124,15 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Load SRIM tables
     // The name of the file sets particle + medium
     auto* srim {new ActPhysics::SRIM()};
-    srim->ReadInterpolations(
+    srim->ReadTable(
         "light",
-        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", light.c_str())
-            .Data());
-    srim->ReadInterpolations(
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_952mb_mixture.txt", light.c_str()).Data());
+    srim->ReadTable(
         "beam",
-        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_952mb_mixture.dat", beam.c_str())
-            .Data());
-    srim->ReadInterpolations(
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_952mb_mixture.txt", beam.c_str()).Data());
+    srim->ReadTable(
         "lightInSil",
-        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/transformed/%s_silicon.dat", light.c_str()).Data());
+        TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_silicon.txt", light.c_str()).Data());
 
     // Load geometry
     auto* geometry {new ActSim::Geometry()};
@@ -242,7 +237,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             continue;
         // cut with TCutG!
         auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
-        if(!sm.IsInside(silIndex0, silPoint0InMM.Y(), silPoint0InMM.Z()))
+        if(!sm->IsInside(silIndex0, silPoint0InMM.Y(), silPoint0InMM.Z()))
             continue;
 
         auto T3EnteringSil {runner.EnergyAfterGas(T3Lab, distance0, "light", stragglingInGas)};
@@ -371,8 +366,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         gtheo->Draw("same");
         c1->cd(2);
         hSP->DrawClone("col");
-        sm.SetSyle(true);
-        sm.Draw(true);
+        sm->Draw();
         c1->cd(3);
         hEexAfter->DrawClone("hist");
         c1->cd(4);
