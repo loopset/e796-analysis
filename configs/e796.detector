@@ -12,6 +12,8 @@ CleanDuplicatedVoxels: true
 %%%%%%%%%%%%%%%%%% Data -> Physics options %%%%%%%%%%%%%%%%%%%
 % Method to cluster!
 ClusterMethod: Climb
+% and method to filter
+FilterMethod: Multistep
 
 
 [Silicons]
@@ -26,4 +28,28 @@ Actions: /media/Data/E796v2/Calibrations/ACTIONS_e796_run111.CHC_PAR
 Names: INCONF, GATCONF, SCA_CFA
 
 [Merger]
-%% Merger detector configuration is in a separated file: merger.conf
+IsEnabled: true
+SilSpecsFile: /media/Data/E796v2/configs/silicons.detector
+%% gatX : ss -> gat command maps X int to ss layer of Sils, as declared in [Silicons]::Layers command
+gat4: f0, f1
+gat8: l0
+%% Force each event to have one of those GATCONF values
+ForceGATCONF: true
+%% Force each event to have a beam-like cluster
+ForceBeamLike: true
+%% Number of non-beam clusters allowed in event
+NotBeamMults: 1, 2
+ForceSilMult: true
+%% Gate on RP X, discarding events with RP.X() < that threshold
+%% whose angles cannot be faithfully reconstructed
+%% Should be corrected now in MultiStep with EnableDefaultBL option
+GateRPX: 0
+%% DRIFT VELOCITY
+%% conversion factor between tb and mm, implicitly considering REBINZ factor
+EnableConversion: true
+DriftFactor: 2.344
+%% Match SilPoint?
+EnableMatch: true
+MatchUseZ: false
+ZOffset: 0
+EnableQProfile: true
