@@ -3,7 +3,7 @@
 
 #include "ActColors.h"
 #include "ActCutsManager.h"
-#include "ActJoinData.h"
+#include "ActDataManager.h"
 #include "ActMergerData.h"
 #include "ActSilMatrix.h"
 
@@ -25,8 +25,9 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
 {
     ROOT::EnableImplicitMT();
     // Read data
-    ActRoot::JoinData in {"/media/Data/E796v2/configs/merger.runs", "/media/Data/E796v2/configs/corrections.runs"};
-    ROOT::RDataFrame df {*in.Get()};
+    ActRoot::DataManager datman {"/media/Data/E796v2/configs/data.conf"};
+    auto chain {datman.GetJoinedData()};
+    ROOT::RDataFrame df {*chain};
 
     // Apply cuts
     ActPhysics::SilMatrix* sm {};
