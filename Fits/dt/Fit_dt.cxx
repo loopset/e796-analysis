@@ -2,16 +2,13 @@
 #include "Rtypes.h"
 
 #include "TCanvas.h"
-#include "TF1.h"
 #include "TFitResult.h"
 #include "TGraph.h"
 #include "TROOT.h"
-#include "TRatioPlot.h"
 #include "TString.h"
 
 #include <iostream>
 #include <stdexcept>
-#include <string>
 #include <utility>
 #include <vector>
 
@@ -142,6 +139,9 @@ void Fit_dt()
     fitter.SetFixedPars(fixedPars);
     // Fit!!
     fitter.Fit();
+    // Save on file
+    fitter.WriteToFile("./Outputs/dt.root");
+
 
     // Draw
     Fitters::SpectrumPlotter plotter {&data, &func, fitter.GetFitResult()};

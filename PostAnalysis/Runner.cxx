@@ -31,6 +31,12 @@ void Runner(TString what = "plot")
     TString path {"./Pipelines/"};
     TString func {};
     TString ext {".cxx"};
+    if(what.Contains("0"))
+    {
+        func = "Pipe0_Beam";
+        gROOT->LoadMacro(path + func + ext);
+        gROOT->ProcessLine(func + "()");
+    }
     if(what.Contains("1"))
     {
         func = "Pipe1_PID";
