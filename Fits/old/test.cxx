@@ -1,8 +1,10 @@
 #include "ROOT/RDataFrame.hxx"
+#include "Rtypes.h"
 
 #include "TCanvas.h"
 #include "TFitResult.h"
 #include "TGraph.h"
+#include "THStack.h"
 #include "TROOT.h"
 #include "TRatioPlot.h"
 #include "TSpline.h"
@@ -13,9 +15,12 @@
 
 #include "HFitInterface.h"
 
+#include <ios>
+
 #include "/media/Data/PhysicsClasses/src/FitModel.cxx"
+#include "/media/Data/PhysicsClasses/src/FitObjective.cxx"
+#include "/media/Data/PhysicsClasses/src/FitPlotter.cxx"
 #include "/media/Data/PhysicsClasses/src/FitRunner.cxx"
-#include "/media/Data/PhysicsClasses/src/Fitter.cxx"
 
 void test()
 {
@@ -40,8 +45,6 @@ void test()
     auto intPS {hPS->Integral()};
     double factor {0.15};
     hPS->Scale(factor * intEx / intPS);
-    // Convert to TSpline3
-    auto* spe {new TSpline3 {hPS.GetPtr(), "b2,e2", 0, 0}};
 
     // Data
     double xmin {hmin};
@@ -56,12 +59,10 @@ void test()
     int ng {7};
     int nv {0};
     bool cte {false};
-    auto* model = new Fitters::Model {ng, nv, {spe}, cte};
-    auto [f1, wrap] {model->Wrap(xmin, xmax)};
+    auto* model = new Fitters::Model {ng, nv, {*hPS}, cte};
 
     // Runner
-    Fitters::Runner runner {model};
-    runner.SetModelWrap(wrap);
+    Fitters::Runner runner {data, *model};
     // Set parameters
     double sigma {0.374};
     // Init parameters
@@ -123,21 +124,39 @@ void test()
     runner.SetInitial(init);
     runner.SetBounds(bounds);
     runner.SetFixed(fixed);
-    runner.Fit(data);
+    runner.Fit();
     auto res {runner.GetFitResult()};
 
-    auto* g {new TGraph};
-    res.Scan(1, g);
+    // Plot
+    Fitters::Plotter plot {&data, model, &res};
+    auto* global {plot.GetGlobalFit()};
+    auto ih {plot.GetIndividualHists()};
+    auto* hs {new THStack};
+    for(auto& [key, h] : ih)
+    {
+        h->SetLineWidth(2);
+        hs->Add(h);
+    }
 
-    auto* hclone {(TH1D*)hEx->Clone()};
-    hclone->GetListOfFunctions()->Add(f1);
+    // Draw
+    auto* c0 {new TCanvas {"c0", "Fit results"}};
+    hEx->DrawClone("e");
+    global->Draw("same");
+    hs->Draw("plc nostack same");
 
-    // Ratio plot
-    auto* c0 {new TCanvas {"c0", "test"}};
-    auto* ratio {new TRatioPlot {hclone, "", &res}};
-    ratio->Draw();
-
-    auto* c1 {new TCanvas};
-    g->Draw("apl");
-
+    // auto* g {new TGraph};
+    // res.Scan(1, g);
+    //
+    // auto [f1, wrap] {model->Wrap(xmin, xmax)};
+    // f1->SetParameters(res.GetParams());
+    // auto* hclone {(TH1D*)hEx->Clone()};
+    // hclone->GetListOfFunctions()->Add(f1);
+    //
+    // // Ratio plot
+    // auto* c0 {new TCanvas {"c0", "test"}};
+    // auto* ratio {new TRatioPlot {hclone, "", &res}};
+    // ratio->Draw();
+    //
+    // auto* c1 {new TCanvas};
+    // g->Draw("apl");
 }

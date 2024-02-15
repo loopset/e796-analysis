@@ -4,16 +4,21 @@
 #include "TCanvas.h"
 #include "TFitResult.h"
 #include "TGraph.h"
+#include "THStack.h"
 #include "TROOT.h"
 #include "TString.h"
+
+#include "FitData.h"
+#include "FitModel.h"
+#include "FitPlotter.h"
+#include "FitRunner.h"
 
 #include <iostream>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
-#include "/media/Data/PhysicsClasses/src/Fitter.cxx"
-#include "/media/Data/PhysicsClasses/src/PublicationColors.cxx"
+// #include "/media/Data/PhysicsClasses/Old/PublicationColors.cxx"
 
 void Fit_dt()
 {
@@ -69,17 +74,22 @@ void Fit_dt()
     double factor {0.15};
     hPS->Scale(factor * intEx / intPS);
 
-    // Init fit
+    // Data
     double xmin {hmin};
     double xmax {10};
-    Fitters::SpectrumData data {xmin, xmax, hEx.GetPtr()};
-    data.AddPhaseSpace(hPS.GetPtr());
+    Fitters::Data data {*hEx, xmin, xmax};
+
+    // Model
     int ngauss {7};
-    Fitters::SpectrumFunction func {ngauss, 0, &data};
-    Fitters::SpectrumFitter fitter {&func};
+    int nvoigt {0};
+    Fitters::Model model {ngauss, nvoigt, {*hPS}};
+
+    // Runner
+    Fitters::Runner runner {data, model};
+    runner.GetObjective().SetUseDivisions(true);
     // Set init parameters
     double sigma {0.374};
-    Fitters::SpectrumFitter::InitPars initPars {
+    Fitters::Runner::Init initPars {
         {"g0", {400, 0, sigma}},
         {"g1", {10, 1.5, sigma}},
         {"g2", {110, 3.2, sigma}},
@@ -93,8 +103,8 @@ void Fit_dt()
     // Set bounds and fix parameters
     double minmean {0.3};
     double maxmean {0.3};
-    Fitters::SpectrumFitter::InitBounds initBounds {};
-    Fitters::SpectrumFitter::FixedPars fixedPars {};
+    Fitters::Runner::Bounds initBounds {};
+    Fitters::Runner::Fixed fixedPars {};
     for(const auto& [key, init] : initPars)
     {
         // determine number of parameters
@@ -134,52 +144,67 @@ void Fit_dt()
             fixedPars[key].push_back(boo);
         }
     }
-    fitter.SetInitPars(initPars);
-    fitter.SetInitBounds(initBounds);
-    fitter.SetFixedPars(fixedPars);
+    runner.SetInitial(initPars);
+    runner.SetBounds(initBounds);
+    runner.SetFixed(fixedPars);
     // Fit!!
-    fitter.Fit();
+    runner.Fit();
+    // result
+    auto res {runner.GetFitResult()};
+
     // Save on file
-    fitter.WriteToFile("./Outputs/dt.root");
+    // fitter.WriteToFile("./Outputs/dt.root");
 
 
     // Draw
-    Fitters::SpectrumPlotter plotter {&data, &func, fitter.GetFitResult()};
-    auto* gfit {plotter.GetGlobalFitGraph()};
-    auto* res {plotter.GetFitResiduals()};
+    Fitters::Plotter plotter {&data, &model, &res};
+    auto* gfit {plotter.GetGlobalFit()};
     auto hfits {plotter.GetIndividualHists()};
-    auto* hps0fit {plotter.GetIndividualPS(0)};
 
-    // plotting
-    PlotUtils::PublicationColors pubcol;
-    auto* cex {new TCanvas("cex")};
-    cex->cd();
-    // Settings for juan's presentation
-    hEx->SetStats(false);
+    // TCanvas
+    auto* c0 {new TCanvas {"c0", "(d,t) global fit"}};
+    hEx->GetXaxis()->SetRangeUser(xmin, xmax);
     hEx->SetLineWidth(2);
     hEx->DrawClone("e");
-    // 1->Draw global fit
-    gfit->SetLineColor(pubcol[5]);
-    gfit->SetLineWidth(2);
     gfit->Draw("same");
-    int idx {};
-    std::vector<int> colors {pubcol[0], pubcol[3], pubcol[2], pubcol[0], pubcol[1], pubcol[4], pubcol[3]};
-    std::vector<int> fs {3244, 3295, 3245, 3254, 3205, 3244, 3295};
-    for(auto& [_, h] : hfits)
+    // Stack of histograms
+    auto* hs {new THStack};
+    for(auto& [key, h] : hfits)
     {
         h->SetLineWidth(2);
-        h->SetLineColor(colors.at(idx));
-        h->SetFillStyle(fs.at(idx));
-        h->SetFillColor(colors.at(idx));
-        // int color {idx + 6};
-        // if(color == 10)
-        //     color = 46;
-        // g->SetLineColor(color);
-        h->Draw("hist same");
-        idx++;
+        hs->Add(h);
     }
-    hps0fit->SetLineColor(kMagenta - 3);
-    hps0fit->SetFillColor(kMagenta - 3);
-    hps0fit->SetFillStyle(3325);
-    hps0fit->Draw("hist same");
+    hs->Draw("plc nostack same");
+
+    // PlotUtils::PublicationColors pubcol;
+    // auto* cex {new TCanvas("cex")};
+    // cex->cd();
+    // // Settings for juan's presentation
+    // hEx->SetStats(false);
+    // hEx->SetLineWidth(2);
+    // hEx->DrawClone("e");
+    // // 1->Draw global fit
+    // gfit->SetLineColor(pubcol[5]);
+    // gfit->SetLineWidth(2);
+    // gfit->Draw("same");
+    // int idx {};
+    // std::vector<int> colors {pubcol[0], pubcol[3], pubcol[2], pubcol[0], pubcol[1], pubcol[4], pubcol[3]};
+    // std::vector<int> fs {3244, 3295, 3245, 3254, 3205, 3244, 3295};
+    // for(auto& [_, h] : hfits)
+    // {
+    //     h->SetLineWidth(2);
+    //     h->SetLineColor(colors.at(idx));
+    //     h->SetFillStyle(fs.at(idx));
+    //     h->SetFillColor(colors.at(idx));
+    //     // int color {idx + 6};
+    //     // if(color == 10)
+    //     //     color = 46;
+    //     // g->SetLineColor(color);
+    //     h->Draw("hist same");
+    //     idx++;
+    // }
+    // hps0fit->SetLineColor(kMagenta - 3);
+    // hps0fit->SetFillColor(kMagenta - 3);
+    // hps0fit->SetFillStyle(3325);
+    // hps0fit->Draw("hist same");
 }
