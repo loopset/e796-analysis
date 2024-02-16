@@ -153,8 +153,7 @@ void Fit_dt()
     auto res {runner.GetFitResult()};
 
     // Save on file
-    // fitter.WriteToFile("./Outputs/dt.root");
-
+    runner.Write("./Outputs/fit_dt.root");
 
     // Draw
     Fitters::Plotter plotter {&data, &model, &res};
