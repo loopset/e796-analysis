@@ -75,6 +75,17 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                                               TMath::DegToRad());
                          },
                          {"MergerData", "EVertex", "EBeam"});
+    def =
+        def.DefineSlot("ThetaCM",
+                       [&](unsigned int slot, const ActRoot::MergerData& d, double EVertex, double EBeam)
+                       {
+                           vkins[slot].SetBeamEnergy(EBeam);
+                           // vkins[slot].SetEx(Ex);
+                           return 180. - vkins[slot].ReconstructTheta3CMFromLab(
+                                             EVertex, ((isSide) ? d.fThetaLegacy : d.fThetaLight) * TMath::DegToRad()) *
+                                             TMath::RadToDeg();
+                       },
+                       {"MergerData", "EVertex", "EBeam"});
 
     // Book new histograms
     auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin,
@@ -82,6 +93,8 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                            : (isSide) ? "fThetaLegacy"
                                       : "fThetaLight",
                            "EVertex")};
+
+    auto hKinCM {def.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
 
     auto hEBeam {def.Histo1D("EBeam")};
     auto hEx {def.Histo1D(HistConfig::Ex, "Ex")};
@@ -126,12 +139,14 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     hEBeam->DrawClone();
 
     auto* c21 {new TCanvas("c21", "Pipe2 canvas 1")};
-    c21->DivideSquare(2);
+    c21->DivideSquare(4);
     c21->cd(1);
     hKin->DrawClone("colz");
     auto* theo {kin.GetKinematicLine3()};
     theo->Draw("same");
     c21->cd(2);
     hEx->DrawClone();
+    c21->cd(3);
+    hKinCM->DrawClone("colz");
 }
 #endif
