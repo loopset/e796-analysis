@@ -90,6 +90,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     cut.DrawAll();
     c10->cd(2);
     hSP->DrawClone("colz");
-    sm->Draw();
+    if(sm)
+        sm->Draw();
 }
 #endif

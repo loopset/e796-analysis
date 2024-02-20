@@ -328,7 +328,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
     // another way to compute efficiency in root
     auto* teff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
-    teff->SetNameTitle("eff", "Efficiency in #theta_{CM}");
+    teff->SetNameTitle("eff", TString::Format("#theta_{CM} eff for %.2f MeV", Ex));
 
     // SAVING
     outFile->cd();

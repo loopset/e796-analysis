@@ -27,7 +27,7 @@ namespace HistConfig
     const TH2DModel KinSimu {"hKin", "Simulation kinematics;#theta_{Lab} [#circ];E_{Vertex} [MeV]", 400, 0, 90, 300, 0,
                              40};
 
-    const TH2DModel KinCM {"hKinCM", "Kinematics;#theta_{CM} [#circ];E_{Vertex} [MeV]", 300, 0, 60, 300, 0, 20};
+    const TH2DModel KinCM {"hKinCM", "CM kinematics;#theta_{CM} [#circ];E_{Vertex} [MeV]", 300, 0, 60, 300, 0, 20};
 
     const TH1DModel Ex {"hEx", "Excitation energy;E_{x} [MeV];Counts", 200, -10, 20};
 
@@ -38,7 +38,7 @@ namespace HistConfig
     const TH2DModel YPhiY {"hYPhiY", "Emittance along Y;Y [mm];#phi_{Y} [#circ]", 200, 0, 270, 600, -10, 10};
 
     const TH2DModel ThetaBeam {
-        "hThetaBeam", "#theta_{Beam} against on RP.X;RP.X() [mm];#theta_{Beam} [#circ]", 200, -5, 270, 200, -1, 10};
+        "hThetaBeam", "#theta_{Beam} against RP.X;RP.X() [mm];#theta_{Beam} [#circ]", 200, -5, 270, 200, -1, 10};
 
     const TH2DModel ExZ {"hExZ", "E_{x} dependence on SP.Z();SP.Z() [mm];E_{x} [MeV]", 200, -10, 300, 200, -10, 20};
 
