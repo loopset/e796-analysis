@@ -10,9 +10,8 @@
 #include "TCanvas.h"
 #include "TEfficiency.h"
 #include "TFile.h"
-#include "TH1.h"
-#include "TH2.h"
 #include "TMath.h"
+#include "TProfile2D.h"
 #include "TROOT.h"
 #include "TRandom3.h"
 #include "TStopwatch.h"
@@ -24,6 +23,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <memory>
 #include <set>
 #include <string>
 #include <utility>
@@ -120,6 +120,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     auto hEexBefore {HistConfig::ChangeTitle(HistConfig::Ex, "Ex before resolutions", "Bef").GetHistogram()};
     auto hEexAfter {HistConfig::ChangeTitle(HistConfig::Ex, "Ex after resolutions", "After").GetHistogram()};
+
+    auto hSPTheta {std::make_unique<TProfile2D>("hSPTheta", "SP vs #theta_{CM};Y [mm];Z [mm];#theta_{CM} [#circ]", 75,
+                                                0, 300, 75, 0, 300)};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -235,8 +238,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // skip tracks that doesn't reach silicons or are in silicon index cut
         if(silIndex0 == -1 || (silIndxs.find(silIndex0) == silIndxs.end()))
             continue;
-        // cut with TCutG!
         auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
+        // Apply SilMatrix cut
         if(!sm->IsInside(silIndex0, silPoint0InMM.Y(), silPoint0InMM.Z()))
             continue;
 
@@ -301,6 +304,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             hKinVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
             hEexAfter->Fill(EexAfter, weight);
             hSP->Fill(silPoint0InMM.Y(), silPoint0InMM.Z());
+            // Fill histogram of SP with thetaCM as weight
+            hSPTheta->Fill(silPoint0InMM.Y(), silPoint0InMM.Z(), theta3CM * TMath::RadToDeg());
 
             // write to TTree
             Eex_tree = EexAfter;
@@ -360,7 +365,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         auto* gtheo {theokin.GetKinematicLine3()};
 
         auto* c1 {new TCanvas("cAfter", "Canvas for inspection 1")};
-        c1->DivideSquare(4);
+        c1->DivideSquare(6);
         c1->cd(1);
         hKinVertex->DrawClone("colz");
         gtheo->Draw("same");
@@ -371,6 +376,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         hEexAfter->DrawClone("hist");
         c1->cd(4);
         teff->Draw("apl");
+        c1->cd(5);
+        hSPTheta->DrawClone("colz");
     }
 
     // deleting news

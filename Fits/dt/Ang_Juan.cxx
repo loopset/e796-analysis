@@ -1,3 +1,4 @@
+
 #include "ROOT/RDataFrame.hxx"
 
 #include "TCanvas.h"
@@ -17,15 +18,39 @@
 
 #include "../../PostAnalysis/HistConfig.h"
 
-void Ang()
+void Ang_Juan()
 {
     ROOT::EnableImplicitMT();
 
-    ROOT::RDataFrame df {
-        "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_2H_light_3H_front.root"};
+    ROOT::RDataFrame d {"yield_tree", "/media/miguel/FICA_4/Juan/Postanalysis/20O_dt_19O_21_Feb_23_v1.root"};
+    // Apply mass cuts from Juan
+    auto applyMassCuts = [&](double AmassH, double thetaCM, double Ex)
+    {
+        // fits to mass gaussians
+        // A = 2
+        double A2mass {2.05609 - 0.0328848 * Ex + 0.00288087 * Ex * Ex};
+        double S2mass {0.251386 + 0.0171722 * Ex - 0.00191928 * Ex * Ex};
+        // A = 3
+        double A3mass {3.16142 - 0.034846 * Ex + 0.000415012 * Ex * Ex};
+        double S3mass {0.306103 - 0.00590731 * Ex - 0.000331309 * Ex * Ex};
+
+        int kA2 {1};
+        int kA3 {2};
+        // Mass cut
+        bool A2cut {(A2mass - kA2 * S2mass < AmassH) && (AmassH < A2mass + kA2 * S2mass)};
+        bool A3cut {(A3mass - kA3 * S3mass < AmassH) && (AmassH < A3mass + kA3 * S3mass)};
+        // Cut in thetaCM (only centered detectors)
+        // bool thetaCMcut {4. <= thetaCM && thetaCM <= 13};
+        bool thetaCMcut {true};
+        // Ex less than 10 MeV
+        // bool Excut {Ex < 10};
+        bool Excut {true};
+
+        return (A3cut && thetaCMcut && Excut);
+    };
+    auto df {d.Filter(applyMassCuts, {"Amass_Hlike", "ThetaCM", "Ex"})};
 
     // Book histograms
-    auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
     int nbins {100};
     double hmin {-5};
     double hmax {25};
@@ -45,7 +70,7 @@ void Ang()
     hPS->Scale(factor * intEx / intPS);
 
     // Init intervals
-    double thetaCMMin {8};
+    double thetaCMMin {4};
     double thetaCMMax {14};
     double thetaCMStep {1};
     Angular::Intervals ivs {thetaCMMin, thetaCMMax, {"hEx", "(d, t)", nbins, hmin, hmax}, thetaCMStep};
@@ -58,7 +83,7 @@ void Ang()
     double exMin {hmin};
     double exMax {10};
     Angular::Fitter fitter {&ivs, exMin, exMax};
-    fitter.Configure("./Outputs/fit_dt.root", {*hPS});
+    fitter.Configure("./Outputs/fit_juan.root", {*hPS});
     fitter.Run();
     fitter.Draw();
     fitter.ComputeIntegrals(2);
@@ -76,17 +101,13 @@ void Ang()
         eff.Add(peaks[p], effFiles[p]);
     // Draw to check is fine
     eff.Draw();
-    // Save for Juan
-    eff.SaveAs("./20O_d_t_effs.root");
     // Set experiment info
     PhysUtils::Experiment exp {1.1959e21, 279932, 30000};
-    std::cout << "Nb : " << exp.GetNb() << '\n';
+    // std::cout << "Nb : " << exp.GetNb() << '\n';
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
     xs.Draw();
-    // Save for Juan
-    xs.Get("g0")->SaveAs("20O_d_t_gs_xs.root");
 
     // For gs
     Angular::Comparator comp {"g.s", xs.Get("g0")};
@@ -101,18 +122,8 @@ void Ang()
     comp.DrawTheo();
     comp.Draw();
 
-    // For g2
-    Angular::Comparator comp2 {"(1/2, 3/2) @ 3.2 MeV", xs.Get("g2")};
-    comp2.Add("l = 1", "./Inputs/g2/l_1/21.g2");
-    comp2.Fit(thetaCMMin, thetaCMMax);
-    comp2.Draw();
-
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};
-    c0->DivideSquare(2);
-    c0->cd(1);
-    hCM->DrawClone("colz");
-    c0->cd(2);
     hEx->DrawClone();
     // c0->cd(3);
     // xs.Get("g0")->Draw("apl");
