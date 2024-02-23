@@ -25,53 +25,49 @@ void Fit()
     ROOT::EnableImplicitMT();
 
     ROOT::RDataFrame df {
-        "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_2H_light_3H_front.root"};
+        "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_1H_light_2H_front.root"};
     auto gated {df};
     std::cout << "Counts after cuts = " << gated.Count().GetValue() << '\n';
 
     int nbins {100};
-    double hmin {-5};
-    double hmax {25};
+    double hmin {-10};
+    double hmax {6};
     auto hEx {gated.Histo1D(
         {"hEx", TString::Format(";E_{x} [MeV];Counts / %.0f keV", (hmax - hmin) / nbins * 1E3), nbins, hmin, hmax},
         "Ex")};
-    // Read PS
-    ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
-                                              "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
-    auto hPS {phase.Histo1D({"hPS", "PS 1n;E_{x} [MeV]", nbins, hmin, hmax}, "Ex_cal")};
-    // Format phase space
-    hPS->Smooth(20);
-    // Scale it
-    auto intEx {hEx->Integral()};
-    auto intPS {hPS->Integral()};
-    double factor {0.15};
-    hPS->Scale(factor * intEx / intPS);
+    // // Read PS
+    // ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
+    //                                           "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
+    // auto hPS {phase.Histo1D({"hPS", "PS 1n;E_{x} [MeV]", nbins, hmin, hmax}, "Ex_cal")};
+    // // Format phase space
+    // hPS->Smooth(20);
+    // // Scale it
+    // auto intEx {hEx->Integral()};
+    // auto intPS {hPS->Integral()};
+    // double factor {0.15};
+    // hPS->Scale(factor * intEx / intPS);
 
     // Data
     double xmin {hmin};
-    double xmax {10};
+    double xmax {5};
     Fitters::Data data {*hEx, xmin, xmax};
 
     // Model
-    int ngauss {7};
+    int ngauss {3};
     int nvoigt {0};
-    Fitters::Model model {ngauss, nvoigt, {*hPS}};
+    bool cte {true};
+    Fitters::Model model {ngauss, nvoigt, {}, cte};
 
     // Runner
     Fitters::Runner runner {data, model};
     runner.GetObjective().SetUseDivisions(true);
     // Set init parameters
-    double sigma {0.374};
+    double sigma {0.240};
     Fitters::Runner::Init initPars {
-        {"g0", {400, 0, sigma}},
-        {"g1", {10, 1.5, sigma}},
+        {"g0", {2000, 0, sigma}},
+        {"g1", {250, 1.5, sigma}},
         {"g2", {110, 3.2, sigma}},
-        {"g3", {60, 4.5, sigma}},
-        // {"g4", {56, 5.2, sigma}},
-        {"g4", {60, 6.7, sigma}},
-        {"g5", {65, 7.9, sigma}},
-        {"g6", {20, 8.9, sigma}},
-        {"ps0", {0.1}},
+        {"cte0", {4}},
     };
     // Set bounds and fix parameters
     double minmean {0.3};
@@ -87,7 +83,7 @@ void Fit()
             npars = 3; // gaussian
         else if(strkey.Contains("v"))
             npars = 4; // voigt
-        else if(strkey.Contains("ps"))
+        else if(strkey.Contains("ps") || strkey.Contains("cte"))
             npars = 1;
         else
             throw std::runtime_error("Wrong key received in initPars");
@@ -126,7 +122,7 @@ void Fit()
     auto res {runner.GetFitResult()};
 
     // Save on file
-    runner.Write("./Outputs/fit_dt.root");
+    runner.Write("./Outputs/fit_pd.root");
 
     // Draw
     Fitters::Plotter plotter {&data, &model, &res};
@@ -147,36 +143,4 @@ void Fit()
         hs->Add(h);
     }
     hs->Draw("plc nostack same");
-
-    // PlotUtils::PublicationColors pubcol;
-    // auto* cex {new TCanvas("cex")};
-    // cex->cd();
-    // // Settings for juan's presentation
-    // hEx->SetStats(false);
-    // hEx->SetLineWidth(2);
-    // hEx->DrawClone("e");
-    // // 1->Draw global fit
-    // gfit->SetLineColor(pubcol[5]);
-    // gfit->SetLineWidth(2);
-    // gfit->Draw("same");
-    // int idx {};
-    // std::vector<int> colors {pubcol[0], pubcol[3], pubcol[2], pubcol[0], pubcol[1], pubcol[4], pubcol[3]};
-    // std::vector<int> fs {3244, 3295, 3245, 3254, 3205, 3244, 3295};
-    // for(auto& [_, h] : hfits)
-    // {
-    //     h->SetLineWidth(2);
-    //     h->SetLineColor(colors.at(idx));
-    //     h->SetFillStyle(fs.at(idx));
-    //     h->SetFillColor(colors.at(idx));
-    //     // int color {idx + 6};
-    //     // if(color == 10)
-    //     //     color = 46;
-    //     // g->SetLineColor(color);
-    //     h->Draw("hist same");
-    //     idx++;
-    // }
-    // hps0fit->SetLineColor(kMagenta - 3);
-    // hps0fit->SetFillColor(kMagenta - 3);
-    // hps0fit->SetFillStyle(3325);
-    // hps0fit->Draw("hist same");
 }

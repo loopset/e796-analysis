@@ -90,22 +90,20 @@ void Ang()
 
     // For gs
     Angular::Comparator comp {"g.s", xs.Get("g0")};
-    comp.Add("l = 2", "./Inputs/l_2/21.gs");
-    comp.Add("l = 2 Ramus", "./Inputs/l_2_Ramus/21.gs");
-    // comp.Add("l = 0", "./Inputs/l_0/21.gs");
-    // comp.Add("l = 1", "./Inputs/l_1/21.gs");
-    // comp.Add("l = 2 Bea", "./Inputs/Bea/21.20Odt_gs");
-    comp.Add("l = 2 Juan", "./Inputs/Juan/GS/OP1_1/21.XS");
-    comp.Add("l = 2 Franck", "./Inputs/Franck/gs.xs");
+    comp.Add("l = 2", "./Inputs/gs/l_2/21.gs");
+    comp.Add("l = 2 Ramus", "./Inputs/gs/l_2_Ramus/21.gs");
+    comp.Add("l = 2 Juan", "./Inputs/gs/Juan/GS/OP1_1/21.XS");
+    comp.Add("l = 2 Franck", "./Inputs/gs/Franck/gs.xs");
     comp.Fit(thetaCMMin, thetaCMMax);
-    comp.DrawTheo();
     comp.Draw();
+    comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
 
     // For g2
-    Angular::Comparator comp2 {"(1/2, 3/2) @ 3.2 MeV", xs.Get("g2")};
+    Angular::Comparator comp2 {"1/2^{-} @ 3.2 MeV", xs.Get("g2")};
     comp2.Add("l = 1", "./Inputs/g2/l_1/21.g2");
     comp2.Fit(thetaCMMin, thetaCMMax);
     comp2.Draw();
+    comp2.ScaleToExp("l = 1", 3.43, fitter.GetIgCountsGraph("g2"), eff.GetTEfficiency("g2"));
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};
@@ -114,7 +112,4 @@ void Ang()
     hCM->DrawClone("colz");
     c0->cd(2);
     hEx->DrawClone();
-    // c0->cd(3);
-    // xs.Get("g0")->Draw("apl");
-    // hCM->DrawClone("colz");
 }

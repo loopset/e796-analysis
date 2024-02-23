@@ -2,12 +2,14 @@
 #define Pipe2_Ex_cxx
 
 #include "ActColors.h"
+#include "ActCutsManager.h"
 #include "ActKinematics.h"
 #include "ActMergerData.h"
 #include "ActParticle.h"
 #include "ActSRIM.h"
 
 #include "ROOT/RDataFrame.hxx"
+#include "Rtypes.h"
 
 #include "TCanvas.h"
 #include "TMath.h"
@@ -105,19 +107,16 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
 
     auto hRP {def.Histo2D(HistConfig::RP, "fRP.fCoordinates.fX", "fRP.fCoordinates.fY")};
 
-    // // Write
-    // ActRoot::CutsManager<int> cut;
-    // cut.ReadCut(0, "/media/Data/E796v2/PostAnalysis/Cuts/debug_d_d.root");
-    // std::ofstream streamer {"/media/Data/E796v2/PostAnalysis/debug_d_d.dat"};
-    // def.Foreach(
-    //     [&](const ActRoot::MergerData& d, double EVertex)
-    //     {
-    //         if(cut.IsInside(0, d.fThetaLight, EVertex))
-    //             streamer << d.fRun << " " << d.fEntry << '\n';
-    //     },
-    //     {"MergerData", "EVertex"});
-    // streamer.close();
+    auto hThetaCMLab {def.Histo2D(HistConfig::ThetaCMLab, "fThetaLight", "ThetaCM")};
 
+    // Ex dependences
+    auto hExThetaCM {def.Histo2D(HistConfig::ExThetaCM, "ThetaCM", "Ex")};
+    auto hExThetaLab {def.Histo2D(HistConfig::ExThetaLab, "fThetaLight", "Ex")};
+    auto hExRP {def.Histo2D(HistConfig::ExRPZ, "fRP.fCoordinates.fZ", "Ex")};
+
+    // Heavy histograms
+    auto hThetaHLLab {def.Histo2D(HistConfig::ChangeTitle(HistConfig::ThetaHeavyLight, "Lab correlations"),
+                                  "fThetaLight", "fThetaHeavy")};
     // Save!
     auto outfile {E796Utils::GetFileName(2, beam, target, light, isSide)};
     std::cout << BOLDCYAN << "Writing in file : " << outfile << RESET << '\n';
@@ -139,7 +138,7 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     hEBeam->DrawClone();
 
     auto* c21 {new TCanvas("c21", "Pipe2 canvas 1")};
-    c21->DivideSquare(4);
+    c21->DivideSquare(6);
     c21->cd(1);
     hKin->DrawClone("colz");
     auto* theo {kin.GetKinematicLine3()};
@@ -148,5 +147,18 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     hEx->DrawClone();
     c21->cd(3);
     hKinCM->DrawClone("colz");
+    c21->cd(4);
+    hExThetaLab->DrawClone("colz");
+    c21->cd(5);
+    hExThetaCM->DrawClone("colz");
+    c21->cd(6);
+    hExRP->DrawClone("colz");
+
+    auto* c23 {new TCanvas {"c23", "Pipe2 canvas 3"}};
+    c23->DivideSquare(4);
+    c23->cd(1);
+    hThetaHLLab->DrawClone("colz");
+    c23->cd(2);
+    hThetaCMLab->DrawClone("colz");
 }
 #endif
