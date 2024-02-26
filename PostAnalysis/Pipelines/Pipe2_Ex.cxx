@@ -112,6 +112,8 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     // Ex dependences
     auto hExThetaCM {def.Histo2D(HistConfig::ExThetaCM, "ThetaCM", "Ex")};
     auto hExThetaLab {def.Histo2D(HistConfig::ExThetaLab, "fThetaLight", "Ex")};
+    auto hExThetaLegacy {
+        def.Histo2D(HistConfig::ChangeTitle(HistConfig::ExThetaLab, "Ex vs #theta_{Legacy}"), "fThetaLegacy", "Ex")};
     auto hExRP {def.Histo2D(HistConfig::ExRPZ, "fRP.fCoordinates.fZ", "Ex")};
 
     // Heavy histograms
@@ -160,5 +162,7 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     hThetaHLLab->DrawClone("colz");
     c23->cd(2);
     hThetaCMLab->DrawClone("colz");
+    c23->cd(3);
+    hExThetaLegacy->DrawClone("colz");
 }
 #endif

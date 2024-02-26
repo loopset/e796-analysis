@@ -1,8 +1,6 @@
-
 #include "ROOT/RDataFrame.hxx"
 
 #include "TCanvas.h"
-#include "TColor.h"
 #include "TROOT.h"
 
 #include "AngComparator.h"
@@ -12,11 +10,8 @@
 #include "Interpolators.h"
 #include "PhysExperiment.h"
 
-#include <iostream>
 #include <string>
 #include <vector>
-
-#include "../../PostAnalysis/HistConfig.h"
 
 void Ang_Juan()
 {
@@ -70,7 +65,7 @@ void Ang_Juan()
     hPS->Scale(factor * intEx / intPS);
 
     // Init intervals
-    double thetaCMMin {4};
+    double thetaCMMin {8};
     double thetaCMMax {14};
     double thetaCMStep {1};
     Angular::Intervals ivs {thetaCMMin, thetaCMMax, {"hEx", "(d, t)", nbins, hmin, hmax}, thetaCMStep};
@@ -107,25 +102,23 @@ void Ang_Juan()
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
-    xs.Draw();
+    // xs.Draw();
 
     // For gs
     Angular::Comparator comp {"g.s", xs.Get("g0")};
-    comp.Add("l = 2", "./Inputs/l_2/21.gs");
-    comp.Add("l = 2 Ramus", "./Inputs/l_2_Ramus/21.gs");
+    // comp.Add("l = 2", "./Inputs/l_2/21.gs");
+    // comp.Add("l = 2 Ramus", "./Inputs/l_2_Ramus/21.gs");
     // comp.Add("l = 0", "./Inputs/l_0/21.gs");
     // comp.Add("l = 1", "./Inputs/l_1/21.gs");
     // comp.Add("l = 2 Bea", "./Inputs/Bea/21.20Odt_gs");
-    comp.Add("l = 2 Juan", "./Inputs/Juan/GS/OP1_1/21.XS");
-    comp.Add("l = 2 Franck", "./Inputs/Franck/gs.xs");
+    // comp.Add("l = 2 Juan", "./Inputs/Juan/GS/OP1_1/21.XS");
+    comp.Add("l = 2 Franck", "./Inputs/gs/Franck/gs.xs");
     comp.Fit(thetaCMMin, thetaCMMax);
     comp.DrawTheo();
     comp.Draw();
+    comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
 
-    // plotting
-    auto* c0 {new TCanvas {"c0", "Angular canvas"}};
-    hEx->DrawClone();
-    // c0->cd(3);
-    // xs.Get("g0")->Draw("apl");
-    // hCM->DrawClone("colz");
+    // // plotting
+    // auto* c0 {new TCanvas {"c0", "Angular canvas"}};
+    // hEx->DrawClone();
 }

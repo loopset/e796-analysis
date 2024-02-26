@@ -124,6 +124,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     auto hSPTheta {std::make_unique<TProfile2D>("hSPTheta", "SP vs #theta_{CM};Y [mm];Z [mm];#theta_{CM} [#circ]", 75,
                                                 0, 300, 75, 0, 300)};
 
+    auto hRP {HistConfig::RP.GetHistogram()};
+
     // Load SRIM tables
     // The name of the file sets particle + medium
     auto* srim {new ActPhysics::SRIM()};
@@ -177,18 +179,21 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     int step {iterations / (100 / percentPrint)};
     int nextPrint {step};
     int percent {};
-    for(int reaction = 0; reaction < iterations; reaction++)
+    for(long int reaction = 0; reaction < iterations; reaction++)
     {
         // Print progress
         if(reaction >= nextPrint)
         {
             percent = 100 * (reaction + 1) / iterations;
-            std::cout << "\r" << std::string(percent / percentPrint, '|') << percent << "%";
+            int nchar {percent / percentPrint};
+            std::cout << "\r" << std::string((int)(percent / percentPrint), '|') << percent << "%";
             std::cout.flush();
             nextPrint += step;
         }
         // 1-> Sample vertex
         auto vertex {runner.SampleVertex(yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, nullptr)};
+        // if(vertex.X() < 128)
+        //     continue;
         // std::cout<<"Vertex = "<<vertex<<" mm"<<'\n';
         // 2-> Beam energy according to its sigma
         auto TBeam {runner.RandomizeBeamEnergy(
@@ -306,6 +311,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             hSP->Fill(silPoint0InMM.Y(), silPoint0InMM.Z());
             // Fill histogram of SP with thetaCM as weight
             hSPTheta->Fill(silPoint0InMM.Y(), silPoint0InMM.Z(), theta3CM * TMath::RadToDeg());
+            // RP histogram
+            hRP->Fill(vertex.X(), vertex.Y());
 
             // write to TTree
             Eex_tree = EexAfter;
@@ -354,11 +361,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         c0->cd(1);
         hThetaCM->DrawClone();
         c0->cd(2);
-        hDistL0->DrawClone();
+        hThetaCMAll->DrawClone();
         c0->cd(3);
         hEexBefore->DrawClone("hist");
         c0->cd(4);
-        hThetaCMAll->DrawClone();
+        // hThetaCMAll->DrawClone();
+        hRP->DrawClone("colz");
 
         // draw theoretical kinematics
         ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};

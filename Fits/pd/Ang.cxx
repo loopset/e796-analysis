@@ -61,7 +61,7 @@ void Ang()
     for(int p = 0; p < peaks.size(); p++)
         eff.Add(peaks[p], effFiles[p]);
     // Draw to check is fine
-    eff.Draw();
+    eff.Draw(true);
     // Set experiment info
     // Nt is different: now H from C4H10
     PhysUtils::Experiment exp {4.554e19, 279932, 30000};
