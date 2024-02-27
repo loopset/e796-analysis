@@ -9,10 +9,6 @@
 
 #include <atomic>
 
-#include "../Gates.cxx"
-#include "../HistConfig.h"
-#include "../Utils.cxx"
-
 void Pipe0_Beam()
 {
     ROOT::EnableImplicitMT();
@@ -29,7 +25,7 @@ void Pipe0_Beam()
     auto hGATCONF {def.Histo1D("GATCONF")};
 
     // And cound CFA triggers
-    std::atomic<unsigned int> cfa {};
+    std::atomic<unsigned long int> cfa {};
     def.Foreach(
         [&](ActRoot::ModularData& mod)
         {

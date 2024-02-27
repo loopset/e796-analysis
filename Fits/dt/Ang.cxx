@@ -1,7 +1,6 @@
 #include "ROOT/RDataFrame.hxx"
 
 #include "TCanvas.h"
-#include "TColor.h"
 #include "TROOT.h"
 
 #include "AngComparator.h"
@@ -65,11 +64,12 @@ void Ang()
     fitter.DrawCounts();
 
     // Read efficiency files
-    std::vector<std::string> peaks {"g0", "g2", "g3"};
+    std::vector<std::string> peaks {"g0", "g2", "g3", "g4"};
     std::vector<std::string> effFiles {
         "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_0.00_nPS_0_pPS_0.root",
         "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_3.24_nPS_0_pPS_0.root",
         "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_4.40_nPS_0_pPS_0.root",
+        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_6.90_nPS_0_pPS_0.root",
     };
     Interpolators::Efficiency eff;
     for(int p = 0; p < peaks.size(); p++)
@@ -86,21 +86,31 @@ void Ang()
     // xs.Draw();
 
     // For gs
-    Angular::Comparator comp {"g.s", xs.Get("g0")};
-    comp.Add("l = 2", "./Inputs/gs/l_2/21.gs");
-    comp.Add("l = 2 Ramus", "./Inputs/gs/l_2_Ramus/21.gs");
-    comp.Add("l = 2 Juan", "./Inputs/gs/Juan/GS/OP1_1/21.XS");
+    Angular::Comparator comp {"g0 = g.s", xs.Get("g0")};
+    // comp.Add("l = 2", "./Inputs/gs/l_2/21.gs");
+    // comp.Add("l = 2 Ramus", "./Inputs/gs/l_2_Ramus/21.gs");
+    // comp.Add("l = 2 Juan", "./Inputs/gs/Juan/GS/OP1_1/21.XS");
     comp.Add("l = 2 Franck", "./Inputs/gs/Franck/gs.xs");
     comp.Fit(thetaCMMin, thetaCMMax);
     comp.Draw();
-    comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
+    // comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
 
     // For g2
-    Angular::Comparator comp2 {"1/2^{-} @ 3.2 MeV", xs.Get("g2")};
+    Angular::Comparator comp2 {"g2 = 1/2^{-} @ 3.2 MeV", xs.Get("g2")};
     comp2.Add("l = 1", "./Inputs/g2/l_1/21.g2");
     comp2.Fit(thetaCMMin, thetaCMMax);
     comp2.Draw();
-    comp2.ScaleToExp("l = 1", 3.43, fitter.GetIgCountsGraph("g2"), eff.GetTEfficiency("g2"));
+    // comp2.ScaleToExp("l = 1", 3.43, fitter.GetIgCountsGraph("g2"), eff.GetTEfficiency("g2"));
+
+    // For g3
+    Angular::Comparator comp3 {"g3 = 3/2^{-} @ 4.58 MeV", xs.Get("g3")};
+    comp3.Add("l = 1", "./Inputs/g3/21.g3");
+    comp3.Fit(thetaCMMin, thetaCMMax);
+    comp3.Draw();
+
+    // For g4
+    // Angular::Comparator comp4 {"g4 = ? @ 6.68 MeV", xs.Get("g4")};
+    // how do I compute the 2fnr without a guess of Jpi?
 
 
     // Debug efficiency
@@ -109,6 +119,7 @@ void Ang()
     std::vector<std::string> dpeaks {"gs_all", "gs_1", "gs_2"};
     std::vector<std::string> dfiles {
         "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_all.root",
+        // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_0.00_nPS_0_pPS_0.root",
         "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_1.root",
         "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_2.root",
     };
@@ -119,19 +130,19 @@ void Ang()
         veff.back().Add("g0", dfiles[i]);
     }
     deff.Draw();
-    // Do calculation
-    std::vector<Angular::DifferentialXS> dxs;
-    std::vector<Angular::Comparator> dcomp;
-    for(int i = 0; i < dpeaks.size(); i++)
-    {
-        dxs.push_back(Angular::DifferentialXS {&ivs, &fitter, &veff[i], &exp});
-        dxs.back().DoFor({"g0"});
-        // and compare
-        dcomp.push_back(Angular::Comparator {dpeaks[i], dxs.back().Get("g0")});
-        dcomp.back().Add("l = 2", "./Inputs/gs/Franck/gs.xs");
-        dcomp.back().Fit(thetaCMMin, thetaCMMax);
-        dcomp.back().Draw();
-    }
+    // // Do calculation
+    // std::vector<Angular::DifferentialXS> dxs;
+    // std::vector<Angular::Comparator> dcomp;
+    // for(int i = 0; i < dpeaks.size(); i++)
+    // {
+    //     dxs.push_back(Angular::DifferentialXS {&ivs, &fitter, &veff[i], &exp});
+    //     dxs.back().DoFor({"g0"});
+    //     // and compare
+    //     dcomp.push_back(Angular::Comparator {dpeaks[i], dxs.back().Get("g0")});
+    //     dcomp.back().Add("l = 2 Franck", "./Inputs/gs/Franck/gs.xs");
+    //     dcomp.back().Fit(thetaCMMin, thetaCMMax);
+    //     dcomp.back().Draw();
+    // }
 
 
     // plotting

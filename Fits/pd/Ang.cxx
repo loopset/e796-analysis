@@ -96,6 +96,35 @@ void Ang()
     // Scale to theo
     comp2.ScaleToExp("l = 1", 3.43, fitter.GetIgCountsGraph("g2"), eff.GetTEfficiency("g2"));
 
+    // Debug efficiency
+    std::vector<Interpolators::Efficiency> veff;
+    Interpolators::Efficiency deff;
+    std::vector<std::string> dpeaks {"gs_all", "gs_1", "gs_2"};
+    std::vector<std::string> dfiles {
+        "/media/Data/E796v2/Simulation/Outputs/Eff_study/p_d_gs_all.root",
+        "/media/Data/E796v2/Simulation/Outputs/Eff_study/p_d_gs_1.root",
+        "/media/Data/E796v2/Simulation/Outputs/Eff_study/p_d_gs_2.root",
+    };
+    for(int i = 0; i < dpeaks.size(); i++)
+    {
+        deff.Add(dpeaks[i], dfiles[i]);
+        veff.push_back({});
+        veff.back().Add("g0", dfiles[i]);
+    }
+    deff.Draw();
+    // Do calculation
+    std::vector<Angular::DifferentialXS> dxs;
+    std::vector<Angular::Comparator> dcomp;
+    for(int i = 0; i < dpeaks.size(); i++)
+    {
+        dxs.push_back(Angular::DifferentialXS {&ivs, &fitter, &veff[i], &exp});
+        dxs.back().DoFor({"g0"});
+        // and compare
+        dcomp.push_back(Angular::Comparator {dpeaks[i], dxs.back().Get("g0")});
+        dcomp.back().Add("l = 2", "./Inputs/gs_new/21.gs");
+        dcomp.back().Fit(thetaCMMin, thetaCMMax);
+        dcomp.back().Draw();
+    }
     // // plotting
     // auto* c0 {new TCanvas {"c0", "Angular canvas"}};
     // c0->DivideSquare(2);

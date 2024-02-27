@@ -18,8 +18,6 @@
 #include <utility>
 #include <vector>
 
-// #include "/media/Data/PhysicsClasses/Old/PublicationColors.cxx"
-
 void Fit()
 {
     ROOT::EnableImplicitMT();
@@ -147,36 +145,4 @@ void Fit()
         hs->Add(h);
     }
     hs->Draw("plc nostack same");
-
-    // PlotUtils::PublicationColors pubcol;
-    // auto* cex {new TCanvas("cex")};
-    // cex->cd();
-    // // Settings for juan's presentation
-    // hEx->SetStats(false);
-    // hEx->SetLineWidth(2);
-    // hEx->DrawClone("e");
-    // // 1->Draw global fit
-    // gfit->SetLineColor(pubcol[5]);
-    // gfit->SetLineWidth(2);
-    // gfit->Draw("same");
-    // int idx {};
-    // std::vector<int> colors {pubcol[0], pubcol[3], pubcol[2], pubcol[0], pubcol[1], pubcol[4], pubcol[3]};
-    // std::vector<int> fs {3244, 3295, 3245, 3254, 3205, 3244, 3295};
-    // for(auto& [_, h] : hfits)
-    // {
-    //     h->SetLineWidth(2);
-    //     h->SetLineColor(colors.at(idx));
-    //     h->SetFillStyle(fs.at(idx));
-    //     h->SetFillColor(colors.at(idx));
-    //     // int color {idx + 6};
-    //     // if(color == 10)
-    //     //     color = 46;
-    //     // g->SetLineColor(color);
-    //     h->Draw("hist same");
-    //     idx++;
-    // }
-    // hps0fit->SetLineColor(kMagenta - 3);
-    // hps0fit->SetFillColor(kMagenta - 3);
-    // hps0fit->SetFillStyle(3325);
-    // hps0fit->Draw("hist same");
 }

@@ -2,7 +2,6 @@
 #define Pipe2_Ex_cxx
 
 #include "ActColors.h"
-#include "ActCutsManager.h"
 #include "ActKinematics.h"
 #include "ActMergerData.h"
 #include "ActParticle.h"
@@ -21,18 +20,25 @@
 #include <string>
 #include <vector>
 
+#include "../Gates.cxx"
 #include "../HistConfig.h"
 #include "../Utils.cxx"
 
 void Pipe2_Ex(const std::string& beam, const std::string& target, const std::string& light, bool isSide)
 {
+    // Use beam-corrected or legacy fThetaLight
     bool debug {false};
     std::cout << BOLDYELLOW << "is DebugTheta enabled ? " << std::boolalpha << debug << '\n';
+    // Get file
     auto filename {E796Utils::GetFileName(1, beam, target, light, isSide)};
     std::cout << BOLDMAGENTA << "Reading file: " << filename << RESET << '\n';
     // Read
     ROOT::EnableImplicitMT();
-    ROOT::RDataFrame df {"PID_Tree", filename};
+    ROOT::RDataFrame d {"PID_Tree", filename};
+
+    std::cout << BOLDGREEN << "Applying RP cut and building Ex" << RESET << '\n';
+    // Apply RP cut
+    auto df {d.Filter(E796Gates::rpMerger, {"MergerData"})};
 
     // Book histograms
     auto hPID {df.Define("ESil0", "fSilEs.front()").Histo2D(HistConfig::PID, "ESil0", "fQave")};
@@ -78,6 +84,14 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                          },
                          {"MergerData", "EVertex", "EBeam"});
     def =
+        def.DefineSlot("ExLegacy",
+                       [&](unsigned int slot, const ActRoot::MergerData& d, double EVertex, double EBeam)
+                       {
+                           vkins[slot].SetBeamEnergy(EBeam);
+                           return vkins[slot].ReconstructExcitationEnergy(EVertex, d.fThetaLegacy * TMath::DegToRad());
+                       },
+                       {"MergerData", "EVertex", "EBeam"});
+    def =
         def.DefineSlot("ThetaCM",
                        [&](unsigned int slot, const ActRoot::MergerData& d, double EVertex, double EBeam)
                        {
@@ -113,7 +127,8 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     auto hExThetaCM {def.Histo2D(HistConfig::ExThetaCM, "ThetaCM", "Ex")};
     auto hExThetaLab {def.Histo2D(HistConfig::ExThetaLab, "fThetaLight", "Ex")};
     auto hExThetaLegacy {
-        def.Histo2D(HistConfig::ChangeTitle(HistConfig::ExThetaLab, "Ex vs #theta_{Legacy}"), "fThetaLegacy", "Ex")};
+        def.Histo2D(HistConfig::ChangeTitle(HistConfig::ExThetaLab, "E_{x}^{Legacy} vs #theta_{Legacy}"),
+                    "fThetaLegacy", "ExLegacy")};
     auto hExRP {def.Histo2D(HistConfig::ExRPZ, "fRP.fCoordinates.fZ", "Ex")};
 
     // Heavy histograms
@@ -123,6 +138,10 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     auto outfile {E796Utils::GetFileName(2, beam, target, light, isSide)};
     std::cout << BOLDCYAN << "Writing in file : " << outfile << RESET << '\n';
     def.Snapshot("Final_Tree", outfile);
+
+    // Save also RP histogram!
+    auto* pRPx {hRP->ProjectionX("px")};
+    pRPx->SaveAs(E796Utils::GetFileName(2, beam, target, light, isSide, "rpx"));
 
     // plot
     auto* c20 {new TCanvas("c20", "Pipe2 canvas 0")};

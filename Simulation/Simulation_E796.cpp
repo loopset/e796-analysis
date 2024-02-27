@@ -7,6 +7,8 @@
 #include "ActSRIM.h"
 #include "ActSilMatrix.h"
 
+#include "Rtypes.h"
+
 #include "TCanvas.h"
 #include "TEfficiency.h"
 #include "TFile.h"
@@ -19,19 +21,38 @@
 #include "TTree.h"
 
 #include "Math/Point3D.h"
+#include "Math/Point3Dfwd.h"
 #include "Math/Vector3D.h"
 
 #include <cmath>
 #include <iostream>
 #include <memory>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
 #include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
 #include "/media/Data/E796v2/Simulation/Utils.cxx"
+
+TH1D* GetRPXProj(const TString& file)
+{
+    auto* f {new TFile {file}};
+    auto* p {f->Get<TH1D>("px")};
+    if(!p)
+        throw std::runtime_error("Simulation_E796::GetRPXProj(): could not get RPx projection in file " + file);
+    p->SetDirectory(nullptr);
+    delete f;
+    return p;
+}
+
+double SampleXFromRPXProj(TH1D* px)
+{
+    return px->GetRandom();
+}
 
 void Simulation_E796(const std::string& beam, const std::string& target, const std::string& light,
                      const std::string& heavy, int neutronPS, int protonPS, double T1, double Ex, bool standalone)
@@ -79,6 +100,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Move Z of silicons to match centre of chamber. The centred silicons are 3 and 4
     sm->MoveZTo(zVertexMean, {3, 4});
 
+    // RPx histogram to sample
+    auto* hRPx {GetRPXProj(E796Utils::GetFileName(2, beam, target, light, false, "rpx"))};
     // // // histogram file
     // auto* histfile {new TFile("./Inputs/BeamY_ThetaXY_and_XZ_space_3Dhisto.root")};
     // auto* hBeam {histfile->Get<TH3F>("h_Y_thetaXY_thetaXZ")};
@@ -126,6 +149,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     auto hRP {HistConfig::RP.GetHistogram()};
 
+    auto* hRPxSimu {HistConfig::RP.GetHistogram()->ProjectionX("hRPxSimu")};
+
     // Load SRIM tables
     // The name of the file sets particle + medium
     auto* srim {new ActPhysics::SRIM()};
@@ -170,6 +195,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     outTree->Branch("EVertex", &EVertex_tree);
     double theta3Lab_tree {};
     outTree->Branch("theta3Lab", &theta3Lab_tree);
+    double rpx_tree {};
+    outTree->Branch("RPx", &rpx_tree);
 
     // RUN!
     // print fancy info
@@ -190,8 +217,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             std::cout.flush();
             nextPrint += step;
         }
-        // 1-> Sample vertex
+        // 1-> Sample vertex and apply same cut as in analysis
         auto vertex {runner.SampleVertex(yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, nullptr)};
+        if(!E796Gates::rp(vertex.X()))
+            continue;
         // if(vertex.X() < 128)
         //     continue;
         // std::cout<<"Vertex = "<<vertex<<" mm"<<'\n';
@@ -217,7 +246,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             theta3Lab = runner.GetRand()->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
         // std::cout<<"Theta3Lab = "<<theta3Lab * TMath::RadToDeg()<<" degree"<<'\n';
         // std::cout<<"Theta3New = "<<psGenerator.GetThetaFromTLorentzVector(PLight) * TMath::RadToDeg()<<'\n';
-        auto theta3CM {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
+        // auto theta3CM {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
         // std::cout<<"Theta3CM = "<<theta3CM * TMath::RadToDeg()<<" degree"<<'\n';
         auto phi3Lab {runner.GetRand()->Uniform(0., 2 * TMath::Pi())};
 
@@ -301,10 +330,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         {
             auto T3Recon {runner.EnergyBeforeGas(eLoss0, distance0, "light")};
             auto EexAfter {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Recon, theta3Lab)};
+            auto theta3CM {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Recon, theta3Lab)};
 
             // fill histograms
             hThetaCM->Fill(theta3CM * TMath::RadToDeg());
-            hEexBefore->Fill(EexBefore, weight); // with the weight for each TGenPhaseSpace::Generate()
+            hEexBefore->Fill(EexBefore, weight); // with the weight from each TGenPhaseSpace::Generate()
             hDistL0->Fill(distance0);
             hKinVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
             hEexAfter->Fill(EexAfter, weight);
@@ -320,6 +350,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             theta3CM_tree = theta3CM * TMath::RadToDeg();
             EVertex_tree = T3Recon;
             theta3Lab_tree = theta3Lab * TMath::RadToDeg();
+            rpx_tree = vertex.X();
+            hRPxSimu->Fill(vertex.X());
             outTree->Fill();
         }
     }
@@ -386,6 +418,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         teff->Draw("apl");
         c1->cd(5);
         hSPTheta->DrawClone("colz");
+        c1->cd(6);
+        hRPx->DrawNormalized();
+        hRPxSimu->SetLineColor(kRed);
+        hRPxSimu->DrawNormalized("same");
     }
 
     // deleting news
