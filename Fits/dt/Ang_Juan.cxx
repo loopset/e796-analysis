@@ -17,7 +17,7 @@ void Ang_Juan()
 {
     ROOT::EnableImplicitMT();
 
-    ROOT::RDataFrame d {"yield_tree", "/media/miguel/FICA_4/Juan/Postanalysis/20O_dt_19O_21_Feb_23_v1.root"};
+    ROOT::RDataFrame d {"yield_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/20O_dt_19O_21_Feb_23_v1.root"};
     // Apply mass cuts from Juan
     auto applyMassCuts = [&](double AmassH, double thetaCM, double Ex)
     {
@@ -97,7 +97,7 @@ void Ang_Juan()
     // Draw to check is fine
     eff.Draw();
     // Set experiment info
-    PhysUtils::Experiment exp {1.1959e21, 279932, 30000};
+    PhysUtils::Experiment exp {8.2125e20, 279932, 30000};
     // std::cout << "Nb : " << exp.GetNb() << '\n';
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
@@ -106,17 +106,24 @@ void Ang_Juan()
 
     // For gs
     Angular::Comparator comp {"g.s", xs.Get("g0")};
-    // comp.Add("l = 2", "./Inputs/l_2/21.gs");
-    // comp.Add("l = 2 Ramus", "./Inputs/l_2_Ramus/21.gs");
-    // comp.Add("l = 0", "./Inputs/l_0/21.gs");
-    // comp.Add("l = 1", "./Inputs/l_1/21.gs");
-    // comp.Add("l = 2 Bea", "./Inputs/Bea/21.20Odt_gs");
-    // comp.Add("l = 2 Juan", "./Inputs/Juan/GS/OP1_1/21.XS");
     comp.Add("l = 2 Franck", "./Inputs/gs/Franck/gs.xs");
     comp.Fit(thetaCMMin, thetaCMMax);
     comp.DrawTheo();
     comp.Draw();
     comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
+
+    // For g2 @ 3.2 MeV
+    Angular::Comparator comp2 {"g2 = 1/2^{-} @ 3.2 MeV", xs.Get("g2")};
+    comp2.Add("l = 1", "./Inputs/g2/l_1/21.g2");
+    comp2.Add("l = 2", "./Inputs/g2/l_2/21.g2");
+    comp2.Fit(thetaCMMin, thetaCMMax);
+    comp2.Draw();
+    
+    // For g3 @ 4.7 MeV
+    Angular::Comparator comp3 {"g3 = 3/2^{-} @ 4.58 MeV", xs.Get("g3")};
+    comp3.Add("l = 1", "./Inputs/g3/21.g3");
+    comp3.Fit(thetaCMMin, thetaCMMax);
+    comp3.Draw();
 
     // // plotting
     // auto* c0 {new TCanvas {"c0", "Angular canvas"}};

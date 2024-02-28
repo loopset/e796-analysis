@@ -54,9 +54,7 @@ void Ang()
 
     // Init fitter
     // Set range
-    double exMin {hmin};
-    double exMax {10};
-    Angular::Fitter fitter {&ivs, exMin, exMax};
+    Angular::Fitter fitter {&ivs};
     fitter.Configure("./Outputs/fit_dt.root", {*hPS});
     fitter.Run();
     fitter.Draw();
@@ -78,7 +76,7 @@ void Ang()
     eff.Draw(true);
 
     // Set experiment info
-    PhysUtils::Experiment exp {1.1959e21, 279932, 30000};
+    PhysUtils::Experiment exp {8.2125e20, 279932, 30000};
     std::cout << "Nb : " << exp.GetNb() << '\n';
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
@@ -86,11 +84,12 @@ void Ang()
     // xs.Draw();
 
     // For gs
-    Angular::Comparator comp {"g0 = g.s", xs.Get("g0")};
+    Angular::Comparator comp {"g0 = 5/2^{+} g.s", xs.Get("g0")};
     // comp.Add("l = 2", "./Inputs/gs/l_2/21.gs");
     // comp.Add("l = 2 Ramus", "./Inputs/gs/l_2_Ramus/21.gs");
     // comp.Add("l = 2 Juan", "./Inputs/gs/Juan/GS/OP1_1/21.XS");
     comp.Add("l = 2 Franck", "./Inputs/gs/Franck/gs.xs");
+    comp.Add("l = 2 E_{x} = 96 keV", "./Inputs/gs/cl_2/21.c");
     comp.Fit(thetaCMMin, thetaCMMax);
     comp.Draw();
     // comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
@@ -98,6 +97,7 @@ void Ang()
     // For g2
     Angular::Comparator comp2 {"g2 = 1/2^{-} @ 3.2 MeV", xs.Get("g2")};
     comp2.Add("l = 1", "./Inputs/g2/l_1/21.g2");
+    comp2.Add("l = 2", "./Inputs/g2/l_2/21.g2");
     comp2.Fit(thetaCMMin, thetaCMMax);
     comp2.Draw();
     // comp2.ScaleToExp("l = 1", 3.43, fitter.GetIgCountsGraph("g2"), eff.GetTEfficiency("g2"));

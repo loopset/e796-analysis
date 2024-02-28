@@ -1,3 +1,4 @@
+#include "ROOT/RDF/HistoModels.hxx"
 #include "ROOT/RDataFrame.hxx"
 
 #include "TCanvas.h"
@@ -21,55 +22,81 @@ void Efficiency()
     ROOT::EnableImplicitMT();
 
     std::string beam {"20O"};
-    std::string target {"2H"};
-    std::string light {"3H"};
+    std::string target {"1H"};
+    std::string light {"2H"};
 
     // Get analysis histogram
     ROOT::RDataFrame da {"Final_Tree", E796Utils::GetFileName(2, beam, target, light, false)};
     // Fill Ex histogram
     auto hEx {da.Histo1D(HistConfig::Ex, "Ex")};
-    // RP histogram
-    auto hRPa {da.Histo2D(HistConfig::RP, "fRP.fCoordinates.fX", "fRP.fCoordinates.fY")};
-    auto* pana {hRPa->ProjectionX()};
-    pana->SetNameTitle("pana", "Analysis");
+    // Fill all correlation histogram
+    auto ha {da.Histo2D(HistConfig::RPxThetaCM, "fRP.fCoordinates.fX", "ThetaCM")};
+    ha->SetNameTitle("pana", "Ana all E_{x}");
     // But RP depends strongly on excited state...
-    std::vector<double> Eexs {0, 3.2};
+    std::vector<double> Eexs {0, 3.24};
     double sigma {1};
-    std::vector<TH1D*> panas;
+    std::vector<TH2D*> has;
     auto* as {new THStack};
     as->SetTitle("Analysis RP.X() per E_{x};X [mm];Normalized counts");
+    // Add curve of Ex vs RPx for analysis
+    TH2D* hags {};
+    ROOT::RDF::TH2DModel hexgs {"hExGS", "E_{x} vs RP.X for gs;RP.X [mm];E_{x} [MeV]", 200, 0, 300, 50, -2, 2};
     for(const auto& ex : Eexs)
     {
         auto gated {da.Filter([=](double e) { return std::abs(ex - e) <= sigma; }, {"Ex"})};
-        auto hrp {gated.Histo2D(HistConfig::RP, "fRP.fCoordinates.fX", "fRP.fCoordinates.fY")};
-        panas.push_back(hrp->ProjectionX(TString::Format("pana%.2f", ex)));
-        auto& p {panas.back()};
-        p->SetTitle(TString::Format("E_{x} = %.2f", ex));
-        // Normalize
-        p->Scale(1. / panas.back()->Integral());
-        p->SetLineWidth(2);
-        p->Smooth(5);
-        as->Add(panas.back(), "hist");
+        auto haux {gated.Histo2D(HistConfig::RPxThetaCM, "fRP.fCoordinates.fX", "ThetaCM")};
+        if(ex == 0)
+        {
+            auto hgs {gated.Histo2D(hexgs, "fRP.fCoordinates.fX", "Ex")};
+            hags = (TH2D*)hgs->Clone();
+        }
+        haux->SetTitle(TString::Format("Ana E_{x} = %.2f MeV", ex));
+        has.push_back((TH2D*)haux->Clone());
+        as->Add(has.back(), "col");
     }
+    // Stack for analysis Ex and Ex RPx gs
+    auto* sags {new THStack};
+    sags->Add(hEx.GetPtr());
+    sags->Add(hags, "col");
 
     // Get simulation histogram
-    ROOT::RDataFrame ds {"SimulationTTree", E796Simu::GetFile(beam, target, light, 0)};
-    auto psimu {ds.Histo1D(
-        {"psimu", "Simulation;X [mm]", HistConfig::RP.fNbinsX, HistConfig::RP.fXLow, HistConfig::RP.fXUp}, "RPx")};
-    ROOT::RDataFrame dss {"SimulationTTree", "./Outputs/Eff_study/d_t_gs_sampled_rpx.root"};
-    auto psimus {dss.Histo1D(
-        {"psimus", "Simu sampled;X [mm]", HistConfig::RP.fNbinsX, HistConfig::RP.fXLow, HistConfig::RP.fXUp}, "RPx")};
-
-    // Add to stack
-    auto* stack {new THStack};
-    stack->SetTitle(";X [mm];Normalized counts");
-    // Normalize and set style
-    for(auto* h : {pana, psimu.GetPtr(), psimus.GetPtr()})
+    auto* stsimu {new THStack};
+    auto* stkin {new THStack};
+    std::vector<TH2D*> hss, hskin;
+    for(const auto& ex : Eexs)
     {
-        h->Scale(1. / h->Integral());
-        h->SetLineWidth(2);
-        stack->Add(h, "hist");
+        ROOT::RDataFrame df {"SimulationTTree", E796Simu::GetFile(beam, target, light, ex)};
+        auto haux {df.Histo2D(HistConfig::RPxThetaCM, "RPx", "theta3CM")};
+        auto hkin {df.Histo2D(HistConfig::KinCM, "theta3CM", "EVertex")};
+        haux->SetTitle(TString::Format("Simu E_{x} = %.2f MeV", ex));
+        hkin->SetTitle(TString::Format("Simu kin E_{x} = %.2f MeV", ex));
+        hss.push_back((TH2D*)haux->Clone());
+        hskin.push_back((TH2D*)hkin->Clone());
+        stsimu->Add(hss.back(), "col");
+        stkin->Add(hskin.back(), "col");
     }
+    // ROOT::RDataFrame ds {"SimulationTTree", E796Simu::GetFile(beam, target, light, 3.24)};
+    // auto psimu {ds.Histo1D(
+    //     {"psimu", "Simu E_{x} = 3.24;X [mm]", HistConfig::RP.fNbinsX, HistConfig::RP.fXLow, HistConfig::RP.fXUp},
+    //     "RPx")};
+    // ROOT::RDataFrame dss {"SimulationTTree", "./Outputs/Eff_study/d_t_gs_sampled_rpx.root"};
+    // auto psimus {dss.Histo1D(
+    //     {"psimus", "Simu samp gs;X [mm]", HistConfig::RP.fNbinsX, HistConfig::RP.fXLow, HistConfig::RP.fXUp},
+    //     "RPx")};
+    // auto hXThetaCM {ds.Histo2D(
+    //     {"hXThetaCM", "RP.X vs #theta_{CM} correlation;#theta_{CM} [#circ];RP.X [mm]", 300, 0, 60, 400, 0, 300},
+    //     "theta3CM", "RPx")};
+
+    // // Add to stack
+    // auto* stack {new THStack};
+    // stack->SetTitle(";X [mm];Normalized counts");
+    // // Normalize and set style
+    // for(auto* h : {pana, psimu.GetPtr(), psimus.GetPtr()})
+    // {
+    //     h->Scale(1. / h->Integral());
+    //     h->SetLineWidth(2);
+    //     stack->Add(h, "hist");
+    // }
 
     // Get efficiency
     Interpolators::Efficiency effs;
@@ -81,13 +108,13 @@ void Efficiency()
     auto* c0 {new TCanvas {"c0", "RP X comparison"}};
     c0->DivideSquare(4);
     c0->cd(1);
-    hEx->DrawClone();
+    sags->DrawClone("pads");
     c0->cd(2);
-    as->Draw("nostack plc");
-    gPad->BuildLegend();
+    as->Draw("pads");
     c0->cd(3);
-    stack->DrawClone("nostack plc");
-    c0->cd(3)->BuildLegend();
+    stsimu->Draw("pads");
+    c0->cd(4);
+    stkin->Draw("pads");
 
 
     // Interpolators::Efficiency effs;

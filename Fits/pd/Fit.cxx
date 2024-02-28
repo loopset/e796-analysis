@@ -1,3 +1,4 @@
+#include "ROOT/RDF/InterfaceUtils.hxx"
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
@@ -15,10 +16,11 @@
 
 #include <iostream>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
 
-// #include "/media/Data/PhysicsClasses/Old/PublicationColors.cxx"
+#include "/media/Data/E796v2/Fits/FitUtils.cxx"
 
 void Fit()
 {
@@ -26,31 +28,29 @@ void Fit()
 
     ROOT::RDataFrame df {
         "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_1H_light_2H_front.root"};
-    auto gated {df};
-    std::cout << "Counts after cuts = " << gated.Count().GetValue() << '\n';
 
+    // Binning settings for Ex histogram (to be saved!)
     int nbins {100};
     double hmin {-10};
     double hmax {6};
-    auto hEx {gated.Histo1D(
-        {"hEx", TString::Format(";E_{x} [MeV];Counts / %.0f keV", (hmax - hmin) / nbins * 1E3), nbins, hmin, hmax},
-        "Ex")};
-    // // Read PS
-    // ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
-    //                                           "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
-    // auto hPS {phase.Histo1D({"hPS", "PS 1n;E_{x} [MeV]", nbins, hmin, hmax}, "Ex_cal")};
-    // // Format phase space
-    // hPS->Smooth(20);
-    // // Scale it
-    // auto intEx {hEx->Integral()};
-    // auto intPS {hPS->Integral()};
-    // double factor {0.15};
-    // hPS->Scale(factor * intEx / intPS);
 
-    // Data
-    double xmin {hmin};
-    double xmax {5};
-    Fitters::Data data {*hEx, xmin, xmax};
+    // Different cuts!
+    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter("fRP.fCoordinates.fX < 128"),
+                                         df.Filter("fRP.fCoordinates.fX > 128")};
+    std::vector<std::string> labels {"pd_all", "pd_1", "pd_2"};
+    std::vector<TH1D*> hExs;
+    for(int i = 0; i < nodes.size(); i++)
+    {
+        auto h {nodes[i].Histo1D(
+            {"hEx", TString::Format("%s;E_{x} [MeV];Counts / %.0f keV", labels[i].c_str(), (hmax - hmin) / nbins * 1E3),
+             nbins, hmin, hmax},
+            "Ex")};
+        hExs.push_back((TH1D*)h->Clone());
+    }
+
+    // Fitting range
+    double exmin {-10};
+    double exmax {5};
 
     // Model
     int ngauss {3};
@@ -58,9 +58,6 @@ void Fit()
     bool cte {true};
     Fitters::Model model {ngauss, nvoigt, {}, cte};
 
-    // Runner
-    Fitters::Runner runner {data, model};
-    runner.GetObjective().SetUseDivisions(true);
     // Set init parameters
     double sigma {0.240};
     Fitters::Runner::Init initPars {
@@ -113,34 +110,11 @@ void Fit()
             fixedPars[key].push_back(boo);
         }
     }
-    runner.SetInitial(initPars);
-    runner.SetBounds(initBounds);
-    runner.SetFixed(fixedPars);
-    // Fit!!
-    runner.Fit();
-    // result
-    auto res {runner.GetFitResult()};
 
-    // Save on file
-    runner.Write("./Outputs/fit_pd.root");
-
-    // Draw
-    Fitters::Plotter plotter {&data, &model, &res};
-    auto* gfit {plotter.GetGlobalFit()};
-    auto hfits {plotter.GetIndividualHists()};
-
-    // TCanvas
-    auto* c0 {new TCanvas {"c0", "(d,t) global fit"}};
-    hEx->GetXaxis()->SetRangeUser(xmin, xmax);
-    hEx->SetLineWidth(2);
-    hEx->DrawClone("e");
-    gfit->Draw("same");
-    // Stack of histograms
-    auto* hs {new THStack};
-    for(auto& [key, h] : hfits)
+    // Run for all the cuts
+    for(int i = 0; i < hExs.size(); i++)
     {
-        h->SetLineWidth(2);
-        hs->Add(h);
+        E796Fit::RunFit(hExs[i], exmin, exmax, model, initPars, initBounds, fixedPars,
+                        ("./Outputs/" + labels[i] + ".root"), labels[i]);
     }
-    hs->Draw("plc nostack same");
 }

@@ -54,6 +54,9 @@ const TH2DModel ThetaHeavyLight {
 const TH2DModel ThetaCMLab {
     "hThetaCMLab", "CM vs Lab correlations;#theta_{Lab} [#circ];#theta_{CM} [#circ]", 400, 0, 60, 400, 0, 60};
 
+const TH2DModel RPxThetaCM {
+    "hRPxThetaCM", "RP.X vs #theta_{CM} correlations;RP.X [mm];#theta_{CM} [#circ]", 200, 0, 300, 100, 0, 60};
+
 template <typename T>
 T ChangeTitle(T model, const TString& title, const TString& label = "");
 } // namespace HistConfig

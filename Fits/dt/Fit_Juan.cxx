@@ -11,7 +11,7 @@
 void Fit_Juan()
 {
     ROOT::EnableImplicitMT();
-    ROOT::RDataFrame df {"yield_tree", "/media/miguel/FICA_4/Juan/Postanalysis/20O_dt_19O_21_Feb_23_v1.root"};
+    ROOT::RDataFrame df {"yield_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/20O_dt_19O_21_Feb_23_v1.root"};
     // Apply mass cuts from Juan
     auto applyMassCuts = [&](double AmassH, double thetaCM, double Ex)
     {
