@@ -9,6 +9,7 @@
 
 #include "ROOT/RDF/InterfaceUtils.hxx"
 #include "ROOT/RDataFrame.hxx"
+#include "Rtypes.h"
 
 #include "TCanvas.h"
 #include "TROOT.h"
@@ -87,6 +88,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     c10->DivideSquare(2);
     c10->cd(1);
     hPID->DrawClone("colz");
+    cut.SetLineAttributes(light, kMagenta, 2);
     cut.DrawAll();
     c10->cd(2);
     hSP->DrawClone("colz");

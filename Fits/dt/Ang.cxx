@@ -106,7 +106,8 @@ void Ang()
     comp3.Draw();
 
     // For g4
-    // Angular::Comparator comp4 {"g4 = ? @ 6.68 MeV", xs.Get("g4")};
+    Angular::Comparator comp4 {"g4 = ? @ 6.68 MeV", xs.Get("g4")};
+    comp4.Draw();
     // how do I compute the 2fnr without a guess of Jpi?
 
 
