@@ -2,25 +2,20 @@
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
-#include "TCanvas.h"
-#include "TFitResult.h"
-#include "TGraph.h"
-#include "THStack.h"
 #include "TROOT.h"
 #include "TString.h"
 
-#include "FitData.h"
 #include "FitModel.h"
-#include "FitPlotter.h"
 #include "FitRunner.h"
 
-#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "/media/Data/E796v2/Fits/FitHist.h"
 #include "/media/Data/E796v2/Fits/FitUtils.cxx"
+#include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
 
 void Fit()
 {
@@ -29,22 +24,13 @@ void Fit()
     ROOT::RDataFrame df {
         "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_1H_light_2H_front.root"};
 
-    // Binning settings for Ex histogram (to be saved!)
-    int nbins {100};
-    double hmin {-10};
-    double hmax {6};
-
     // Different cuts!
-    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter("fRP.fCoordinates.fX < 128"),
-                                         df.Filter("fRP.fCoordinates.fX > 128")};
-    std::vector<std::string> labels {"pd_all", "pd_1", "pd_2"};
+    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1, {"fRP"}), df.Filter(E796Gates::rpx2, {"fRP"})};
+    std::vector<std::string> labels {"pd", "pd_1", "pd_2"};
     std::vector<TH1D*> hExs;
     for(int i = 0; i < nodes.size(); i++)
     {
-        auto h {nodes[i].Histo1D(
-            {"hEx", TString::Format("%s;E_{x} [MeV];Counts / %.0f keV", labels[i].c_str(), (hmax - hmin) / nbins * 1E3),
-             nbins, hmin, hmax},
-            "Ex")};
+        auto h {nodes[i].Histo1D(E796Fit::Expd, "Ex")};
         hExs.push_back((TH1D*)h->Clone());
     }
 
@@ -115,6 +101,6 @@ void Fit()
     for(int i = 0; i < hExs.size(); i++)
     {
         E796Fit::RunFit(hExs[i], exmin, exmax, model, initPars, initBounds, fixedPars,
-                        ("./Outputs/" + labels[i] + ".root"), labels[i]);
+                        ("./Outputs/fit_" + labels[i] + ".root"), labels[i]);
     }
 }

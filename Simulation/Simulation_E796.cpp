@@ -20,9 +20,7 @@
 #include "TString.h"
 #include "TTree.h"
 
-#include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
-#include "Math/Vector3D.h"
 
 #include <cmath>
 #include <iostream>
@@ -31,7 +29,6 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-#include <vector>
 
 #include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
@@ -134,6 +131,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // To compute a fine-grain efficiency, we require at least a binning width of 0.25 degrees!
     auto hThetaCM {HistConfig::ThetaCM.GetHistogram()};
     auto hThetaCMAll {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all", "All").GetHistogram()};
+    // Add additional histograms to compute eff per sections of actar
+    auto hThetaCM1 {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM1").GetHistogram()};
+    auto hThetaCMAll1 {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all 1").GetHistogram()};
+    auto hThetaCM2 {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM2").GetHistogram()};
+    auto hThetaCMAll2 {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all 2").GetHistogram()};
 
     auto hDistL0 {HistConfig::ChangeTitle(HistConfig::TL, "Distance to L0").GetHistogram()};
 
@@ -221,14 +223,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         auto vertex {runner.SampleVertex(yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, nullptr)};
         if(!E796Gates::rp(vertex.X()))
             continue;
-        // if(vertex.X() < 128)
-        //     continue;
-        // std::cout<<"Vertex = "<<vertex<<" mm"<<'\n';
         // 2-> Beam energy according to its sigma
         auto TBeam {runner.RandomizeBeamEnergy(
             T1 * p1.GetAMU(),
             sigmaPercentBeam * T1 * p1.GetAMU())}; // T1 in Mev / u * mass of beam in u = total kinetic energy
-        // std::cout<<"TBeam = "<<TBeam<<" MeV"<<'\n';
         // 3-> Run kinematics!
         kingen.SetBeamAndExEnergies(TBeam, Ex);
         double weight {kingen.Generate()};
@@ -241,18 +239,16 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // to compute geometric efficiency by CM interval and with our set reference direction
         double theta3CMBefore {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
         hThetaCMAll->Fill(theta3CMBefore * TMath::RadToDeg());
+        // Divide per regions
+        if(E796Gates::rpx1(vertex))
+            hThetaCMAll1->Fill(theta3CMBefore * TMath::RadToDeg());
+        if(E796Gates::rpx2(vertex))
+            hThetaCMAll2->Fill(theta3CMBefore * TMath::RadToDeg());
         // 4-> Include thetaLab resolution to compute thetaCM and Ex
         if(thetaResolution) // resolution in
             theta3Lab = runner.GetRand()->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
-        // std::cout<<"Theta3Lab = "<<theta3Lab * TMath::RadToDeg()<<" degree"<<'\n';
-        // std::cout<<"Theta3New = "<<psGenerator.GetThetaFromTLorentzVector(PLight) * TMath::RadToDeg()<<'\n';
-        // auto theta3CM {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
-        // std::cout<<"Theta3CM = "<<theta3CM * TMath::RadToDeg()<<" degree"<<'\n';
         auto phi3Lab {runner.GetRand()->Uniform(0., 2 * TMath::Pi())};
 
-        // apply cut in XVertex
-        // if(!(40. <= vertex.X() && vertex.X() <= 200.))
-        //     continue;
         // 5-> Propagate track from vertex to silicon wall using Geometry class
         ROOT::Math::XYZVector direction {TMath::Cos(theta3Lab), TMath::Sin(theta3Lab) * TMath::Sin(phi3Lab),
                                          TMath::Sin(theta3Lab) * TMath::Cos(phi3Lab)};
@@ -343,6 +339,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             hSPTheta->Fill(silPoint0InMM.Y(), silPoint0InMM.Z(), theta3CM * TMath::RadToDeg());
             // RP histogram
             hRP->Fill(vertex.X(), vertex.Y());
+            // Fill new efficiency histograms
+            if(E796Gates::rpx1(vertex))
+                hThetaCM1->Fill(theta3CM * TMath::RadToDeg());
+            if(E796Gates::rpx2(vertex))
+                hThetaCM2->Fill(theta3CM * TMath::RadToDeg());
 
             // write to TTree
             Eex_tree = EexAfter;
@@ -359,31 +360,24 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     std::cout.flush();
     std::cout << RESET << '\n';
 
-    // compute geometric efficiency as the division of two histograms: thetaCM after all cuts and before them
-    std::vector<std::pair<double, double>> geoEff {};
-    std::vector<std::pair<double, double>> ugeoEff {};
-    for(int bin = 1; bin <= hThetaCMAll->GetNbinsX(); bin++)
-    {
-        auto x {hThetaCMAll->GetBinCenter(bin)};
-        auto y0 {hThetaCMAll->GetBinContent(bin)};
-        auto y {hThetaCM->GetBinContent(bin)};
-        geoEff.push_back({x, y / y0});
-        ugeoEff.push_back({x, TMath::Sqrt(y) / y0});
-    }
-    // another way to compute efficiency in root
-    auto* teff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
-    teff->SetNameTitle("eff", TString::Format("#theta_{CM} eff for %.2f MeV", Ex));
+    // Efficiencies as quotient of histograms in TEfficiency class
+    auto* eff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
+    eff->SetNameTitle("eff", TString::Format("#theta_{CM} eff E_{x} = %.2f MeV", Ex));
+    // Efficiencies for the other sections of actar
+    auto* eff1 {new TEfficiency {*hThetaCM1, *hThetaCMAll1}};
+    eff1->SetNameTitle("eff1", TString::Format("#theta_{CM} eff section 1 E_{x} = %.2f MeV", Ex));
+    auto* eff2 {new TEfficiency {*hThetaCM2, *hThetaCMAll2}};
+    eff2->SetNameTitle("eff2", TString::Format("#theta_{CM} eff section 2 E_{x} = %.2f MeV", Ex));
 
     // SAVING
     outFile->cd();
     outTree->Write();
-    outFile->WriteObject(&geoEff, "veff");
-    outFile->WriteObject(&ugeoEff, "vueff");
-    teff->Write();
+    eff->Write();
+    eff1->Write();
+    eff2->Write();
     outFile->Close();
     delete outFile;
     outFile = nullptr;
-
 
     // plotting
     if(standalone)
@@ -415,13 +409,19 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         c1->cd(3);
         hEexAfter->DrawClone("hist");
         c1->cd(4);
-        teff->Draw("apl");
+        eff->Draw("apl");
         c1->cd(5);
         hSPTheta->DrawClone("colz");
-        c1->cd(6);
-        hRPx->DrawNormalized();
-        hRPxSimu->SetLineColor(kRed);
-        hRPxSimu->DrawNormalized("same");
+        auto* p6 {c1->cd(6)};
+        p6->Divide(2, 1);
+        p6->cd(1);
+        eff1->Draw("apl");
+        p6->cd(2);
+        eff2->Draw("apl");
+
+        // hRPx->DrawNormalized();
+        // hRPxSimu->SetLineColor(kRed);
+        // hRPxSimu->DrawNormalized("same");
     }
 
     // deleting news

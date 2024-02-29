@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "../../PostAnalysis/HistConfig.h"
-#include "/media/Data/E796v2/Fits/FitUtils.cxx"
+#include "../FitHist.h"
 
 void Ang()
 {
@@ -23,14 +23,13 @@ void Ang()
         "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_1H_light_2H_front.root"};
 
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
-    auto* hEx {E796Fit::ReadHisto("./RootFiles/Ex_all.root", "hEx")};
-    auto [nbins, hmin, hmax] {E796Fit::GetHistoSpecs(hEx)};
+    auto hEx {df.Histo1D(E796Fit::Expd, "Ex")};
 
     // Init intervals
     double thetaCMMin {6};
     double thetaCMMax {14};
     double thetaCMStep {1};
-    Angular::Intervals ivs {thetaCMMin, thetaCMMax, {"hEx", "(d, t)", nbins, hmin, hmax}, thetaCMStep};
+    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Expd, thetaCMStep};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
     // ivs.Draw();

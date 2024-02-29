@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "../../PostAnalysis/HistConfig.h"
+#include "../FitHist.h"
 
 void Ang()
 {
@@ -25,29 +26,25 @@ void Ang()
 
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
-    int nbins {100};
-    double hmin {-5};
-    double hmax {25};
-    auto hEx {df.Histo1D(
-        {"hEx", TString::Format(";E_{x} [MeV];Counts / %.0f keV", (hmax - hmin) / nbins * 1E3), nbins, hmin, hmax},
-        "Ex")};
+    auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
     // Read PS
     ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
                                               "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
-    auto hPS {phase.Histo1D({"hPS", "PS 1n;E_{x} [MeV]", nbins, hmin, hmax}, "Ex_cal")};
+    auto hPS {phase.Histo1D(E796Fit::Exdt, "Ex_cal")};
+    hPS->SetNameTitle("hPS", "1n PS");
     // Format phase space
     hPS->Smooth(20);
     // Scale it
     auto intEx {hEx->Integral()};
     auto intPS {hPS->Integral()};
-    double factor {0.15};
+    double factor {0.10};
     hPS->Scale(factor * intEx / intPS);
 
     // Init intervals
     double thetaCMMin {8};
     double thetaCMMax {14};
     double thetaCMStep {1};
-    Angular::Intervals ivs {thetaCMMin, thetaCMMax, {"hEx", "(d, t)", nbins, hmin, hmax}, thetaCMStep};
+    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdt, thetaCMStep};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
     // ivs.Draw();
@@ -113,23 +110,23 @@ void Ang()
     // how do I compute the 2fnr without a guess of Jpi?
 
 
-    // Debug efficiency
-    std::vector<Interpolators::Efficiency> veff;
-    Interpolators::Efficiency deff;
-    std::vector<std::string> dpeaks {"gs_all", "gs_1", "gs_2"};
-    std::vector<std::string> dfiles {
-        "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_all.root",
-        // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_0.00_nPS_0_pPS_0.root",
-        "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_1.root",
-        "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_2.root",
-    };
-    for(int i = 0; i < dpeaks.size(); i++)
-    {
-        deff.Add(dpeaks[i], dfiles[i]);
-        veff.push_back({});
-        veff.back().Add("g0", dfiles[i]);
-    }
-    deff.Draw();
+    // // Debug efficiency
+    // std::vector<Interpolators::Efficiency> veff;
+    // Interpolators::Efficiency deff;
+    // std::vector<std::string> dpeaks {"gs_all", "gs_1", "gs_2"};
+    // std::vector<std::string> dfiles {
+    //     "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_all.root",
+    //     // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_0.00_nPS_0_pPS_0.root",
+    //     "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_1.root",
+    //     "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_2.root",
+    // };
+    // for(int i = 0; i < dpeaks.size(); i++)
+    // {
+    //     deff.Add(dpeaks[i], dfiles[i]);
+    //     veff.push_back({});
+    //     veff.back().Add("g0", dfiles[i]);
+    // }
+    // deff.Draw();
     // // Do calculation
     // std::vector<Angular::DifferentialXS> dxs;
     // std::vector<Angular::Comparator> dcomp;

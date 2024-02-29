@@ -2,7 +2,6 @@
 #define FitUtils_cxx
 
 #include "TCanvas.h"
-#include "TFile.h"
 #include "TH1.h"
 #include "THStack.h"
 #include "TString.h"
@@ -13,33 +12,19 @@
 #include "FitRunner.h"
 #include "PhysColors.h"
 
-#include <memory>
-#include <stdexcept>
 #include <string>
-#include <tuple>
 
 namespace E796Fit
 {
-void SaveHisto(TH1D* h, const std::string& file, const std::string& name)
+void TreatPS(TH1D* hEx, TH1D* hPS)
 {
-    auto f {std::make_unique<TFile>(file.c_str(), "recreate")};
-    f->cd();
-    h->Write(name.c_str());
-}
-
-TH1D* ReadHisto(const std::string& file, const std::string& name)
-{
-    auto f {std::make_unique<TFile>(file.c_str())};
-    auto* h {f->Get<TH1D>(name.c_str())};
-    if(!h)
-        throw std::runtime_error("E796Fit::ReadHisto(): could not read histo " + name);
-    h->SetDirectory(nullptr);
-    return h;
-}
-
-std::tuple<int, double, double> GetHistoSpecs(TH1D* h)
-{
-    return {h->GetNbinsX(), h->GetXaxis()->GetXmin(), h->GetXaxis()->GetXmax()};
+    // 1-> Smooth it
+    hPS->Smooth(20);
+    // 2-> Scale it to have a reasonable height
+    auto intEx {hEx->Integral()};
+    auto intPS {hPS->Integral()};
+    double factor {0.1};
+    hPS->Scale(factor * intEx / intPS);
 }
 
 void DrawGlobalFit(TGraph* g, const std::unordered_map<std::string, TH1D*>& hs)

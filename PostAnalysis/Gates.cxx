@@ -2,11 +2,17 @@
 #define Gates_cxx
 
 #include "ActMergerData.h"
+
+#include "Math/Point3Dfwd.h"
 namespace E796Gates
 {
 auto rp {[](double xrp) -> bool { return (26 <= xrp) && (xrp <= 220); }};
 
 auto rpMerger {[](const ActRoot::MergerData& d) -> bool { return rp(d.fRP.X()); }};
+
+auto rpx1 {[](const ROOT::Math::XYZPointF& rp) -> bool { return rp.X() < 128; }};
+
+auto rpx2 {[](const ROOT::Math::XYZPointF& rp) -> bool { return rp.X() > 128; }};
 
 auto left0 {[](const ActRoot::MergerData& d) -> bool
             {

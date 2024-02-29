@@ -1,22 +1,21 @@
+#include "ROOT/RDF/InterfaceUtils.hxx"
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
-#include "TCanvas.h"
-#include "TFitResult.h"
-#include "TGraph.h"
-#include "THStack.h"
 #include "TROOT.h"
 #include "TString.h"
 
-#include "FitData.h"
 #include "FitModel.h"
-#include "FitPlotter.h"
 #include "FitRunner.h"
 
-#include <iostream>
 #include <stdexcept>
+#include <string>
 #include <utility>
 #include <vector>
+
+#include "/media/Data/E796v2/Fits/FitHist.h"
+#include "/media/Data/E796v2/Fits/FitUtils.cxx"
+#include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
 
 void Fit()
 {
@@ -24,52 +23,43 @@ void Fit()
 
     ROOT::RDataFrame df {
         "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_2H_light_3H_front.root"};
-    auto gated {df};
-    std::cout << "Counts after cuts = " << gated.Count().GetValue() << '\n';
 
-    int nbins {100};
-    double hmin {-5};
-    double hmax {25};
-    auto hEx {gated.Histo1D(
-        {"hEx", TString::Format(";E_{x} [MeV];Counts / %.0f keV", (hmax - hmin) / nbins * 1E3), nbins, hmin, hmax},
-        "Ex")};
+    // Nodes at which compute global fit
+    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1, {"fRP"}), df.Filter(E796Gates::rpx2, {"fRP"})};
+    std::vector<std::string> labels {"dt", "dt_1", "dt_2"};
+    std::vector<TH1D*> hExs;
+    for(int i = 0; i < nodes.size(); i++)
+    {
+        auto h {nodes[i].Histo1D(E796Fit::Exdt, "Ex")};
+        hExs.push_back((TH1D*)h->Clone());
+    }
     // Read PS
     ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
                                               "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
-    auto hPS {phase.Histo1D({"hPS", "PS 1n;E_{x} [MeV]", nbins, hmin, hmax}, "Ex_cal")};
+    auto hPS {phase.Histo1D(E796Fit::Exdt, "Ex_cal")};
+    hPS->SetNameTitle("hPS", "1n PS");
     // Format phase space
     hPS->Smooth(20);
     // Scale it
-    auto intEx {hEx->Integral()};
+    auto intEx {hExs.front()->Integral()};
     auto intPS {hPS->Integral()};
-    double factor {0.15};
+    double factor {0.1};
     hPS->Scale(factor * intEx / intPS);
 
-    // Data
-    double xmin {hmin};
-    double xmax {10};
-    Fitters::Data data {*hEx, xmin, xmax};
+    // Fitting range
+    double exmin {-5};
+    double exmax {10};
 
     // Model
     int ngauss {7};
     int nvoigt {0};
     Fitters::Model model {ngauss, nvoigt, {*hPS}};
 
-    // Runner
-    Fitters::Runner runner {data, model};
-    runner.GetObjective().SetUseDivisions(true);
     // Set init parameters
     double sigma {0.374};
     Fitters::Runner::Init initPars {
-        {"g0", {400, 0, sigma}},
-        {"g1", {10, 1.5, sigma}},
-        {"g2", {110, 3.2, sigma}},
-        {"g3", {60, 4.5, sigma}},
-        // {"g4", {56, 5.2, sigma}},
-        {"g4", {60, 6.7, sigma}},
-        {"g5", {65, 7.9, sigma}},
-        {"g6", {20, 8.9, sigma}},
-        {"ps0", {0.1}},
+        {"g0", {400, 0, sigma}},  {"g1", {10, 1.5, sigma}}, {"g2", {110, 3.2, sigma}}, {"g3", {60, 4.5, sigma}},
+        {"g4", {60, 6.7, sigma}}, {"g5", {65, 7.9, sigma}}, {"g6", {20, 8.9, sigma}},  {"ps0", {0.1}},
     };
     // Set bounds and fix parameters
     double minmean {0.3};
@@ -115,34 +105,11 @@ void Fit()
             fixedPars[key].push_back(boo);
         }
     }
-    runner.SetInitial(initPars);
-    runner.SetBounds(initBounds);
-    runner.SetFixed(fixedPars);
-    // Fit!!
-    runner.Fit();
-    // result
-    auto res {runner.GetFitResult()};
 
-    // Save on file
-    runner.Write("./Outputs/fit_dt.root");
-
-    // Draw
-    Fitters::Plotter plotter {&data, &model, &res};
-    auto* gfit {plotter.GetGlobalFit()};
-    auto hfits {plotter.GetIndividualHists()};
-
-    // TCanvas
-    auto* c0 {new TCanvas {"c0", "(d,t) global fit"}};
-    hEx->GetXaxis()->SetRangeUser(xmin, xmax);
-    hEx->SetLineWidth(2);
-    hEx->DrawClone("e");
-    gfit->Draw("same");
-    // Stack of histograms
-    auto* hs {new THStack};
-    for(auto& [key, h] : hfits)
+    // Run for all the nodes
+    for(int i = 0; i < hExs.size(); i++)
     {
-        h->SetLineWidth(2);
-        hs->Add(h);
+        E796Fit::RunFit(hExs[i], exmin, exmax, model, initPars, initBounds, fixedPars,
+                        ("./Outputs/fit_" + labels[i] + ".root"), labels[i]);
     }
-    hs->Draw("plc nostack same");
 }

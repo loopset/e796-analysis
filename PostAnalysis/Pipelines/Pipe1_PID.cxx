@@ -59,9 +59,9 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     ActRoot::CutsManager<std::string> cut;
     TString pidfile {};
     if(isSide)
-        pidfile = TString::Format("./Cuts/pid_%s_side.root", light.c_str());
+        pidfile = TString::Format("./Cuts/LightPID/pid_%s_side.root", light.c_str());
     else
-        pidfile = TString::Format("./Cuts/pid_%s.root", light.c_str());
+        pidfile = TString::Format("./Cuts/LightPID/pid_%s.root", light.c_str());
     cut.ReadCut(light, pidfile);
     std::cout << BOLDCYAN << "Reading light PID in : " << pidfile << RESET << '\n';
 
