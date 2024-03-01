@@ -14,6 +14,8 @@
 
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include "../../PostAnalysis/Gates.cxx"
@@ -66,8 +68,8 @@ void DebugAng()
     }
 
     // Set how many peaks are going to be compared
-    std::vector<std::string> peaks {"g0"};
-    std::vector<double> peaksEx {0};
+    std::vector<std::string> peaks {"g0", "g1", "g2"};
+    std::vector<double> peaksEx {0, 1.47, 3.24};
     std::vector<std::string> effsnames {"eff", "eff1", "eff2"};
     // Init efficiencies and experiment settings
     std::vector<Interpolators::Efficiency> effs;
@@ -96,17 +98,22 @@ void DebugAng()
         xss.back().DoFor(peaks);
         // xss.back().Draw("XS for " + labels[i]);
     }
+
     // And finally compare!
     std::vector<std::vector<Angular::Comparator>> comps;
+    std::unordered_map<std::string, std::pair<std::string, std::string>> models {
+        {"g0", {"l = 2", "./Inputs/gs_new/21.gs"}},
+        {"g1", {"l = 0", "./Inputs/g1/21.g1"}},
+        {"g2", {"l = 1", "./Inputs/g2/21.g2"}}};
     for(int i = 0; i < nodes.size(); i++)
     {
         comps.push_back({});
         // Run for each peak
         for(const auto& peak : peaks)
         {
-            comps.back().push_back({"Comp for " + peak, xss[i].Get(peak)});
+            comps.back().push_back({peak, xss[i].Get(peak)});
             auto& comp {comps.back().back()};
-            comp.Add("l = 2", "./Inputs/gs_new/21.gs");
+            comp.Add(models[peak].first, models[peak].second);
             comp.Fit(thetaCMMin, thetaCMMax);
             comp.Draw("For " + peak + " in " + labels[i]);
         }
