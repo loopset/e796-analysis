@@ -7,6 +7,7 @@
 
 #include "FitModel.h"
 #include "FitRunner.h"
+#include "FitUtils.h"
 
 #include <stdexcept>
 #include <string>
@@ -14,7 +15,6 @@
 #include <vector>
 
 #include "/media/Data/E796v2/Fits/FitHist.h"
-#include "/media/Data/E796v2/Fits/FitUtils.cxx"
 #include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
 
 void Fit()
@@ -100,7 +100,7 @@ void Fit()
     // Run for all the cuts
     for(int i = 0; i < hExs.size(); i++)
     {
-        E796Fit::RunFit(hExs[i], exmin, exmax, model, initPars, initBounds, fixedPars,
+        Fitters::RunFit(hExs[i], exmin, exmax, model, initPars, initBounds, fixedPars,
                         ("./Outputs/fit_" + labels[i] + ".root"), labels[i]);
     }
 }

@@ -7,6 +7,7 @@
 
 #include "FitModel.h"
 #include "FitRunner.h"
+#include "FitUtils.h"
 
 #include <stdexcept>
 #include <string>
@@ -14,7 +15,6 @@
 #include <vector>
 
 #include "/media/Data/E796v2/Fits/FitHist.h"
-#include "/media/Data/E796v2/Fits/FitUtils.cxx"
 #include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
 
 void Fit()
@@ -36,16 +36,9 @@ void Fit()
     // Read PS
     ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
                                               "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
-    phase.Describe().Print();
     auto hPS {phase.Histo1D(E796Fit::Exdt, "Ex_cal", "Weight_sim")};
     hPS->SetNameTitle("hPS", "1n PS");
-    // Format phase space
-    hPS->Smooth(20);
-    // Scale it
-    auto intEx {hExs.front()->Integral()};
-    auto intPS {hPS->Integral()};
-    double factor {0.1};
-    hPS->Scale(factor * intEx / intPS);
+    Fitters::TreatPS(hExs.front(), hPS.GetPtr());
 
     // Fitting range
     double exmin {-5};
@@ -110,7 +103,7 @@ void Fit()
     // Run for all the nodes
     for(int i = 0; i < hExs.size(); i++)
     {
-        E796Fit::RunFit(hExs[i], exmin, exmax, model, initPars, initBounds, fixedPars,
+        Fitters::RunFit(hExs[i], exmin, exmax, model, initPars, initBounds, fixedPars,
                         ("./Outputs/fit_" + labels[i] + ".root"), labels[i]);
     }
 }
