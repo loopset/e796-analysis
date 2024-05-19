@@ -129,6 +129,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hEexBefore->SetTitle("Eex without any res.");
     auto* hPhiAll {new TH1F("hPhiAll", "Phi in LAB;#phi [deg]", 360, 0, 180)};
     auto* hPhi {(TH1F*)hPhiAll->Clone("hPhi")};
+    auto* hDeltaEE {new TH2D {"hDeltaEE", "Two sil Es;T at Sil;#DeltaE_{0} [MeV]", 200, 0, 40, 200, 0, 40}};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -289,6 +290,9 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         auto [eLoss0, T3AfterSil0] {
             runner.EnergyAfterSilicons(T3EnteringSil, geometry->GetAssemblyUnitWidth(hitAssembly0) * 10., thresholdSi0,
                                        "lightInSil", silResolution, stragglingInSil)};
+        hDeltaEE->Fill(T3EnteringSil, eLoss0);
+        // hDeltaEE->Fill(eLoss0,
+        //                srim->Slow("lightInSil", T3EnteringSil, geometry->GetAssemblyUnitWidth(hitAssembly0) * 10.));
         // does not consider angle of track in silicons... we will have to modify it to do so
 
         // nan if bellow threshold (experimental sil detectors have a threshold energy below which particles are not
@@ -335,7 +339,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
 
         // 7 -> Reconstruct energy at vertex
         double EBefSil0 {};
-        if(isPunch && T3AfterSil1 == 0)
+        if(isPunch && T3AfterSil1 == 0 && std::isfinite(eLoss1))
         {
             auto EAfterSil0 {runner.EnergyBeforeGas(eLoss1, distance1, "light")};
             EBefSil0 = eLoss0 + EAfterSil0;
@@ -418,7 +422,7 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
     auto* gtheo {theokin.GetKinematicLine3()};
     auto* cAfter {new TCanvas("cAfter", "After implementing all")};
-    cAfter->DivideSquare(4);
+    cAfter->DivideSquare(6);
     cAfter->cd(1);
     hThetaESil->Draw("col");
     cAfter->cd(2);
@@ -428,6 +432,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hEexAfter->Draw("hist");
     cAfter->cd(4);
     hKin->Draw("colz");
+    cAfter->cd(5);
+    hDeltaEE->Draw("colz");
 
     auto* cSP {new TCanvas("cSP", "Silicon points")};
     cSP->DivideSquare(hsSP.size());
