@@ -18,6 +18,7 @@ void BuildTRIUMFGeo(bool draw = true)
     double silicon1Y {8. / 2};
     double silicon1Z {5.0 / 2};
     ActSim::SilUnit silUnit(0, silicon1X, silicon1Y, silicon1Z);
+    ActSim::SilUnit silUnitThick (1, 0.15 / 2, silicon1Y, silicon1Z);
     // set placements for front L0
     std::map<int, std::pair<double, double>> l0Placements {{0, {+2 * silicon1Y, -2 * silicon1Z}},
                                                            {1, {0, -2 * silicon1Z}},
@@ -44,7 +45,7 @@ void BuildTRIUMFGeo(bool draw = true)
     l1Assembly.SetOffsets(l0offset + 2.9);
 
     // BACKWARDS assembly
-    ActSim::SilAssembly backAssembly {2, silUnit, true, false};
+    ActSim::SilAssembly backAssembly {2, silUnitThick, true, false};
     auto backOffset {-0.5 - (2 * driftX)}; // cm respect to actar rear (beam output)
     backAssembly.SetOffsets(backOffset);
     backAssembly.SetAssemblyPlacements(l0Placements);
@@ -56,7 +57,7 @@ void BuildTRIUMFGeo(bool draw = true)
         {4, {0 * silicon1Y, 0 * silicon1Z}},   {5, {+2 * silicon1Y, 0 * silicon1Z}},
         {6, {-2 * silicon1Y, -2 * silicon1Z}}, {7, {0 * silicon1Y, -2 * silicon1Z}},
     };
-    ActSim::SilAssembly sideAssembly {3, silUnit, false, true};
+    ActSim::SilAssembly sideAssembly {3, silUnitThick, false, true};
     auto sideOffset {10.}; // cm from actar left side
     sideAssembly.SetOffsets(-1, sideOffset);
     sideAssembly.SetAssemblyPlacements(sidePlacements);

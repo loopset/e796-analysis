@@ -129,7 +129,11 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hEexBefore->SetTitle("Eex without any res.");
     auto* hPhiAll {new TH1F("hPhiAll", "Phi in LAB;#phi [deg]", 360, 0, 180)};
     auto* hPhi {(TH1F*)hPhiAll->Clone("hPhi")};
-    auto* hDeltaEE {new TH2D {"hDeltaEE", "Two sil Es;T at Sil;#DeltaE_{0} [MeV]", 200, 0, 40, 200, 0, 40}};
+    auto* hDeltaEE {new TH2D {"hDeltaEE", "#DeltaE assembly 0;T3EnteringSil;#DeltaE_{0} [MeV]", 200, 0, 40, 200, 0, 40}};
+    auto* hDeltaEE1 {(TH2D*)hDeltaEE->Clone()};
+    hDeltaEE1->SetTitle("#DeltaE assembly 1;T3AfterInterGas [MeV];#DeltaE_{1} [MeV]");
+    auto* hDeltaE1Res {(TH2D*)hDeltaEE->Clone()};
+    hDeltaE1Res->SetTitle(";T3EnteringSil [MeV];T3AfterSil1 [MeV]");
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -334,6 +338,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
                 eLoss1 = results.first;
                 T3AfterSil1 = results.second;
                 isPunch = true;
+                hDeltaEE1->Fill(T3AfterInterGas, eLoss1);
+                hDeltaE1Res->Fill(T3AfterInterGas, T3AfterSil1);
             }
         }
 
@@ -434,6 +440,9 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hKin->Draw("colz");
     cAfter->cd(5);
     hDeltaEE->Draw("colz");
+    cAfter->cd(6);
+    hDeltaEE1->Draw("colz");
+    // hDeltaE1Res->Draw("colz same");
 
     auto* cSP {new TCanvas("cSP", "Silicon points")};
     cSP->DivideSquare(hsSP.size());
