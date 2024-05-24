@@ -1,8 +1,12 @@
+#include "ActKinematics.h"
+
 #include "TCanvas.h"
 #include "TF1.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
 #include "TH1.h"
+#include "TH2.h"
+#include "TMath.h"
 #include "TRandom.h"
 #include "TSpline.h"
 
@@ -16,31 +20,31 @@
 
 namespace ActSim
 {
-    class CrossSectionSampler
-    {
-    private:
-        // Vectors holding raw
-        std::vector<double> fXData {};
-        std::vector<double> fYData {};
-        // Sum of absolute cross section
-        double fAbsXS {-1};
-        // TSPline3 to sample
-        std::vector<double> fCDFData {};
-        TSpline3* fCDF {};
+class CrossSectionSampler
+{
+private:
+    // Vectors holding raw
+    std::vector<double> fXData {};
+    std::vector<double> fYData {};
+    // Sum of absolute cross section
+    double fAbsXS {-1};
+    // TSPline3 to sample
+    std::vector<double> fCDFData {};
+    TSpline3* fCDF {};
 
-    public:
-        CrossSectionSampler() = default;
-        CrossSectionSampler(const std::string& file);
+public:
+    CrossSectionSampler() = default;
+    CrossSectionSampler(const std::string& file);
 
-        void ReadData(const std::string& file);
+    void ReadData(const std::string& file);
 
-        void Draw() const;
+    void Draw() const;
 
-        double Sample(TRandom* rand = nullptr);
+    double Sample(TRandom* rand = nullptr);
 
-    private:
-        void Init();
-    };
+private:
+    void Init();
+};
 } // namespace ActSim
 
 ActSim::CrossSectionSampler::CrossSectionSampler(const std::string& file)
@@ -110,8 +114,8 @@ TSpline3* spline {};
 
 void SampleTheoXS()
 {
-    ActSim::CrossSectionSampler xs {"./Inputs/TheoXS/5.5MeV/angs12nospin.dat"};
-    xs.Draw();
+    ActSim::CrossSectionSampler xs {"../Inputs/TheoXS/5.5MeV/angs12nospin.dat"};
+    // xs.Draw();
 
     // // 1-> Read TGraphErrors
     // auto* g {new TGraphErrors("./Inputs/TheoXS/5.5MeV/angp32nospin.dat", "%lg %lg")};
@@ -125,21 +129,42 @@ void SampleTheoXS()
     // func->SetLineColor(kPink);
     // func->SetLineWidth(2);
     //
+    ActPhysics::Kinematics kin {"11Li", "d", "p", "12Li", 65};
     // Get random from TF1!!
     auto* hist {new TH1F("hist", "Sampled histogram;#theta_{CM} [deg]", 150, 0, 180)};
-    for(int i = 0; i < 10000; i++)
+    auto* h {(TH1F*)hist->Clone("hLab")};
+    auto* hCM {new TH2F {"hCM", "CM kinematics;#theta_{CM} [#circ];E_{lab} [MeV]", 100, 0, 180, 100, 0, 50}};
+    auto* hLab {(TH2F*)hCM->Clone()};
+    hLab->SetTitle("Lab kinematics;#theta_{Lab} [#circ];E_{lab} [MeV]");
+    auto* hAng {new TH2F {"hAng", "Angles;Lab;CM", 100, 0, 180, 100, 0, 180}};
+    for(int i = 0; i < 1000000; i++)
     {
         // auto sampled {func->GetRandom()};
         auto sampled {xs.Sample()};
         hist->Fill(sampled);
+        kin.ComputeRecoilKinematics(sampled, 0, 3);
+        auto thetaLab {kin.GetTheta3Lab() * TMath::RadToDeg()};
+        auto T3Lab {kin.GetT3Lab()};
+        h->Fill(thetaLab);
+        hCM->Fill(sampled * TMath::RadToDeg(), T3Lab);
+        hLab->Fill(thetaLab, T3Lab);
+        hAng->Fill(thetaLab, sampled * TMath::RadToDeg());
+        // kin.Reset();
     }
-    //
-    // plotting
-    // auto* c1 {new TCanvas("c1", "Canvas")};
-    // hist->Draw();
-    // c1->DivideSquare(2);
-    // c1->cd(1);
+
+    auto* c1 {new TCanvas("c1", "Canvas")};
+    c1->DivideSquare(6);
+    c1->cd(1);
     // xs.Draw();
-    // c1->cd(2);
-    // hist->Draw();
+    h->Draw();
+    c1->cd(2);
+    hist->Draw();
+    c1->cd(3);
+    hCM->Draw("colz");
+    c1->cd(4);
+    hLab->Draw("colz");
+    c1->cd(5);
+    hAng->Draw("colz");
+
+    // kin.GetTheta3vs4Line()->Draw("al");
 }
