@@ -12,6 +12,7 @@
 #include "TCanvas.h"
 #include "TEfficiency.h"
 #include "TFile.h"
+#include "TH1.h"
 #include "TH1F.h"
 #include "TH2F.h"
 #include "TMath.h"
@@ -24,6 +25,8 @@
 
 #include "Math/Point3D.h"
 #include "Math/Vector3D.h"
+
+#include "SampleTheoXS.cpp"
 
 #include <cmath>
 #include <iostream>
@@ -102,6 +105,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     // get threshold energy
     // Beam losses energy in gas, but since this reaction has a Tbeam threshold. Compute it here since it is constant
     auto beamThreshold {ActPhysics::Kinematics(p1, p2, p3, p4, -1, Ex).GetT1Thresh()};
+    //Theo XS
+    ActSim::CrossSectionSampler xs {"../Inputs/TheoXS/7.5MeV/spin-split/p12spin.dat"};
 
     // Histograms
     // WARNING! To compute a fine-grain efficiency, we require at least a binning width of 0.25 degrees!
@@ -109,7 +114,8 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     auto* hThetaCMAll {(TH1F*)hThetaCM->Clone("hThetaCMAll")};
     hThetaCMAll->SetTitle("All thetaCM");
     auto* hThetaLabDebug {(TH1F*)hThetaCM->Clone("hThetaLabDebug")};
-    hThetaLabDebug->SetTitle("Theta discriminated in layer 0;#theta_{Lab} [degree]");
+    hThetaLabDebug->SetTitle("Sampled theta lab;#theta_{Lab} [degree]");
+    auto* hThetaCMDebug {(TH1F*)hThetaCM->Clone()};
     auto* hDistL0 {new TH1F("hDistL0", "Distance vertex to L0;dist [mm]", 300, 0., 600.)};
     auto* hThetaESil {new TH2F("hThetaELab", "Theta vs Energy in Sil0;#theta_{LAB} [degree];E_{Sil0} [MeV]", 200, 0.,
                                180., 200, 0., 60.)};
@@ -129,11 +135,13 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     hEexBefore->SetTitle("Eex without any res.");
     auto* hPhiAll {new TH1F("hPhiAll", "Phi in LAB;#phi [deg]", 360, 0, 180)};
     auto* hPhi {(TH1F*)hPhiAll->Clone("hPhi")};
-    auto* hDeltaEE {new TH2D {"hDeltaEE", "#DeltaE assembly 0;T3EnteringSil;#DeltaE_{0} [MeV]", 200, 0, 40, 200, 0, 40}};
+    auto* hDeltaEE {
+        new TH2D {"hDeltaEE", "#DeltaE assembly 0;T3EnteringSil;#DeltaE_{0} [MeV]", 200, 0, 40, 200, 0, 40}};
     auto* hDeltaEE1 {(TH2D*)hDeltaEE->Clone()};
     hDeltaEE1->SetTitle("#DeltaE assembly 1;T3AfterInterGas [MeV];#DeltaE_{1} [MeV]");
     auto* hDeltaE1Res {(TH2D*)hDeltaEE->Clone()};
     hDeltaE1Res->SetTitle(";T3EnteringSil [MeV];T3AfterSil1 [MeV]");
+    auto* hAngles {new TH2D {"hAngles", "Angles;CM;Lab", 1500, 0, 180, 150, 0, 180}};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -243,10 +251,13 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
             theta3Lab = runner.GetRand()->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
         // std::cout<<"Theta3Lab = "<<theta3Lab * TMath::RadToDeg()<<" degree"<<'\n';
         // std::cout<<"Theta3New = "<<psGenerator.GetThetaFromTLorentzVector(PLight) * TMath::RadToDeg()<<'\n';
-        auto theta3CM {TMath::Pi() - kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
+        auto theta3CM {kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
         // std::cout<<"Theta3CM = "<<theta3CM * TMath::RadToDeg()<<" degree"<<'\n';
         // auto phi3Lab {runner.GetRand()->Uniform(0., 2 * TMath::Pi())};
         auto EexBefore {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Lab, theta3Lab)};
+        hAngles->Fill(theta3CM * TMath::RadToDeg(), theta3Lab * TMath::RadToDeg());
+        hThetaLabDebug->Fill(theta3Lab * TMath::RadToDeg());
+        hThetaCMDebug->Fill(theta3CM * TMath::RadToDeg());
 
         // 5-> Propagate track from vertex to silicon wall using Geometry class
         ROOT::Math::XYZVector direction {TMath::Cos(theta3Lab), TMath::Sin(theta3Lab) * TMath::Sin(phi3Lab),
@@ -276,7 +287,6 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
         // skip tracks that doesn't reach silicons or are in silicon index cut
         if(silIndex0 == -1)
         {
-            hThetaLabDebug->Fill(theta3Lab * TMath::RadToDeg());
             continue;
         }
         // Moving from ActSim::Geometry reference frame to ACTAR standard frame: (0, 0) = (padx = 0, pady = 0)
@@ -413,10 +423,14 @@ void Simulation_TRIUMF(const std::string& beam, const std::string& target, const
     cBefore->DivideSquare(4);
     cBefore->cd(1);
     hThetaCMAll->Draw();
-    hThetaCM->SetLineColor(kRed);
-    hThetaCM->Draw("sames");
+    hThetaCMDebug->SetLineColor(kRed);
+    hThetaCMDebug->Draw("same");
+    hThetaLabDebug->SetLineColor(kOrange);
+    hThetaLabDebug->Draw("same");
+    // hThetaCM->SetLineColor(kRed);
+    // hThetaCM->Draw("sames");
     cBefore->cd(2);
-    hDistL0->Draw();
+    hAngles->Draw();
     cBefore->cd(3);
     hEexBefore->Draw("hist");
     cBefore->cd(4);

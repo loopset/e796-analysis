@@ -129,7 +129,7 @@ void SampleTheoXS()
     // func->SetLineColor(kPink);
     // func->SetLineWidth(2);
     //
-    ActPhysics::Kinematics kin {"11Li", "d", "p", "12Li", 65};
+    ActPhysics::Kinematics kin {"12Li", "d", "t", "11Li", 65};
     // Get random from TF1!!
     auto* hist {new TH1F("hist", "Sampled histogram;#theta_{CM} [deg]", 150, 0, 180)};
     auto* h {(TH1F*)hist->Clone("hLab")};
