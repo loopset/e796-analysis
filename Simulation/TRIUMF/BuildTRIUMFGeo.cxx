@@ -1,5 +1,7 @@
 #include "ActGeometry.h"
 
+#include "TCanvas.h"
+
 #include <map>
 #include <string>
 #include <utility>
@@ -18,7 +20,7 @@ void BuildTRIUMFGeo(bool draw = true)
     double silicon1Y {8. / 2};
     double silicon1Z {5.0 / 2};
     ActSim::SilUnit silUnit(0, silicon1X, silicon1Y, silicon1Z);
-    ActSim::SilUnit silUnitThick (1, 0.15 / 2, silicon1Y, silicon1Z);
+    ActSim::SilUnit silUnitThick(1, 0.15 / 2, silicon1Y, silicon1Z);
     // set placements for front L0
     std::map<int, std::pair<double, double>> l0Placements {{0, {+2 * silicon1Y, -2 * silicon1Z}},
                                                            {1, {0, -2 * silicon1Z}},
@@ -78,5 +80,5 @@ void BuildTRIUMFGeo(bool draw = true)
 
     // and draw it if necessary
     if(draw)
-        geo.Draw();
+        geo.Draw(false);
 }
