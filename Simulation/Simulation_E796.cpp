@@ -9,6 +9,7 @@
 #include "ActSilMatrix.h"
 
 #include "Rtypes.h"
+#include <ratio>
 
 #include "TCanvas.h"
 #include "TEfficiency.h"
@@ -35,6 +36,12 @@
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
 #include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
 #include "/media/Data/E796v2/Simulation/Utils.cxx"
+
+void ApplyNaN(double& val, double thresh = 0, const std::string& comment = "stopped")
+{
+    if(val <= thresh)
+        val = std::nan(comment.c_str());
+}
 
 TH1D* GetRPXProj(const TString& file)
 {
@@ -185,6 +192,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     auto* hRPxSimu {HistConfig::RP.GetHistogram()->ProjectionX("hRPxSimu")};
 
+    // Debug histograms
+    auto* hDeltaE {new TH2D {"hDeltaEE", "#Delta E - E;E_{in} [MeV];#Delta E_{0} [MeV]", 300, 0, 60, 300, 0, 60}};
+
     // Load SRIM tables
     // The name of the file sets particle + medium
     auto* srim {new ActPhysics::SRIM()};
@@ -306,15 +316,22 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // if(!cuts.IsInside(std::to_string(silIndex0), silPoint0InMM.Y(), silPoint0InMM.Z() - 50))
         //     continue;
 
-        auto T3EnteringSil {runner.EnergyAfterGas(T3Lab, distance0, "light", stragglingInGas)};
+        // auto T3EnteringSil {runner.EnergyAfterGas(T3Lab, distance0, "light", stragglingInGas)};
+        auto T3EnteringSil {srim->SlowWithStraggling("light", T3Lab, distance0, 0)};
+        ApplyNaN(T3EnteringSil);
         // nan if stopped in gas
         if(!std::isfinite(T3EnteringSil))
             continue;
 
         // SILICON0
-        auto [eLoss0,
-              T3AfterSil0] {runner.EnergyAfterSilicons(T3EnteringSil, geometry->GetAssemblyUnitWidth(0) * 10.,
-                                                       thresholdSi0, "lightInSil", silResolution, stragglingInSil)};
+        auto T3AfterSil0 {
+            srim->SlowWithStraggling("lightInSil", T3EnteringSil, geometry->GetAssemblyUnitWidth(0) * 10, 0)};
+        auto eLoss0 {T3EnteringSil - T3AfterSil0};
+        // auto [eLoss0,
+        //       T3AfterSil0] {runner.EnergyAfterSilicons(T3EnteringSil, geometry->GetAssemblyUnitWidth(0) * 10.,
+        //                                                thresholdSi0, "lightInSil", silResolution, stragglingInSil)};
+        ApplyNaN(eLoss0, thresholdSi0, "thresh");
+        hDeltaE->Fill(T3EnteringSil, eLoss0);
         // nan if bellow threshold
         if(!std::isfinite(eLoss0))
             continue;
@@ -340,17 +357,24 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             distance1 = (silPoint1 - silPoint0).R() * 10;
             // distance1 *= 10.;
             // distance1 -= distance0; // distanceIntergas = distance1 - distance0
-            T3AfterInterGas = runner.EnergyAfterGas(T3AfterSil0, distance1, "light", stragglingInGas);
+            // T3AfterInterGas = runner.EnergyAfterGas(T3AfterSil0, distance1, "light", stragglingInGas);
+            T3AfterInterGas = srim->SlowWithStraggling("light", T3AfterSil0, distance1);
+            ApplyNaN(T3AfterInterGas);
             if(!std::isfinite(T3AfterInterGas))
                 continue;
 
             // now, silicon if we have energy left
             if(T3AfterInterGas > 0)
             {
-                auto results {runner.EnergyAfterSilicons(T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10.,
-                                                         thresholdSi1, "lightInSil", silResolution, stragglingInSil)};
-                eLoss1 = results.first;
-                T3AfterSil1 = results.second;
+                // auto results {runner.EnergyAfterSilicons(T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10.,
+                //                                          thresholdSi1, "lightInSil", silResolution,
+                //                                          stragglingInSil)};
+                auto T3AfterSil1 {
+                    srim->SlowWithStraggling("lightInSil", T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10)};
+                auto eLoss1 {T3AfterInterGas - T3AfterSil1};
+                ApplyNaN(eLoss1, thresholdSi1, "thresh");
+                // eLoss1 = results.first;
+                // T3AfterSil1 = results.second;
                 isPunch = true;
             }
         }
@@ -359,7 +383,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         double EBefSil0 {};
         if(isPunch && T3AfterSil1 == 0 && std::isfinite(eLoss1))
         {
-            auto EAfterSil0 {runner.EnergyBeforeGas(eLoss1, distance1, "light")};
+            // auto EAfterSil0 {runner.EnergyBeforeGas(eLoss1, distance1, "light")};
+            double EAfterSil0 {srim->EvalInitialEnergy("light", eLoss1, distance1)};
             EBefSil0 = eLoss0 + EAfterSil0;
         }
         else if(!isPunch && T3AfterSil0 == 0)
@@ -370,11 +395,13 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // 7->
         // we are ready to reconstruct Eex with all resolutions implemented
         //(d,light) is investigated gating on Esil1 = 0!
-        bool cutEAfterSil0 {EBefSil0 != -1 && !isPunch};
+        // bool cutEAfterSil0 {EBefSil0 != -1 && !isPunch};
+        bool cutEAfterSil0 {T3AfterSil0 == 0};
         bool cutELoss0 {eLoss0Cut.first <= eLoss0 && eLoss0 <= eLoss0Cut.second};
         if(cutEAfterSil0 && cutELoss0) // fill histograms
         {
-            auto T3Recon {runner.EnergyBeforeGas(eLoss0, distance0, "light")};
+            // auto T3Recon {runner.EnergyBeforeGas(EBefSil0, distance0, "light")};
+            auto T3Recon {srim->EvalInitialEnergy("light", EBefSil0, distance0)};
             auto EexAfter {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Recon, theta3Lab)};
             auto theta3CM {kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Recon, theta3Lab)};
 
@@ -433,16 +460,18 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     if(standalone)
     {
         auto* c0 {new TCanvas("c0", "Canvas for inspection 0")};
-        c0->DivideSquare(4);
+        c0->DivideSquare(6);
         c0->cd(1);
         hThetaCM->DrawClone();
         c0->cd(2);
         hThetaCMAll->DrawClone();
         c0->cd(3);
-        hEexBefore->DrawClone("hist");
+        hDistL0->DrawClone();
         c0->cd(4);
         // hThetaCMAll->DrawClone();
         hRP->DrawClone("colz");
+        c0->cd(5);
+        hDeltaE->DrawClone("colz");
 
         // draw theoretical kinematics
         ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
