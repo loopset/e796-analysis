@@ -53,10 +53,8 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
         TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_952mb_mixture.txt", beam.c_str()).Data());
 
     // Build energy at vertex
-    auto def = df.Define("EVertex",
-                         [&](const ActRoot::MergerData& d)
-                         { return srim->EvalInitialEnergy(light, d.fSilEs.front(), d.fTrackLength); },
-                         {"MergerData"});
+    auto def = df.Define("EVertex", [&](const ActRoot::MergerData& d)
+                         { return srim->EvalInitialEnergy(light, d.fSilEs.front(), d.fTrackLength); }, {"MergerData"});
 
     // Init particles
     ActPhysics::Particle pb {beam};
@@ -64,9 +62,8 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     ActPhysics::Particle pl {light};
 
     // Build beam energy
-    def =
-        def.Define("EBeam", [&](const ActRoot::MergerData& d) { return srim->Slow(beam, 35 * pb.GetAMU(), d.fRP.X()); },
-                   {"MergerData"});
+    def = def.Define("EBeam", [&](const ActRoot::MergerData& d)
+                     { return srim->Slow(beam, 35 * pb.GetAMU(), d.fRP.X()); }, {"MergerData"});
 
     ActPhysics::Kinematics kin {pb, pt, pl, 35 * pb.GetAMU()};
     // Vector of kinematics as one object is needed per
@@ -91,17 +88,16 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                            return vkins[slot].ReconstructExcitationEnergy(EVertex, d.fThetaLegacy * TMath::DegToRad());
                        },
                        {"MergerData", "EVertex", "EBeam"});
-    def =
-        def.DefineSlot("ThetaCM",
-                       [&](unsigned int slot, const ActRoot::MergerData& d, double EVertex, double EBeam)
-                       {
-                           vkins[slot].SetBeamEnergy(EBeam);
-                           // vkins[slot].SetEx(Ex);
-                           return 180. - vkins[slot].ReconstructTheta3CMFromLab(
-                                             EVertex, ((isSide) ? d.fThetaLegacy : d.fThetaLight) * TMath::DegToRad()) *
-                                             TMath::RadToDeg();
-                       },
-                       {"MergerData", "EVertex", "EBeam"});
+    def = def.DefineSlot("ThetaCM",
+                         [&](unsigned int slot, const ActRoot::MergerData& d, double EVertex, double EBeam)
+                         {
+                             vkins[slot].SetBeamEnergy(EBeam);
+                             // vkins[slot].SetEx(Ex);
+                             return vkins[slot].ReconstructTheta3CMFromLab(
+                                        EVertex, ((isSide) ? d.fThetaLegacy : d.fThetaLight) * TMath::DegToRad()) *
+                                    TMath::RadToDeg();
+                         },
+                         {"MergerData", "EVertex", "EBeam"});
 
     // Book new histograms
     auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin,

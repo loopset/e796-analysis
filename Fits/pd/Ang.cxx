@@ -26,8 +26,8 @@ void Ang()
     auto hEx {df.Histo1D(E796Fit::Expd, "Ex")};
 
     // Init intervals
-    double thetaCMMin {6};
-    double thetaCMMax {14};
+    double thetaCMMin {5};
+    double thetaCMMax {16};
     double thetaCMStep {1};
     Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Expd, thetaCMStep};
     // Fill

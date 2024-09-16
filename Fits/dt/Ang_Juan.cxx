@@ -110,7 +110,7 @@ void Ang_Juan()
     comp.Fit(thetaCMMin, thetaCMMax);
     comp.DrawTheo();
     comp.Draw();
-    comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
+    // comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
 
     // For g2 @ 3.2 MeV
     Angular::Comparator comp2 {"g2 = 1/2^{-} @ 3.2 MeV", xs.Get("g2")};

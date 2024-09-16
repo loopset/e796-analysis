@@ -13,7 +13,7 @@ void Pipe0_Beam()
 {
     ROOT::EnableImplicitMT();
     // Read data
-    ActRoot::DataManager datman {"/media/Data/E796v2/configs/data.conf", ActRoot::ModeType::EReadSilMod};
+    ActRoot::DataManager datman {"/media/Data/E796v2/configs/data_old.conf", ActRoot::ModeType::EReadSilMod};
     auto chain {datman.GetJoinedData()};
     ROOT::RDataFrame df {*chain};
     // df.Describe().Print();

@@ -25,7 +25,7 @@ void Fit()
         "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_2H_light_3H_front.root"};
 
     // Nodes at which compute global fit
-    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1, {"fRP"}), df.Filter(E796Gates::rpx2, {"fRP"})};
+    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1<>, {"fRP"}), df.Filter(E796Gates::rpx2<>, {"fRP"})};
     std::vector<std::string> labels {"dt", "dt_1", "dt_2"};
     std::vector<TH1D*> hExs;
     for(int i = 0; i < nodes.size(); i++)

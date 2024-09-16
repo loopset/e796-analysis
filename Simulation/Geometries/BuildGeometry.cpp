@@ -55,7 +55,7 @@ void BuildGeometry(bool draw = true)
     geo.Print();
 
     //SAVE GEO
-    std::string path {"./Geometries/"};
+    std::string path {"./"};
     geo.WriteGeometry(path, "geo0");
 
     //and draw it if necessary

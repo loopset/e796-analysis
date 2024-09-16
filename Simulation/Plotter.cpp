@@ -24,7 +24,7 @@
 #include "/media/Data/E796v2/Simulation/Utils.cxx"
 
 void Plotter(const std::vector<double>& Exs, const std::string& beam, const std::string& target,
-             const std::string& light, const std::string& heavy, double T1, int neutronPS, int protonPS)
+             const std::string& light, double T1, int neutronPS, int protonPS)
 {
     ROOT::EnableImplicitMT();
 
@@ -92,7 +92,7 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
         // Get theoretical kinematics
         ActPhysics::Particle p1 {beam};
         double T1Total {T1 * p1.GetAMU()};
-        ActPhysics::Kinematics kin(beam, target, light, heavy, T1Total, Exs[i]);
+        ActPhysics::Kinematics kin(beam, target, light, T1Total, Exs[i]);
         auto* gtheo {kin.GetKinematicLine3()};
         // Kinematics
         cs[i]->cd(1);

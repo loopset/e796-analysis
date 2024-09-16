@@ -25,7 +25,7 @@ void Fit()
         "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_1H_light_2H_front.root"};
 
     // Different cuts!
-    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1, {"fRP"}), df.Filter(E796Gates::rpx2, {"fRP"})};
+    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1<>, {"fRP"}), df.Filter(E796Gates::rpx2<>, {"fRP"})};
     std::vector<std::string> labels {"pd", "pd_1", "pd_2"};
     std::vector<TH1D*> hExs;
     for(int i = 0; i < nodes.size(); i++)

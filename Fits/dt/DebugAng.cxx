@@ -35,7 +35,7 @@ void DebugAng()
                                               "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
     auto hPS {phase.Histo1D(E796Fit::Exdt, "Ex_cal")};
     // Init nodes
-    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1, {"fRP"}), df.Filter(E796Gates::rpx2, {"fRP"})};
+    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1<>, {"fRP"}), df.Filter(E796Gates::rpx2<>, {"fRP"})};
     std::vector<std::string> labels {"(d,t) all", "(d,t) sec 1", "(d,t) sec 2"};
     std::vector<TH1D*> hExs;
     for(int n = 0; n < nodes.size(); n++)
