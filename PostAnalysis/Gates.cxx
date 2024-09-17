@@ -10,8 +10,6 @@ namespace E796Gates
 {
 auto rp {[](double xrp) -> bool { return (26 <= xrp) && (xrp <= 220); }};
 
-auto rpDebug {[](double xrp) -> bool { return (40 <= xrp) && (xrp <= 200); }};
-
 auto rpMerger {[](const ActRoot::MergerData& d) -> bool { return rp(d.fRP.X()); }};
 
 template <typename T = float>

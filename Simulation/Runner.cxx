@@ -17,8 +17,8 @@ void Runner(TString what = "plot", bool standalone = true)
     // Settings
     // Names of particles
     std::string beam {"20O"};
-    std::string target {"2H"};
-    std::string light {"4He"};
+    std::string target {"1H"};
+    std::string light {"1H"};
     // Phase space reactions: when the heavy decays by proton or neutron emission
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
     int neutronPS {0}; // number of neutrons in final state
@@ -28,18 +28,26 @@ void Runner(TString what = "plot", bool standalone = true)
     std::vector<double> Eexs;
     if(neutronPS == 0 && protonPS == 0)
     {
-        // (d, 4He)
-        if(target == "2H" && light == "4He")
-            Eexs = {0};
-        // (d, 3He)
-        if(target == "2H" && light == "3He")
-            Eexs = {0};
-        // (d, t)
-        if(target == "2H" && light == "3H")
-            Eexs = {0., 1.47, 3.24, 4.4, 5.2, 6.9};
-        // (p, d)
-        if(target == "1H" && light == "2H")
-            Eexs = {0, 1.47, 3.24};
+        // p reactions
+        if(target == "1H")
+        {
+            if(light == "1H")
+                Eexs = {0, 1.67};
+            if(light == "2H")
+                Eexs = {0, 1.47, 3.24};
+        }
+        // d reactions
+        if(target == "2H")
+        {
+            if(light == "2H")
+                Eexs = {0, 1.67};
+            if(light == "3H")
+                Eexs = {0., 1.47, 3.24, 4.4, 5.2, 6.9};
+            if(light == "3He")
+                Eexs = {0};
+            if(light == "4He")
+                Eexs = {0};
+        }
     }
     else if(neutronPS > 0 && protonPS == 0)
         Eexs = {0}; // only gs for n phase space

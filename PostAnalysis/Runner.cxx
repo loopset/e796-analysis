@@ -21,8 +21,8 @@ void Print(const std::string& beam, const std::string& target, const std::string
 void Runner(TString what = "plot")
 {
     std::string beam {"20O"};
-    std::string target {"2H"};
-    std::string light {"4He"};
+    std::string target {"1H"};
+    std::string light {"1H"};
     bool isSide {(target == light)}; // else isFront
     // Nice print
     Print(beam, target, light, isSide, what.Data());

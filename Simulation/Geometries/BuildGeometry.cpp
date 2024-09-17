@@ -45,18 +45,34 @@ void BuildGeometry(bool draw = true)
     ActSim::SilAssembly l1Assembly(1, silUnit, true, false);
     l1Assembly.SetAssemblyPlacements(l1Placements);
     l1Assembly.SetOffsets(l0offset + 2.9);
+    // Placements for side layer
+    std::map<int, std::pair<double, double>> lsPlacement {
+        {0, {-2 * silicon1Y, - 2 * silicon1Z}},
+        {1, {0 * silicon1Y, - 2 * silicon1Z}},
+        {2, {+2 * silicon1Y, - 2 * silicon1Z}},
+        {3, {-2 * silicon1Y, 0 * silicon1Z}},
+        {4, {0 * silicon1Y, 0 * silicon1Z}},
+        {5, {+2 * silicon1Y, 0 * silicon1Z}},
+        {6, {-2 * silicon1Y, + 2 * silicon1Z}},
+        {7, {0 * silicon1Y, + 2 * silicon1Z}},
+    };
+    ActSim::SilAssembly lsAssembly {2, silUnit, false, true};
+    double lsoffset {10};//cm
+    lsAssembly.SetOffsets(-1, lsoffset);
+    lsAssembly.SetAssemblyPlacements(lsPlacement);
 
     //BUILD GEOMETRY
     ActSim::Geometry geo { };
     geo.SetDrift(actar);
     geo.AddAssemblyData(l0Assembly);
     geo.AddAssemblyData(l1Assembly);
+    geo.AddAssemblyData(lsAssembly);
     geo.Construct();
     geo.Print();
 
     //SAVE GEO
     std::string path {"./"};
-    geo.WriteGeometry(path, "geo0");
+    geo.WriteGeometry(path, "geo_all");
 
     //and draw it if necessary
     if(draw) geo.Draw();

@@ -9,7 +9,6 @@
 #include "ActSilMatrix.h"
 
 #include "Rtypes.h"
-#include <ratio>
 
 #include "TCanvas.h"
 #include "TEfficiency.h"
@@ -17,6 +16,7 @@
 #include "TMath.h"
 #include "TProfile2D.h"
 #include "TROOT.h"
+#include "TRandom.h"
 #include "TRandom3.h"
 #include "TStopwatch.h"
 #include "TString.h"
@@ -59,6 +59,11 @@ double SampleXFromRPXProj(TH1D* px)
     return px->GetRandom();
 }
 
+void ApplySilRes(double& e, double sigma)
+{
+    e = gRandom->Gaus(e, sigma * TMath::Sqrt(e / 5.5));
+}
+
 void Simulation_E796(const std::string& beam, const std::string& target, const std::string& light, int neutronPS,
                      int protonPS, double T1, double Ex, bool standalone)
 {
@@ -68,6 +73,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // Set whether is elastic or not
     const bool isEl {target == light};
+    // Set assembly indexes as in the BuilGeometry file
+    const int idxAssembly0 {(isEl) ? 2 : 0};
+    const int idxAssembly1 {(isEl) ? -1 : 1};
 
     // SIGMAS
     const double sigmaSil {0.060 / 2.355};
@@ -90,7 +98,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double thresholdSi1 {1.};
 
     // number of iterations
-    const int iterations {static_cast<int>(5e6)};
+    const int iterations {static_cast<int>((isEl) ? 1e7 : 5e6)};
 
     // ACTIVATE STRAGGLING OR NOT
     bool stragglingInGas {true};
@@ -109,8 +117,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     std::pair<double, double> eLoss0Cut;
     if(cuts.GetCut(light))
     {
-        // eLoss0Cut = cuts.GetXRange(light);
-        eLoss0Cut = {6.5, 27};
+        eLoss0Cut = cuts.GetXRange(light);
+        // eLoss0Cut = {6.5, 27};
         std::cout << BOLDGREEN << "-> ESil range for " << light << ": [" << eLoss0Cut.first << ", " << eLoss0Cut.second
                   << "] MeV" << RESET << '\n';
     }
@@ -124,15 +132,19 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
 
     // Silicon masks
-    auto sm {E796Utils::GetEffSilMatrix(light)};
-    auto silIndxs {sm->GetSilIndexes()};
-    // Try removing faulty silicon 7
-    auto found {silIndxs.find(7)};
-    if(found != silIndxs.end())
-        silIndxs.erase(found);
-    // std::set<int> silIndxs {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11};
-    // Move Z of silicons to match centre of chamber. The centred silicons are 3 and 4
-    sm->MoveZTo(zVertexMean, {3, 4});
+    ActPhysics::SilMatrix* sm {};
+    std::set<int> silIndxs;
+    if(!isEl)
+    {
+        sm = E796Utils::GetEffSilMatrix(light);
+        silIndxs = sm->GetSilIndexes();
+        // Move Z of silicons to match centre of chamber. The centred silicons are 3 and 4
+        sm->MoveZTo(zVertexMean, {3, 4});
+        // // Try removing faulty silicon 7
+        // auto found {silIndxs.find(7)};
+        // if(found != silIndxs.end())
+        //     silIndxs.erase(found);
+    }
 
     // RPx histogram to sample
     // auto* hRPx {GetRPXProj(E796Utils::GetFileName(2, beam, target, light, false, "rpx"))};
@@ -176,7 +188,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     auto hThetaCM2 {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM2").GetHistogram()};
     auto hThetaCMAll2 {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all 2").GetHistogram()};
 
-    auto hDistL0 {HistConfig::ChangeTitle(HistConfig::TL, "Distance to L0").GetHistogram()};
+    auto hDistF0 {HistConfig::ChangeTitle(HistConfig::TL, "Distance to F0").GetHistogram()};
 
     auto hKinVertex {HistConfig::ChangeTitle(HistConfig::KinSimu, "Kinematics at vertex").GetHistogram()};
 
@@ -193,7 +205,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     auto* hRPxSimu {HistConfig::RP.GetHistogram()->ProjectionX("hRPxSimu")};
 
     // Debug histograms
-    auto* hDeltaE {new TH2D {"hDeltaEE", "#Delta E - E;E_{in} [MeV];#Delta E_{0} [MeV]", 300, 0, 60, 300, 0, 60}};
+    auto hDeltaE {
+        std::make_unique<TH2D>("hDeltaEE", "#Delta E - E;E_{in} [MeV];#Delta E_{0} [MeV]", 300, 0, 60, 300, 0, 60)};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -210,13 +223,13 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // Load geometry
     auto* geometry {new ActSim::Geometry()};
-    geometry->ReadGeometry("/media/Data/E796v2/Simulation/Geometries/", "geo0");
+    geometry->ReadGeometry("/media/Data/E796v2/Simulation/Geometries/", "geo_all");
 
     // Random generator
     auto* rand {new TRandom3()};
     rand->SetSeed(); // random path in each execution of macro
 
-    // Runner: contains utility funcstions to execute multiple actions
+    // Runner: contains utility functions to execute multiple actions
     ActSim::Runner runner(srim, geometry, rand, sigmaSil);
 
     // Output from simulation!
@@ -261,10 +274,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             std::cout.flush();
             nextPrint += step;
         }
-        // 1-> Sample vertex and apply same cut as in analysis
+        // 1-> Sample vertex
         auto vertex {runner.SampleVertex(yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, nullptr)};
-        if(!E796Gates::rpDebug(vertex.X()))
-            continue;
         // 2-> Beam energy according to its sigma
         auto TBeam {runner.RandomizeBeamEnergy(
             T1 * p1.GetAMU(),
@@ -286,10 +297,16 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             hThetaCMAll1->Fill(theta3CMBefore * TMath::RadToDeg());
         if(E796Gates::rpx2<double>(vertex))
             hThetaCMAll2->Fill(theta3CMBefore * TMath::RadToDeg());
+
         // 4-> Include thetaLab resolution to compute thetaCM and Ex
         if(thetaResolution) // resolution in
             theta3Lab = runner.GetRand()->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
-        auto phi3Lab {runner.GetRand()->Uniform(0., 2 * TMath::Pi())};
+        // auto phi3Lab {runner.GetRand()->Uniform(0., 2 * TMath::Pi())};
+        auto phi3Lab {PLight->Phi()};
+
+        // 4.1 -> Apply cut on vertex position
+        if(!E796Gates::rp(vertex.X()))
+            continue;
 
         // 5-> Propagate track from vertex to silicon wall using Geometry class
         ROOT::Math::XYZVector direction {TMath::Cos(theta3Lab), TMath::Sin(theta3Lab) * TMath::Sin(phi3Lab),
@@ -301,42 +318,50 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         double distance0 {};
         bool side0 {};
         // Assembly 0
-        runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, 0, side0, distance0, silType0,
-                                                      silIndex0, silPoint0);
+        runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, idxAssembly0, side0, distance0,
+                                                      silType0, silIndex0, silPoint0);
         // convert to mm (Geometry::PropagateTracksToSiliconArray works in cm but we need mm to use in SRIM)
         distance0 *= 10.;
 
         // skip tracks that doesn't reach silicons or are in silicon index cut
-        if(silIndex0 == -1 || (silIndxs.find(silIndex0) == silIndxs.end()))
+        if(silIndex0 == -1 || (!isEl && silIndxs.find(silIndex0) == silIndxs.end()))
             continue;
         auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
         // Apply SilMatrix cut
-        if(!sm->IsInside(silIndex0, silPoint0InMM.Y(), silPoint0InMM.Z()))
-            continue;
-        // if(!cuts.IsInside(std::to_string(silIndex0), silPoint0InMM.Y(), silPoint0InMM.Z() - 50))
-        //     continue;
+        if(!isEl)
+        {
+            if(!sm->IsInside(silIndex0, silPoint0InMM.Y(), silPoint0InMM.Z()))
+                continue;
+        }
 
         // auto T3EnteringSil {runner.EnergyAfterGas(T3Lab, distance0, "light", stragglingInGas)};
-        auto T3EnteringSil {srim->SlowWithStraggling("light", T3Lab, distance0, 0)};
+        auto T3EnteringSil {srim->SlowWithStraggling("light", T3Lab, distance0)};
         ApplyNaN(T3EnteringSil);
         // nan if stopped in gas
         if(!std::isfinite(T3EnteringSil))
             continue;
 
-        // SILICON0
-        auto T3AfterSil0 {
-            srim->SlowWithStraggling("lightInSil", T3EnteringSil, geometry->GetAssemblyUnitWidth(0) * 10, 0)};
+        // First layer of silicons
+        auto T3AfterSil0 {srim->SlowWithStraggling("lightInSil", T3EnteringSil,
+                                                   geometry->GetAssemblyUnitWidth(idxAssembly0) * 10, 0)};
         auto eLoss0 {T3EnteringSil - T3AfterSil0};
+        // Apply resolution
+        if(T3AfterSil0 != 0)
+        {
+            ApplySilRes(eLoss0, sigmaSil);
+            T3AfterSil0 = T3EnteringSil - eLoss0;
+        }
         // auto [eLoss0,
         //       T3AfterSil0] {runner.EnergyAfterSilicons(T3EnteringSil, geometry->GetAssemblyUnitWidth(0) * 10.,
         //                                                thresholdSi0, "lightInSil", silResolution, stragglingInSil)};
         ApplyNaN(eLoss0, thresholdSi0, "thresh");
+        // std::cout << "T3AfterSil0 : " << T3AfterSil0 << '\n';
+        // std::cout << "eLoss0 : " << eLoss0 << '\n';
         hDeltaE->Fill(T3EnteringSil, eLoss0);
         // nan if bellow threshold
         if(!std::isfinite(eLoss0))
             continue;
-        // 6-> Same but to silicon layer 1
-        // SILICON1
+        // 6-> Same but to silicon layer 1 if exists
         double T3AfterInterGas {};
         double distance1 {};
         int silIndex1 {};
@@ -346,7 +371,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         double eLoss1 {};
         double T3AfterSil1 {};
         bool isPunch {};
-        if(T3AfterSil0 > 0)
+        if(T3AfterSil0 > 0 && !isEl)
         {
             // first, propagate in gas
             runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, 1, side1, distance1, silType1,
@@ -369,9 +394,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
                 // auto results {runner.EnergyAfterSilicons(T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10.,
                 //                                          thresholdSi1, "lightInSil", silResolution,
                 //                                          stragglingInSil)};
-                auto T3AfterSil1 {
-                    srim->SlowWithStraggling("lightInSil", T3AfterInterGas, geometry->GetAssemblyUnitWidth(1) * 10)};
+                auto T3AfterSil1 {srim->SlowWithStraggling("lightInSil", T3AfterInterGas,
+                                                           geometry->GetAssemblyUnitWidth(idxAssembly1) * 10)};
                 auto eLoss1 {T3AfterInterGas - T3AfterSil1};
+                ApplySilRes(eLoss1, sigmaSil);
+                T3AfterSil1 = T3AfterInterGas - eLoss1;
                 ApplyNaN(eLoss1, thresholdSi1, "thresh");
                 // eLoss1 = results.first;
                 // T3AfterSil1 = results.second;
@@ -408,10 +435,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             // fill histograms
             hThetaCM->Fill(theta3CM * TMath::RadToDeg());
             hEexBefore->Fill(EexBefore, weight); // with the weight from each TGenPhaseSpace::Generate()
-            hDistL0->Fill(distance0);
+            hDistF0->Fill(distance0);
             hKinVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
             hEexAfter->Fill(EexAfter, weight);
-            hSP->Fill(silPoint0InMM.Y(), silPoint0InMM.Z());
+            hSP->Fill((isEl) ? silPoint0InMM.X() : silPoint0InMM.Y(), silPoint0InMM.Z());
             // Fill histogram of SP with thetaCM as weight
             hSPTheta->Fill(silPoint0InMM.Y(), silPoint0InMM.Z(), theta3CM * TMath::RadToDeg());
             // RP histogram
@@ -466,7 +493,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         c0->cd(2);
         hThetaCMAll->DrawClone();
         c0->cd(3);
-        hDistL0->DrawClone();
+        hDistF0->DrawClone();
         c0->cd(4);
         // hThetaCMAll->DrawClone();
         hRP->DrawClone("colz");
@@ -484,8 +511,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         gtheo->Draw("same");
         c1->cd(2);
         hSP->DrawClone("col");
-        sm->Draw();
-        // cuts.DrawAll();
+        if(!isEl)
+            sm->Draw();
         c1->cd(3);
         hEexAfter->DrawClone("hist");
         c1->cd(4);
