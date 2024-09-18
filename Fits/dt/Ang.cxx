@@ -10,7 +10,6 @@
 #include "Interpolators.h"
 #include "PhysExperiment.h"
 
-#include <iostream>
 #include <string>
 #include <vector>
 
@@ -43,7 +42,7 @@ void Ang()
     // Init intervals
     double thetaCMMin {8};
     double thetaCMMax {14};
-    double thetaCMStep {1};
+    double thetaCMStep {1.5};
     Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdt, thetaCMStep};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
@@ -73,8 +72,7 @@ void Ang()
     eff.Draw(true);
 
     // Set experiment info
-    PhysUtils::Experiment exp {8.2125e20, 279932, 30000};
-    std::cout << "Nb : " << exp.GetNb() << '\n';
+    PhysUtils::Experiment exp {"../norms/d_target.dat"};
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);

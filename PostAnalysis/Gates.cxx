@@ -8,7 +8,8 @@
 #include "Math/Point3Dfwd.h"
 namespace E796Gates
 {
-auto rp {[](double xrp) -> bool { return (26 <= xrp) && (xrp <= 220); }};
+// auto rp {[](double xrp) -> bool { return (26 <= xrp) && (xrp <= 220); }};
+auto rp {[](double xrp) -> bool { return (40 <= xrp) && (xrp <= 200); }}; // same as Juan
 
 auto rpMerger {[](const ActRoot::MergerData& d) -> bool { return rp(d.fRP.X()); }};
 

@@ -97,7 +97,7 @@ void Ang_Juan()
     // Draw to check is fine
     eff.Draw();
     // Set experiment info
-    PhysUtils::Experiment exp {8.2125e20, 279932, 30000};
+    PhysUtils::Experiment exp {"../norms/d_target.dat"};
     // std::cout << "Nb : " << exp.GetNb() << '\n';
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};

@@ -56,15 +56,17 @@ void Ang()
     eff.Draw(true);
 
     // Set experiment info
-    PhysUtils::Experiment exp {8.2125e20, 279932, 30000};
+    PhysUtils::Experiment exp {"../norms/d_target.dat"};
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
+    xs.Write("./Outputs/");
 
     // For gs
     Angular::Comparator comp {"g0 = 0^{+} g.s", xs.Get("g0")};
     comp.Add("Daeh", "./Inputs/g0_Daehnick/fort.201");
     comp.Add("Haixia", "./Inputs/g0_Haixia/fort.201");
+    comp.Add("Fit", "./Inputs/s0/fort.201");
     // comp.Fit();
     comp.Draw();
 

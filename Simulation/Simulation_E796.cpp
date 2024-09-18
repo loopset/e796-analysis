@@ -85,7 +85,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Beam has to be manually placed in the simulation
     // Centered in Z and Y with a width of 4 mm
     // Center in Z
-    const double zVertexMean {128.};
+    const double zOffsetBeam {(isEl) ? 6.97 : 8.34};//mm
+    const double zVertexMean {128. + zOffsetBeam};
     const double zVertexSigma {4};
     // Center in Y
     const double yVertexMean {128.};
@@ -98,7 +99,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double thresholdSi1 {1.};
 
     // number of iterations
-    const int iterations {static_cast<int>((isEl) ? 1e7 : 5e6)};
+    const int iterations {static_cast<int>((isEl) ? 5e7 : 1e7)};
 
     // ACTIVATE STRAGGLING OR NOT
     bool stragglingInGas {true};
@@ -118,7 +119,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     if(cuts.GetCut(light))
     {
         eLoss0Cut = cuts.GetXRange(light);
-        // eLoss0Cut = {6.5, 27};
+        // eLoss0Cut = {1.5, 19};
         std::cout << BOLDGREEN << "-> ESil range for " << light << ": [" << eLoss0Cut.first << ", " << eLoss0Cut.second
                   << "] MeV" << RESET << '\n';
     }
@@ -139,7 +140,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         sm = E796Utils::GetEffSilMatrix(light);
         silIndxs = sm->GetSilIndexes();
         // Move Z of silicons to match centre of chamber. The centred silicons are 3 and 4
-        sm->MoveZTo(zVertexMean, {3, 4});
+        sm->MoveZTo(zVertexMean - zOffsetBeam, {3, 4});
         // // Try removing faulty silicon 7
         // auto found {silIndxs.find(7)};
         // if(found != silIndxs.end())
@@ -207,6 +208,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Debug histograms
     auto hDeltaE {
         std::make_unique<TH2D>("hDeltaEE", "#Delta E - E;E_{in} [MeV];#Delta E_{0} [MeV]", 300, 0, 60, 300, 0, 60)};
+    auto hELoss0 {std::make_unique<TH2D>("hELoss0", "ELoss0;E_{in} [MeV];#Delta E_{0} [MeV]", 200, 0, 40, 200, 0, 40)};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -448,6 +450,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
                 hThetaCM1->Fill(theta3CM * TMath::RadToDeg());
             if(E796Gates::rpx2<double>(vertex))
                 hThetaCM2->Fill(theta3CM * TMath::RadToDeg());
+            hELoss0->Fill(T3EnteringSil, eLoss0);
 
             // write to TTree
             Eex_tree = EexAfter;
@@ -499,6 +502,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         hRP->DrawClone("colz");
         c0->cd(5);
         hDeltaE->DrawClone("colz");
+        c0->cd(6);
+        hELoss0->DrawClone("colz");
 
         // draw theoretical kinematics
         ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
