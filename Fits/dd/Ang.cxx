@@ -14,14 +14,14 @@
 #include <vector>
 
 #include "../../PostAnalysis/HistConfig.h"
-#include "../../PostAnalysis/Utils.cxx"
 #include "../FitHist.h"
+#include "../../Selector/Selector.h"
 
 void Ang()
 {
     ROOT::EnableImplicitMT();
 
-    ROOT::RDataFrame df {"Final_Tree", E796Utils::GetFileName(2, "20O", "2H", "2H", true)};
+    ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "2H")};
 
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
@@ -46,8 +46,10 @@ void Ang()
     // Read efficiency files
     std::vector<std::string> peaks {"g0", "g1"};
     std::vector<std::string> effFiles {
-        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_2H_Eex_0.00_nPS_0_pPS_0.root",
-        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_2H_Eex_1.67_nPS_0_pPS_0.root",
+        gSelector->GetSimuFile("20O", "2H", "2H", 0).Data(),
+        gSelector->GetSimuFile("20O", "2H", "2H", 1.67).Data(),
+        // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_2H_Eex_0.00_nPS_0_pPS_0.root",
+        // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_2H_Eex_1.67_nPS_0_pPS_0.root",
     };
     Interpolators::Efficiency eff;
     for(int p = 0; p < peaks.size(); p++)

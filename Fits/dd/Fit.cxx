@@ -16,13 +16,12 @@
 
 #include "/media/Data/E796v2/Fits/FitHist.h"
 #include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
-#include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
-
+#include "../../Selector/Selector.h"
 void Fit()
 {
     ROOT::EnableImplicitMT();
 
-    ROOT::RDataFrame df {"Final_Tree", E796Utils::GetFileName(2, "20O", "2H", "2H", true)};
+    ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "2H")};
 
     // Nodes at which compute global fit
     std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1<>, {"fRP"}),
