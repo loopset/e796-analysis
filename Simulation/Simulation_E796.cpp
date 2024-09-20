@@ -35,7 +35,7 @@
 #include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
 #include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
-#include "/media/Data/E796v2/Simulation/Utils.cxx"
+#include "/media/Data/E796v2/Selector/Selector.h"
 
 void ApplyNaN(double& val, double thresh = 0, const std::string& comment = "stopped")
 {
@@ -85,7 +85,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Beam has to be manually placed in the simulation
     // Centered in Z and Y with a width of 4 mm
     // Center in Z
-    const double zOffsetBeam {(isEl) ? 6.97 : 8.34};//mm
+    const double zOffsetBeam {(isEl) ? 6.97 : 8.34}; // mm
     const double zVertexMean {128. + zOffsetBeam};
     const double zVertexSigma {4};
     // Center in Y
@@ -242,7 +242,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // variables need to be weighted by this value. For binary reactions, weight = 1
     // 4-> Energy at vertex
     // 5-> Theta in Lab frame
-    auto* outFile {new TFile(E796Simu::GetFile(beam, target, light, Ex, neutronPS, protonPS), "recreate")};
+    auto* outFile {new TFile(gSelector->GetSimuFile(beam, target, light, Ex, neutronPS, protonPS), "recreate")};
     auto* outTree {new TTree("SimulationTTree", "A TTree containing only our Eex obtained by simulation")};
     double theta3CM_tree {};
     outTree->Branch("theta3CM", &theta3CM_tree);

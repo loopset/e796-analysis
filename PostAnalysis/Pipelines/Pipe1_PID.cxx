@@ -22,7 +22,7 @@
 #include "../HistConfig.h"
 #include "../Utils.cxx"
 
-void Pipe1_PID(const std::string& beam, const std::string& target, const std::string& light, bool isSide)
+void Pipe1_PID(const std::string& beam, const std::string& target, const std::string& light, bool isEl)
 {
     ROOT::EnableImplicitMT();
     // Read data
@@ -33,7 +33,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     // Apply cuts
     ActPhysics::SilMatrix* sm {};
     ROOT::RDF::RNode vetoed {df};
-    if(isSide)
+    if(isEl)
         vetoed = vetoed.Filter(E796Gates::left0, {"MergerData"});
     else
     {
@@ -53,13 +53,13 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
 
     // Book histograms
     auto hPID {vetoed.Define("ESil0", "fSilEs.front()").Histo2D(HistConfig::PID, "ESil0", "fQave")};
-    auto hSP {vetoed.Histo2D(HistConfig::SP, (isSide) ? "fSP.fCoordinates.fX" : "fSP.fCoordinates.fY",
-                             "fSP.fCoordinates.fZ")};
+    auto hSP {
+        vetoed.Histo2D(HistConfig::SP, (isEl) ? "fSP.fCoordinates.fX" : "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
 
     // Read PID cut
     ActRoot::CutsManager<std::string> cut;
     TString pidfile {};
-    if(isSide)
+    if(isEl)
         pidfile = TString::Format("./Cuts/LightPID/pid_%s_side.root", light.c_str());
     else
         pidfile = TString::Format("./Cuts/LightPID/pid_%s.root", light.c_str());
@@ -70,9 +70,8 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     {
         // Filter
         auto pid {vetoed.Filter([&](const ActRoot::MergerData& d)
-                                { return cut.IsInside(light, d.fSilEs.front(), d.fQave); },
-                                {"MergerData"})};
-        auto filename {E796Utils::GetFileName(1, beam, target, light, isSide)};
+                                { return cut.IsInside(light, d.fSilEs.front(), d.fQave); }, {"MergerData"})};
+        auto filename {E796Utils::GetFile(1, beam, target, light, isEl)};
         std::cout << BOLDCYAN << "Saving PID_Tree in file : " << filename << '\n';
         pid.Snapshot("PID_Tree", filename);
 

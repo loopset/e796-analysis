@@ -20,7 +20,6 @@
 #include <string>
 #include <vector>
 
-#include "../Gates.cxx"
 #include "../HistConfig.h"
 #include "../Utils.cxx"
 
@@ -30,15 +29,11 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     bool debug {false};
     std::cout << BOLDYELLOW << "is DebugTheta enabled ? " << std::boolalpha << debug << '\n';
     // Get file
-    auto filename {E796Utils::GetFileName(1, beam, target, light, isSide)};
+    auto filename {E796Utils::GetFile(1, beam, target, light, isSide)};
     std::cout << BOLDMAGENTA << "Reading file: " << filename << RESET << '\n';
     // Read
     ROOT::EnableImplicitMT();
-    ROOT::RDataFrame d {"PID_Tree", filename};
-
-    std::cout << BOLDGREEN << "Applying RP cut and building Ex" << RESET << '\n';
-    // Apply RP cut
-    auto df {d.Filter(E796Gates::rpMerger, {"MergerData"})};
+    ROOT::RDataFrame df {"PID_Tree", filename};
 
     // Book histograms
     auto hPID {df.Define("ESil0", "fSilEs.front()").Histo2D(HistConfig::PID, "ESil0", "fQave")};
@@ -131,13 +126,13 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     auto hThetaHLLab {def.Histo2D(HistConfig::ChangeTitle(HistConfig::ThetaHeavyLight, "Lab correlations"),
                                   "fThetaLight", "fThetaHeavy")};
     // Save!
-    auto outfile {E796Utils::GetFileName(2, beam, target, light, isSide)};
+    auto outfile {E796Utils::GetFile(2, beam, target, light, isSide)};
     std::cout << BOLDCYAN << "Writing in file : " << outfile << RESET << '\n';
     def.Snapshot("Final_Tree", outfile);
 
     // Save also RP histogram!
-    auto* pRPx {hRP->ProjectionX("px")};
-    pRPx->SaveAs(E796Utils::GetFileName(2, beam, target, light, isSide, "rpx"));
+    // auto* pRPx {hRP->ProjectionX("px")};
+    // pRPx->SaveAs(E796Utils::GetFileName(2, beam, target, light, isSide, "rpx"));
 
     // plot
     auto* c20 {new TCanvas("c20", "Pipe2 canvas 0")};

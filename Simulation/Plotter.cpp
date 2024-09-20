@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
-#include "/media/Data/E796v2/Simulation/Utils.cxx"
+#include "/media/Data/E796v2/Selector/Selector.h"
 
 void Plotter(const std::vector<double>& Exs, const std::string& beam, const std::string& target,
              const std::string& light, double T1, int neutronPS, int protonPS)
@@ -43,7 +43,7 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
     int idx {1};
     for(const auto& Ex : Exs)
     {
-        auto file {E796Simu::GetFile(beam, target, light, Ex, neutronPS, protonPS)};
+        auto file {gSelector->GetSimuFile(beam, target, light, Ex, neutronPS, protonPS)};
         // Get DF
         ROOT::RDataFrame df("SimulationTTree", file);
 

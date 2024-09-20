@@ -1,5 +1,6 @@
 #ifndef Plotter_cxx
 #define Plotter_cxx
+#include "ActColors.h"
 #include "ActKinematics.h"
 #include "ActParticle.h"
 
@@ -22,6 +23,7 @@
 #include <vector>
 
 #include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
+#include "/media/Data/E796v2/Selector/Selector.h"
 
 void Plotter(const std::string& beam = "", const std::string& target = "", const std::string& light = "",
              bool isSide = false)
@@ -33,11 +35,14 @@ void Plotter(const std::string& beam = "", const std::string& target = "", const
     // If called from Runner
     if(beam.length() > 0)
     {
-        dfs.push_back(ROOT::RDataFrame {"Final_Tree", E796Utils::GetFileName(2, beam, target, light, isSide)});
+        dfs.push_back(
+            ROOT::RDataFrame {"Sel_Tree", E796Utils::GetFile(3, beam, target, light, isSide, gSelector->GetFlag())});
         signatures.push_back({beam, target, light, isSide});
     }
     else
     {
+        std::cout << BOLDRED << "Do not use Plotter in this way because you're plotting TTrees at Pipe2 level" << RESET
+                  << '\n';
         // List all files
         TString dirname {"/media/Data/E796v2/PostAnalysis/RootFiles/Pipe2/"};
         TString ext {".root"};

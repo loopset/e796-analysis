@@ -6,12 +6,16 @@
 #include "Math/GenVector/Cartesian3D.h"
 #include "Math/GenVector/PositionVector3D.h"
 #include "Math/Point3Dfwd.h"
+
+#include "/media/Data/E796v2/Selector/Selector.h"
+
 namespace E796Gates
 {
 // auto rp {[](double xrp) -> bool { return (26 <= xrp) && (xrp <= 220); }};
-auto rp {[](double xrp) -> bool { return (40 <= xrp) && (xrp <= 200); }}; // same as Juan
+auto rp {[](double xrp) -> bool
+         { return (gSelector->GetRPxLow() <= xrp) && (xrp <= gSelector->GetRPxUp()); }}; // same as Juan
 
-auto rpMerger {[](const ActRoot::MergerData& d) -> bool { return rp(d.fRP.X()); }};
+// auto rpMerger {[](const ActRoot::MergerData& d) -> bool { return rp(d.fRP.X()); }};
 
 template <typename T = float>
 auto rpx1 {[](const ROOT::Math::PositionVector3D<ROOT::Math::Cartesian3D<T>>& rp) -> bool { return rp.X() < 128; }};

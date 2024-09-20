@@ -12,9 +12,19 @@
 
 namespace E796Utils
 {
+TString GetFile(int pipe, const std::string& beam, const std::string& target, const std::string& light, bool isEl,
+                const std::string& flag = "")
+{
+    auto path {TString::Format("/media/Data/E796v2/PostAnalysis/RootFiles/Pipe%d/", pipe)};
+    TString name {TString::Format("tree_%s_%s_%s_%s%s.root", beam.c_str(), target.c_str(), light.c_str(),
+                                  (isEl) ? "side" : "front", (flag.size()) ? ("_" + flag).c_str() : "")};
+    return path + name;
+}
+
 TString GetFileName(int pipe, const std::string& beam, const std::string& target, const std::string& light, bool isSide,
                     const std::string& type = "tree")
 {
+    std::cout << BOLDRED << "Do not use GetFileName" << RESET << '\n';
     auto path {TString::Format("/media/Data/E796v2/PostAnalysis/RootFiles/Pipe%d/", pipe)};
     TString name {};
     if(isSide)
@@ -48,7 +58,7 @@ ActPhysics::SilMatrix* GetEffSilMatrix(const std::string& light)
         std::cout << BOLDYELLOW << "E796Utils: Reading veto sil matrix for -> " << light << RESET << '\n';
         return GetVetoMatrix();
     }
-    else if(light == "1H" || light == "2H" || light == "3H" || light == "3He" ||light == "4He")
+    else if(light == "1H" || light == "2H" || light == "3H" || light == "3He" || light == "4He")
     // else if(light == "1H" || light == "2H" || light == "3H")
     {
         std::cout << BOLDYELLOW << "E796Utils: Reading antiveto sil matrix for -> " << light << RESET << '\n';

@@ -22,7 +22,7 @@ void Runner(TString what = "plot")
 {
     std::string beam {"20O"};
     std::string target {"2H"};
-    std::string light {"2H"};
+    std::string light {"3H"};
     bool isSide {(target == light)}; // else isFront
     // Nice print
     Print(beam, target, light, isSide, what.Data());
@@ -46,6 +46,12 @@ void Runner(TString what = "plot")
     if(what.Contains("2"))
     {
         func = "Pipe2_Ex";
+        gROOT->LoadMacro(path + func + ext);
+        gROOT->ProcessLine(func + args);
+    }
+    if(what.Contains("3"))
+    {
+        func = "Pipe3_Selector";
         gROOT->LoadMacro(path + func + ext);
         gROOT->ProcessLine(func + args);
     }
