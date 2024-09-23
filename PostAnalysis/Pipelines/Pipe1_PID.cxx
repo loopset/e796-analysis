@@ -18,6 +18,7 @@
 #include <iostream>
 #include <string>
 
+#include "../../Selector/Selector.h"
 #include "../Gates.cxx"
 #include "../HistConfig.h"
 #include "../Utils.cxx"
@@ -71,8 +72,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
         // Filter
         auto pid {vetoed.Filter([&](const ActRoot::MergerData& d)
                                 { return cut.IsInside(light, d.fSilEs.front(), d.fQave); }, {"MergerData"})};
-        auto filename {E796Utils::GetFile(1, beam, target, light, isEl)};
-        std::cout << BOLDCYAN << "Saving PID_Tree in file : " << filename << '\n';
+        auto filename {gSelector->GetAnaFile(1, beam, target, light, false)};
         pid.Snapshot("PID_Tree", filename);
 
         // // Write

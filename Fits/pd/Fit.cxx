@@ -15,17 +15,15 @@
 #include <vector>
 
 #include "/media/Data/E796v2/Fits/FitHist.h"
-#include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
-
+#include "/media/Data/E796v2/Selector/Selector.h"
 void Fit()
 {
     ROOT::EnableImplicitMT();
 
-    ROOT::RDataFrame df {
-        "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_1H_light_2H_front.root"};
+    ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "1H", "2H")};
 
     // Different cuts!
-    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1<>, {"fRP"}), df.Filter(E796Gates::rpx2<>, {"fRP"})};
+    std::vector<ROOT::RDF::RNode> nodes {df};
     std::vector<std::string> labels {"pd", "pd_1", "pd_2"};
     std::vector<TH1D*> hExs;
     for(int i = 0; i < nodes.size(); i++)

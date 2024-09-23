@@ -4,9 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "../Selector/Selector.h"
 #include "./Plotter.cpp"
 #include "./Simulation_E796.cpp"
-#include "../Selector/Selector.h"
 // what
 // if simu = runs simulation
 // if plot = plots results
@@ -17,9 +17,9 @@ void Runner(TString what = "plot", bool standalone = true)
 {
     // Settings
     // Names of particles
-    std::string beam {"20O"};
-    std::string target {"2H"};
-    std::string light {"2H"};
+    std::string beam {gSelector->GetBeam()};
+    std::string target {gSelector->GetTarget()};
+    std::string light {gSelector->GetLight()};
     gSelector->Print();
     // Phase space reactions: when the heavy decays by proton or neutron emission
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
@@ -56,7 +56,7 @@ void Runner(TString what = "plot", bool standalone = true)
     else if(neutronPS == 0 && protonPS > 0)
         Eexs = {0};
     else
-        throw std::runtime_error("No confs with neutronPS and protonPS enabled at the same time");
+        throw std::runtime_error("Simulation::Runner(): No confs with neutronPS and protonPS enabled at the same time");
 
     if(what.Contains("simu"))
     {

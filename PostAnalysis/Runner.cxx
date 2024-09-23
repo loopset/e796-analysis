@@ -6,6 +6,8 @@
 #include <iostream>
 #include <string>
 
+#include "../Selector/Selector.h"
+
 void Print(const std::string& beam, const std::string& target, const std::string& light, bool isSide,
            const std::string& what = "")
 {
@@ -20,12 +22,17 @@ void Print(const std::string& beam, const std::string& target, const std::string
 
 void Runner(TString what = "plot")
 {
-    std::string beam {"20O"};
-    std::string target {"2H"};
-    std::string light {"2H"};
-    bool isSide {(target == light)}; // else isFront
-    // Nice print
-    Print(beam, target, light, isSide, what.Data());
+    // std::string beam {"20O"};
+    // std::string target {"2H"};
+    // std::string light {"3H"};
+    // bool isSide {(target == light)}; // else isFront
+    // // Nice print
+    // Print(beam, target, light, isSide, what.Data());
+    std::string beam {gSelector->GetBeam()};
+    std::string target {gSelector->GetTarget()};
+    std::string light {gSelector->GetLight()};
+    bool isSide {target == light};
+    gSelector->Print();
 
     auto args {TString::Format("(\"%s\", \"%s\", \"%s\", %d)", beam.c_str(), target.c_str(), light.c_str(), isSide)};
     TString path {"./Pipelines/"};

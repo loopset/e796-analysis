@@ -58,6 +58,7 @@ void Ang()
     eff.Draw(true);
 
     // Set experiment info
+    gSelector->RecomputeNormalization();
     PhysUtils::Experiment exp {"../norms/d_target.dat"};
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};

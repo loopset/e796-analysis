@@ -12,30 +12,6 @@
 
 namespace E796Utils
 {
-TString GetFile(int pipe, const std::string& beam, const std::string& target, const std::string& light, bool isEl,
-                const std::string& flag = "")
-{
-    auto path {TString::Format("/media/Data/E796v2/PostAnalysis/RootFiles/Pipe%d/", pipe)};
-    TString name {TString::Format("tree_%s_%s_%s_%s%s.root", beam.c_str(), target.c_str(), light.c_str(),
-                                  (isEl) ? "side" : "front", (flag.size()) ? ("_" + flag).c_str() : "")};
-    return path + name;
-}
-
-TString GetFileName(int pipe, const std::string& beam, const std::string& target, const std::string& light, bool isSide,
-                    const std::string& type = "tree")
-{
-    std::cout << BOLDRED << "Do not use GetFileName" << RESET << '\n';
-    auto path {TString::Format("/media/Data/E796v2/PostAnalysis/RootFiles/Pipe%d/", pipe)};
-    TString name {};
-    if(isSide)
-        name = TString::Format("%s_beam_%s_target_%s_light_%s_side.root", type.c_str(), beam.c_str(), target.c_str(),
-                               light.c_str());
-    else
-        name = TString::Format("%s_beam_%s_target_%s_light_%s_front.root", type.c_str(), beam.c_str(), target.c_str(),
-                               light.c_str());
-    return path + name;
-}
-
 ActPhysics::SilMatrix* GetVetoMatrix()
 {
     auto* sm {new ActPhysics::SilMatrix {"Veto"}};

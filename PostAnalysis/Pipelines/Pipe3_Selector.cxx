@@ -11,8 +11,8 @@
 #include <string>
 
 #include "../../Selector/Selector.h"
+#include "../Gates.cxx"
 #include "../HistConfig.h"
-#include "../Utils.cxx"
 
 void Pipe3_Selector(const std::string& beam, const std::string target, const std::string& light, bool isEl)
 {
@@ -21,24 +21,21 @@ void Pipe3_Selector(const std::string& beam, const std::string target, const std
 
     // Read data
     ROOT::EnableImplicitMT();
-    ROOT::RDataFrame df {"Final_Tree", E796Utils::GetFile(2, beam, target, light, isEl)};
+    ROOT::RDataFrame df {"Final_Tree", gSelector->GetAnaFile(2, beam, target, light, false)};
 
     // Apply
     auto gated {df.Filter(
         [&](ActRoot::MergerData& merger)
         {
             // Apply cut in RPx
-            auto rpx {merger.fRP.X()};
-            if(!(gSelector->GetRPxLow() <= rpx && rpx <= gSelector->GetRPxUp()))
-                return false;
-            return true;
+            return E796Gates::rp(merger.fRP.X());
         },
         {"MergerData"})};
     // Book histograms
     auto hRP {gated.Histo2D(HistConfig::RP, "fRP.fCoordinates.fX", "fRP.fCoordinates.fY")};
 
     // Save
-    gated.Snapshot("Sel_Tree", E796Utils::GetFile(3, beam, target, light, isEl, gSelector->GetFlag()));
+    gated.Snapshot("Sel_Tree", gSelector->GetAnaFile(3, beam, target, light, true));
 
     // Draw
     auto* c30 {new TCanvas {"c30", "Pipe3 canvas 0"}};

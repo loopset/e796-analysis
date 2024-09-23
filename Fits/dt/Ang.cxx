@@ -2,6 +2,7 @@
 
 #include "TCanvas.h"
 #include "TROOT.h"
+#include "TString.h"
 
 #include "AngComparator.h"
 #include "AngDifferentialXS.h"
@@ -14,15 +15,14 @@
 #include <vector>
 
 #include "../../PostAnalysis/HistConfig.h"
-#include "../FitHist.h"
 #include "../../Selector/Selector.h"
+#include "../FitHist.h"
 
 void Ang()
 {
     ROOT::EnableImplicitMT();
 
-    ROOT::RDataFrame df {
-        "Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "3H")};
+    ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "3H")};
 
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
@@ -52,7 +52,7 @@ void Ang()
     // Init fitter
     // Set range
     Angular::Fitter fitter {&ivs};
-    fitter.Configure("./Outputs/fit_dt.root", {*hPS});
+    fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data(), {*hPS});
     fitter.Run();
     fitter.Draw();
     fitter.ComputeIntegrals(2);
@@ -74,6 +74,7 @@ void Ang()
     eff.Draw(true);
 
     // Set experiment info
+    gSelector->RecomputeNormalization();
     PhysUtils::Experiment exp {"../norms/d_target.dat"};
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};

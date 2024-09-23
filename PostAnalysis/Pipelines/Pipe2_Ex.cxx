@@ -21,7 +21,8 @@
 #include <vector>
 
 #include "../HistConfig.h"
-#include "../Utils.cxx"
+// #include "../Utils.cxx"
+#include "../../Selector/Selector.h"
 
 void Pipe2_Ex(const std::string& beam, const std::string& target, const std::string& light, bool isSide)
 {
@@ -29,7 +30,7 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     bool debug {false};
     std::cout << BOLDYELLOW << "is DebugTheta enabled ? " << std::boolalpha << debug << '\n';
     // Get file
-    auto filename {E796Utils::GetFile(1, beam, target, light, isSide)};
+    auto filename {gSelector->GetAnaFile(1, beam, target, light, false)};
     std::cout << BOLDMAGENTA << "Reading file: " << filename << RESET << '\n';
     // Read
     ROOT::EnableImplicitMT();
@@ -126,7 +127,7 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     auto hThetaHLLab {def.Histo2D(HistConfig::ChangeTitle(HistConfig::ThetaHeavyLight, "Lab correlations"),
                                   "fThetaLight", "fThetaHeavy")};
     // Save!
-    auto outfile {E796Utils::GetFile(2, beam, target, light, isSide)};
+    auto outfile {gSelector->GetAnaFile(2, beam, target, light, false)};
     std::cout << BOLDCYAN << "Writing in file : " << outfile << RESET << '\n';
     def.Snapshot("Final_Tree", outfile);
 

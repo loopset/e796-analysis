@@ -1,25 +1,28 @@
 #include "PhysExperiment.h"
 
+#include "/media/Data/E796v2/Selector/Selector.h"
+
 // Generates the different normalizations
 void gen()
 {
     // Number of incoming beams
     double Ntrigger {279932};
     double Ndiv {30000};
-    // Length X of ACTAR used in the analysis
-    // Now is 256 - (256 - 220) - 26 = 194 mm
-    // double Ntp {4.5625e20}; // cm2
-    // double Ntd {8.2125e20}; // cm2
-    // However, if we use Juan's length of 160 mm...
-    double Ntp {3.75e20}; // cm2
-    double Ntd {6.75e20}; // cm2
+    // Total ACTAR length used in the LISE calculation
+    double totalLength {256}; // mm
+    // Number of targets per component
+    double Np {0.3125 * 1.93e21};
+    double Nd {0.5625 * 1.93e21};
+    // Exact targets depend on the actual length of ACTAR
+    // considered in the analysis, accesible in the gSelector
+    // Then Ntargets = actualLength / totalLength * Np or Nd
 
     // Build
-    PhysUtils::Experiment p {Ntp, Ntrigger, Ndiv};
+    PhysUtils::Experiment p {gSelector->GetLengthX() / totalLength * Np, Ntrigger, Ndiv};
     p.Print();
     p.Write("p_target.dat");
 
-    PhysUtils::Experiment d {Ntd, Ntrigger, Ndiv};
+    PhysUtils::Experiment d {gSelector->GetLengthX() / totalLength * Nd, Ntrigger, Ndiv};
     d.Print();
     d.Write("d_target.dat");
 }

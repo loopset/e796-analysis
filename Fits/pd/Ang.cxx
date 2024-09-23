@@ -14,13 +14,13 @@
 
 #include "../../PostAnalysis/HistConfig.h"
 #include "../FitHist.h"
+#include "/media/Data/E796v2/Selector/Selector.h"
 
 void Ang()
 {
     ROOT::EnableImplicitMT();
 
-    ROOT::RDataFrame df {
-        "Final_Tree", "/media/Data/E796v2/PostAnalysis/RootFiles/Legacy/tree_beam_20O_target_1H_light_2H_front.root"};
+    ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "1H", "2H")};
 
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
     auto hEx {df.Histo1D(E796Fit::Expd, "Ex")};
@@ -45,19 +45,22 @@ void Ang()
     // Read efficiency files
     std::vector<std::string> peaks {"g0", "g1", "g2"};
     std::vector<std::string> effFiles {
-        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_1H_light_2H_Eex_0.00_nPS_0_pPS_0.root",
-        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_1H_light_2H_Eex_1.47_nPS_0_pPS_0.root",
-        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_1H_light_2H_Eex_3.24_nPS_0_pPS_0.root",
+        gSelector->GetSimuFile("20O", "1H", "2H", 0).Data(), gSelector->GetSimuFile("20O", "1H", "2H", 1.47).Data(),
+        gSelector->GetSimuFile("20O", "1H", "2H", 3.24).Data(),
+        // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_1H_light_2H_Eex_0.00_nPS_0_pPS_0.root",
+        // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_1H_light_2H_Eex_1.47_nPS_0_pPS_0.root",
+        // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_1H_light_2H_Eex_3.24_nPS_0_pPS_0.root",
     };
     Interpolators::Efficiency eff;
     for(int p = 0; p < peaks.size(); p++)
         eff.Add(peaks[p], effFiles[p]);
     // Draw to check is fine
     eff.Draw(true);
+
     // Set experiment info
-    // Nt is different: now H from C4H10
-    // remember we are using an effective length!
-    PhysUtils::Experiment exp {4.5625e20, 279932, 30000};
+    // Recompute normalization
+    gSelector->RecomputeNormalization();
+    PhysUtils::Experiment exp {"../norms/p_target.dat"};
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
