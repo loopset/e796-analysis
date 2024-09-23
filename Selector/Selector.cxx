@@ -11,6 +11,8 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <string>
+#include <vector>
 
 void E796::Config::ReadConfig(std::shared_ptr<ActRoot::InputBlock> b)
 {
@@ -73,6 +75,14 @@ void E796::Selector::SetFlag(const std::string& flag)
     fCurrent = &(fConfigs.find(fFlag)->second);
 }
 
+std::vector<std::string> E796::Selector::GetFlags() const
+{
+    std::vector<std::string> ret;
+    for(const auto& [name, _] : fConfigs)
+        ret.push_back(name);
+    return ret;
+}
+
 void E796::Selector::Print() const
 {
     std::cout << BOLDGREEN << "::::: E796::Selector :::::" << '\n';
@@ -96,6 +106,11 @@ TString E796::Selector::GetAnaFile(int pipe, const std::string& beam, const std:
     return path + name;
 }
 
+TString E796::Selector::GetAnaFile(int pipe, bool withFlag)
+{
+    return GetAnaFile(pipe, fBeam, fTarget, fLight, withFlag);
+}
+
 TString E796::Selector::GetSimuFile(const std::string& beam, const std::string& target, const std::string& light,
                                     double Ex, int nPS, int pPS)
 {
@@ -104,6 +119,11 @@ TString E796::Selector::GetSimuFile(const std::string& beam, const std::string& 
                                Ex, nPS, pPS, (fFlag.size()) ? ("_" + fFlag).c_str() : "")};
     std::cout << BOLDMAGENTA << "Opening simu file : " << name << RESET << '\n';
     return path + name;
+}
+
+TString E796::Selector::GetSimuFile(double Ex, int nPS, int pPS)
+{
+    return GetSimuFile(fBeam, fTarget, fLight, Ex, nPS, pPS);
 }
 
 void E796::Selector::RecomputeNormalization() const

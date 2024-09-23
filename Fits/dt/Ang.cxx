@@ -79,7 +79,7 @@ void Ang()
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
-    // xs.Draw();
+    xs.Write("./Outputs/", gSelector->GetFlag());
 
     // For gs
     Angular::Comparator comp {"g0 = 5/2^{+} g.s", xs.Get("g0")};

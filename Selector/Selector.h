@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include <utility>
+#include <vector>
 namespace E796
 {
 class Config
@@ -49,18 +50,23 @@ public:
     static Selector* GetInstance(const std::string& file = "");
     void Print() const;
 
-    // Set configuration
+    // Setters
     void SetFlag(const std::string& flag);
 
+    // Getters
     const std::string& GetFlag() const { return fFlag; }
     double GetRPxLow() const { return fCurrent->fRPx.first; }
     double GetRPxUp() const { return fCurrent->fRPx.second; }
     std::pair<double, double> GetRPx() const { return fCurrent->fRPx; }
     double GetLengthX() const { return fCurrent->fLengthX; }
 
+    std::vector<std::string> GetFlags() const;
+
     // Formatting functions
+    TString GetAnaFile(int pipe, bool withFlag = true);
     TString GetAnaFile(int pipe, const std::string& beam, const std::string& target, const std::string& light,
                        bool withFlag = true);
+    TString GetSimuFile(double Ex, int nPS = 0, int pPS = 0);
     TString GetSimuFile(const std::string& beam, const std::string& target, const std::string& light, double Ex,
                         int nPS = 0, int pPS = 0);
 
