@@ -20,9 +20,9 @@ void gen()
     // Build
     PhysUtils::Experiment p {gSelector->GetLengthX() / totalLength * Np, Ntrigger, Ndiv};
     p.Print();
-    p.Write("p_target.dat");
+    p.Write("/media/Data/E796v2/Fits/norms/p_target.dat");
 
     PhysUtils::Experiment d {gSelector->GetLengthX() / totalLength * Nd, Ntrigger, Ndiv};
     d.Print();
-    d.Write("d_target.dat");
+    d.Write("/media/Data/E796v2/Fits/norms/d_target.dat");
 }

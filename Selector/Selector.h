@@ -31,17 +31,17 @@ private:
     // Constructor which reads a config file
     Selector(const std::string& file);
 
-    // Parameters that define the current selection
+    // Particle information
     std::string fBeam {};
     std::string fTarget {};
     std::string fLight {};
 
-    // Other configurations in the selector
+    // List all configurations under the config file
     std::unordered_map<std::string, Config> fConfigs;
-    Config* fCurrent {};
 
     // Current selection
     std::string fFlag {};
+    Config* fCurrent {};
 
 public:
     Selector(Selector&) = delete;

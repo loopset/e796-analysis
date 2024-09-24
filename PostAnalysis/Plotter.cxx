@@ -9,6 +9,7 @@
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RResultHandle.hxx"
 #include "ROOT/RResultPtr.hxx"
+#include "Rtypes.h"
 
 #include "TCanvas.h"
 #include "TH2.h"
@@ -35,8 +36,7 @@ void Plotter(const std::string& beam = "", const std::string& target = "", const
     // If called from Runner
     if(beam.length() > 0)
     {
-        dfs.push_back(
-            ROOT::RDataFrame {"Sel_Tree", E796Utils::GetFile(3, beam, target, light, isSide, gSelector->GetFlag())});
+        dfs.push_back(ROOT::RDataFrame {"Sel_Tree", gSelector->GetAnaFile(3)});
         signatures.push_back({beam, target, light, isSide});
     }
     else
@@ -94,6 +94,13 @@ void Plotter(const std::string& beam = "", const std::string& target = "", const
         cs[c]->cd(1);
         hsKin[c]->DrawClone("colz");
         vkins[c].GetKinematicLine3()->Draw("same");
+        if(signatures[c].light == "3H" && signatures[c].target == "2H")
+        {
+            ActPhysics::Kinematics okin {"20O", "p", "t", 700};
+            auto* ogkin {okin.GetKinematicLine3()};
+            ogkin->SetLineColor(kOrange);
+            ogkin->Draw("l");
+        }
         cs[c]->cd(2);
         hsEx[c]->DrawClone();
         cs[c]->cd(3);

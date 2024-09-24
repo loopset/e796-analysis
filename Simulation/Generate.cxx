@@ -1,17 +1,16 @@
+#ifndef Generate_cxx
+#define Generate_cxx
 #include "ActColors.h"
-#include "ActCutsManager.h"
 #include "ActGeometry.h"
 #include "ActKinematicGenerator.h"
 #include "ActKinematics.h"
 #include "ActParticle.h"
 #include "ActRunner.h"
 #include "ActSRIM.h"
-#include "ActSilMatrix.h"
 
 #include "Rtypes.h"
 
 #include "TCanvas.h"
-#include "TEfficiency.h"
 #include "TFile.h"
 #include "TMath.h"
 #include "TProfile2D.h"
@@ -27,12 +26,9 @@
 #include <cmath>
 #include <iostream>
 #include <memory>
-#include <set>
 #include <stdexcept>
 #include <string>
-#include <utility>
 
-#include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
 #include "/media/Data/E796v2/Selector/Selector.h"
 #include "/media/Data/E796v2/Simulation/Utils.cxx"
@@ -106,46 +102,6 @@ void Generate(const std::string& beam, const std::string& target, const std::str
     bool stragglingInSil {true};
     bool silResolution {true};
     bool thetaResolution {true};
-
-    // CUTS ON SILICON ENERGY, depending on particle
-    // from the graphical PID cut
-    ActRoot::CutsManager<std::string> cuts;
-    cuts.ReadCut(light, TString::Format("/media/Data/E796v2/PostAnalysis/Cuts/LightPID/pid_%s%s.root", light.c_str(),
-                                        (isEl) ? "_side" : "")
-                            .Data());
-    // for(auto i : {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-    //     cuts.ReadCut(std::to_string(i), TString::Format("/media/Data/E796/Cuts/veto_sil%d.root", i).Data());
-    std::pair<double, double> eLoss0Cut;
-    if(cuts.GetCut(light))
-    {
-        eLoss0Cut = cuts.GetXRange(light);
-        // eLoss0Cut = {1.5, 19};
-        std::cout << BOLDGREEN << "-> ESil range for " << light << ": [" << eLoss0Cut.first << ", " << eLoss0Cut.second
-                  << "] MeV" << RESET << '\n';
-    }
-    else
-    {
-        std::cout << BOLDRED << "Simulation_E796(): could not read PID cut for " << light
-                  << " -> using default eLoss0Cut" << RESET << '\n';
-        eLoss0Cut = {0, 1000};
-    }
-    // std::pair<double, double> eLoss0Cut {0, 1000}; //{6.5, 27.};
-
-
-    // Silicon masks
-    ActPhysics::SilMatrix* sm {};
-    std::set<int> silIndxs;
-    if(!isEl)
-    {
-        sm = E796Utils::GetEffSilMatrix(light);
-        silIndxs = sm->GetSilIndexes();
-        // Move Z of silicons to match centre of chamber. The centred silicons are 3 and 4
-        sm->MoveZTo(zVertexMean - zOffsetBeam, {3, 4});
-        // // Try removing faulty silicon 7
-        // auto found {silIndxs.find(7)};
-        // if(found != silIndxs.end())
-        //     silIndxs.erase(found);
-    }
 
     // RPx histogram to sample
     // auto* hRPx {GetRPXProj(E796Utils::GetFileName(2, beam, target, light, false, "rpx"))};
@@ -241,7 +197,7 @@ void Generate(const std::string& beam, const std::string& target, const std::str
     // variables need to be weighted by this value. For binary reactions, weight = 1
     // 4-> Energy at vertex
     // 5-> Theta in Lab frame
-    auto* outFile {new TFile(gSelector->GetSimuFile(beam, target, light, Ex, neutronPS, protonPS), "recreate")};
+    auto* outFile {new TFile(gSelector->GetSimuFile(Ex, neutronPS, protonPS), "recreate")};
     auto* outTree {new TTree("SimulationTTree", "A TTree containing only our Eex obtained by simulation")};
     auto* data {new E796Simu::Data};
     outTree->Branch("data", &data);
@@ -392,70 +348,26 @@ void Generate(const std::string& beam, const std::string& target, const std::str
                     EBefSil0 = eLoss0;
                 else
                     EBefSil0 = -1;
+                if(EBefSil0 != -1)
+                {
+                    auto recT3 {srim->EvalInitialEnergy("light", EBefSil0, distance0)};
+                    data->fRecT3 = recT3;
+                    auto recEx {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(recT3, theta3Lab)};
+                    data->fEx = recEx;
+                }
             }
         }
 
-        // // 7->
-        // // we are ready to reconstruct Eex with all resolutions implemented
-        // //(d,light) is investigated gating on Esil1 = 0!
-        // // bool cutEAfterSil0 {EBefSil0 != -1 && !isPunch};
-        // bool cutEAfterSil0 {T3AfterSil0 == 0};
-        // bool cutELoss0 {eLoss0Cut.first <= eLoss0 && eLoss0 <= eLoss0Cut.second};
-        // if(cutEAfterSil0 && cutELoss0) // fill histograms
-        // {
-        //     // auto T3Recon {runner.EnergyBeforeGas(EBefSil0, distance0, "light")};
-        //     auto T3Recon {srim->EvalInitialEnergy("light", EBefSil0, distance0)};
-        //     auto EexAfter {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Recon, theta3Lab)};
-        //     auto theta3CM {kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Recon, theta3Lab)};
-        //
-        //     // fill histograms
-        //     hThetaCM->Fill(theta3CM * TMath::RadToDeg());
-        //     hEexBefore->Fill(EexBefore, weight); // with the weight from each TGenPhaseSpace::Generate()
-        //     hDistF0->Fill(distance0);
-        //     hKinVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
-        //     hEexAfter->Fill(EexAfter, weight);
-        //     hSP->Fill((isEl) ? silPoint0InMM.X() : silPoint0InMM.Y(), silPoint0InMM.Z());
-        //     // Fill histogram of SP with thetaCM as weight
-        //     hSPTheta->Fill(silPoint0InMM.Y(), silPoint0InMM.Z(), theta3CM * TMath::RadToDeg());
-        //     // RP histogram
-        //     hRP->Fill(vertex.X(), vertex.Y());
-        //     // Fill new efficiency histograms
-        //     if(E796Gates::rpx1<double>(vertex))
-        //         hThetaCM1->Fill(theta3CM * TMath::RadToDeg());
-        //     if(E796Gates::rpx2<double>(vertex))
-        //         hThetaCM2->Fill(theta3CM * TMath::RadToDeg());
-        //     hELoss0->Fill(T3EnteringSil, eLoss0);
-        //
-        //     // write to TTree
-        //     Eex_tree = EexAfter;
-        //     weight_tree = weight;
-        //     theta3CM_tree = theta3CM * TMath::RadToDeg();
-        //     EVertex_tree = T3Recon;
-        //     theta3Lab_tree = theta3Lab * TMath::RadToDeg();
-        //     rpx_tree = vertex.X();
-        //     hRPxSimu->Fill(vertex.X());
-        //     outTree->Fill();
-        // }
+        // Write to TTree
+        outTree->Fill();
     }
     std::cout << "\r" << std::string(100 / percentPrint, '|') << 100 << "%";
     std::cout.flush();
     std::cout << RESET << '\n';
 
-    // Efficiencies as quotient of histograms in TEfficiency class
-    auto* eff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
-    eff->SetNameTitle("eff", TString::Format("#theta_{CM} eff E_{x} = %.2f MeV", Ex));
-    // Efficiencies for the other sections of actar
-    auto* eff1 {new TEfficiency {*hThetaCM1, *hThetaCMAll1}};
-    eff1->SetNameTitle("eff1", TString::Format("#theta_{CM} eff section 1 E_{x} = %.2f MeV", Ex));
-    auto* eff2 {new TEfficiency {*hThetaCM2, *hThetaCMAll2}};
-    eff2->SetNameTitle("eff2", TString::Format("#theta_{CM} eff section 2 E_{x} = %.2f MeV", Ex));
-
     // SAVING
     outFile->cd();
     outTree->Write();
-    eff->Write();
-    eff1->Write();
-    eff2->Write();
     outFile->Close();
     delete outFile;
     outFile = nullptr;
@@ -490,24 +402,11 @@ void Generate(const std::string& beam, const std::string& target, const std::str
         gtheo->Draw("same");
         c1->cd(2);
         hSP->DrawClone("col");
-        if(!isEl)
-            sm->Draw();
         c1->cd(3);
         hEexAfter->DrawClone("hist");
         c1->cd(4);
-        eff->Draw("apl");
         c1->cd(5);
         hSPTheta->DrawClone("colz");
-        auto* p6 {c1->cd(6)};
-        p6->Divide(2, 1);
-        p6->cd(1);
-        eff1->Draw("apl");
-        p6->cd(2);
-        eff2->Draw("apl");
-
-        // hRPx->DrawNormalized();
-        // hRPxSimu->SetLineColor(kRed);
-        // hRPxSimu->DrawNormalized("same");
     }
 
     // deleting news
@@ -518,3 +417,4 @@ void Generate(const std::string& beam, const std::string& target, const std::str
     timer.Stop();
     timer.Print();
 }
+#endif

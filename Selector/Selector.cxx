@@ -6,6 +6,7 @@
 
 #include "TROOT.h"
 #include "TString.h"
+#include "TSystem.h"
 
 #include <iostream>
 #include <memory>
@@ -114,9 +115,12 @@ TString E796::Selector::GetAnaFile(int pipe, bool withFlag)
 TString E796::Selector::GetSimuFile(const std::string& beam, const std::string& target, const std::string& light,
                                     double Ex, int nPS, int pPS)
 {
-    TString path {"/media/Data/E796v2/Simulation/Outputs/"};
-    auto name {TString::Format("tree_%s_%s_%s_%.2f_nPS_%d_pPS_%d%s.root", beam.c_str(), target.c_str(), light.c_str(),
-                               Ex, nPS, pPS, (fFlag.size()) ? ("_" + fFlag).c_str() : "")};
+    auto path {TString::Format("/media/Data/E796v2/Simulation/Outputs/%s/", fFlag.c_str())};
+    // Make dir in case it doesnt exist
+    if(gSystem->AccessPathName(path))
+        gSystem->mkdir(path);
+    auto name {TString::Format("tree_%s_%s_%s_%.2f_nPS_%d_pPS_%d.root", beam.c_str(), target.c_str(), light.c_str(), Ex,
+                               nPS, pPS)};
     std::cout << BOLDMAGENTA << "Opening simu file : " << name << RESET << '\n';
     return path + name;
 }

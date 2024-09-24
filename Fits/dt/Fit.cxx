@@ -41,7 +41,7 @@ void Fit()
 
     // Fitting range
     double exmin {-5};
-    double exmax {10};
+    double exmax {25};
 
     // Model
     int ngauss {7};

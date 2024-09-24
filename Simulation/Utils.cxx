@@ -20,6 +20,8 @@ struct Data
     double fELoss1 {};
     double fDistL0 {};
     double fDistInter {};
+    double fRecT3 {};
+    double fEx {};
     int fSilIndex0 {};
     int fSilIndex1 {};
 };
