@@ -23,6 +23,7 @@
 #include "TTree.h"
 
 #include "Math/Point3Dfwd.h"
+#include "Math/Vector3Dfwd.h"
 
 #include <cmath>
 #include <iostream>
@@ -93,13 +94,15 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double yVertexSigma {4};
     // const double zVertexMean {83.59};
     // const double zVertexSigma {3.79};
+    // Set start point
+    ROOT::Math::XYZPoint start {0, yVertexMean, zVertexMean};
 
     // THRESHOLDS FOR SILICONS
     const double thresholdSi0 {1.};
     const double thresholdSi1 {1.};
 
     // number of iterations
-    const int iterations {static_cast<int>((isEl) ? 5e7 : 1e7)};
+    const int iterations {static_cast<int>((isEl) ? 5e7 : 3e7)};
 
     // ACTIVATE STRAGGLING OR NOT
     bool stragglingInGas {true};
@@ -150,16 +153,17 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // RPx histogram to sample
     // auto* hRPx {GetRPXProj(E796Utils::GetFileName(2, beam, target, light, false, "rpx"))};
     // // // histogram file
-    // auto* histfile {new TFile("./Inputs/BeamY_ThetaXY_and_XZ_space_3Dhisto.root")};
-    // auto* hBeam {histfile->Get<TH3F>("h_Y_thetaXY_thetaXZ")};
-    // if(!hBeam)
-    //     throw std::runtime_error("Could not load beam emittance histogram");
-    // // closing hBeam file and coming back to main ROOT directory
-    // gROOT->cd();
-    // hBeam->SetDirectory(nullptr);
-    // histfile->Close();
-    // delete histfile;
-    // histfile = nullptr;
+    // Histogram to sample vertex
+    auto* histfile {new TFile("./Inputs/BeamY_ThetaXY_and_XZ_space_3Dhisto.root")};
+    auto* hBeam {histfile->Get<TH3F>("h_Y_thetaXY_thetaXZ")};
+    if(!hBeam)
+        throw std::runtime_error("Simulation_E796(): Could not load beam emittance histogram");
+    // closing hBeam file and coming back to main ROOT directory
+    gROOT->cd();
+    hBeam->SetDirectory(nullptr);
+    histfile->Close();
+    delete histfile;
+    histfile = nullptr;
 
     //---- SIMULATION STARTS HERE
     ROOT::EnableImplicitMT();
@@ -277,11 +281,14 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             nextPrint += step;
         }
         // 1-> Sample vertex
-        auto vertex {runner.SampleVertex(yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, nullptr)};
+        auto vertex {runner.SampleVertex(yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, hBeam)};
         // 2-> Beam energy according to its sigma
         auto TBeam {runner.RandomizeBeamEnergy(
             T1 * p1.GetAMU(),
             sigmaPercentBeam * T1 * p1.GetAMU())}; // T1 in Mev / u * mass of beam in u = total kinetic energy
+        // And slow according to distance travelled
+        auto distToVertex {(vertex - start).R()};
+        TBeam = srim->Slow("beam", TBeam, distToVertex);
         // 3-> Run kinematics!
         kingen.SetBeamAndExEnergies(TBeam, Ex);
         double weight {kingen.Generate()};
@@ -311,8 +318,13 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             continue;
 
         // 5-> Propagate track from vertex to silicon wall using Geometry class
-        ROOT::Math::XYZVector direction {TMath::Cos(theta3Lab), TMath::Sin(theta3Lab) * TMath::Sin(phi3Lab),
-                                         TMath::Sin(theta3Lab) * TMath::Cos(phi3Lab)};
+        ROOT::Math::XYZVector dirBeamFrame {TMath::Cos(theta3Lab), TMath::Sin(theta3Lab) * TMath::Sin(phi3Lab),
+                                            TMath::Sin(theta3Lab) * TMath::Cos(phi3Lab)};
+        // Declare beam direction
+        auto beamDir {(vertex - start).Unit()};
+        // Rotate to world = geometry frame
+        auto dirWorldFrame {runner.RotateToWorldFrame(dirBeamFrame, beamDir)};
+
         auto vertexInGeoFrame {runner.DisplacePointToTGeometryFrame(vertex)};
         ROOT::Math::XYZPoint silPoint0 {};
         int silType0 {};
@@ -320,7 +332,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         double distance0 {};
         bool side0 {};
         // Assembly 0
-        runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, idxAssembly0, side0, distance0,
+        runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, dirWorldFrame, idxAssembly0, side0, distance0,
                                                       silType0, silIndex0, silPoint0);
         // convert to mm (Geometry::PropagateTracksToSiliconArray works in cm but we need mm to use in SRIM)
         distance0 *= 10.;
@@ -376,8 +388,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         if(T3AfterSil0 > 0 && !isEl)
         {
             // first, propagate in gas
-            runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, direction, 1, side1, distance1, silType1,
-                                                          silIndex1, silPoint1, false);
+            runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, dirWorldFrame, 1, side1, distance1,
+                                                          silType1, silIndex1, silPoint1, false);
             if(silIndex1 == -1)
                 continue;
 
@@ -507,6 +519,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
         // draw theoretical kinematics
         ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
+        if(neutronPS == 1)
+            theokin.SetEx(p4.GetSn());
+        if(neutronPS == 2)
+            theokin.SetEx(p4.GetS2n());
         auto* gtheo {theokin.GetKinematicLine3()};
 
         auto* c1 {new TCanvas("cAfter", "Canvas for inspection 1")};

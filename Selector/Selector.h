@@ -69,6 +69,7 @@ public:
     TString GetSimuFile(double Ex, int nPS = 0, int pPS = 0);
     TString GetSimuFile(const std::string& beam, const std::string& target, const std::string& light, double Ex,
                         int nPS = 0, int pPS = 0);
+    TString GetSigmasFile();
 
     // Executing functions
     void RecomputeNormalization() const;

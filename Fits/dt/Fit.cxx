@@ -4,10 +4,12 @@
 
 #include "TROOT.h"
 #include "TString.h"
+#include "TSystem.h"
 
 #include "FitModel.h"
 #include "FitRunner.h"
 #include "FitUtils.h"
+#include "Interpolators.h"
 
 #include <stdexcept>
 #include <string>
@@ -33,27 +35,44 @@ void Fit()
         hExs.push_back((TH1D*)h->Clone());
     }
     // Read PS
-    ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
-                                              "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
-    auto hPS {phase.Histo1D(E796Fit::Exdt, "Ex_cal", "Weight_sim")};
+    // ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
+    //                                           "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
+    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile(0, 1, 0)};
+    // auto hPS {phase.Histo1D(E796Fit::Exdt, "Ex_cal", "Weight_sim")};
+    auto hPS {phase.Histo1D(E796Fit::Exdt, "Eex", "weight")};
     hPS->SetNameTitle("hPS", "1n PS");
     Fitters::TreatPS(hExs.front(), hPS.GetPtr());
+
+    // Sigma interpolators
+    Interpolators::Sigmas sigmas {gSelector->GetSigmasFile().Data()};
 
     // Fitting range
     double exmin {-5};
     double exmax {25};
 
     // Model
-    int ngauss {7};
+    int ngauss {11};
     int nvoigt {0};
     Fitters::Model model {ngauss, nvoigt, {*hPS}};
 
     // Set init parameters
-    double sigma {0.374};
+    // double sigma {0.374};
+    double sigma {0.364};
     Fitters::Runner::Init initPars {
-        {"g0", {400, 0, sigma}},  {"g1", {10, 1.5, sigma}}, {"g2", {110, 3.2, sigma}}, {"g3", {60, 4.5, sigma}},
-        {"g4", {60, 6.7, sigma}}, {"g5", {65, 7.9, sigma}}, {"g6", {20, 8.9, sigma}},  {"ps0", {0.1}},
+        {"g0", {400, 0, sigma}},  {"g1", {10, 1.5, sigma}},  {"g2", {110, 3.2, sigma}}, {"g3", {60, 4.5, sigma}},
+        {"g4", {60, 6.7, sigma}}, {"g5", {65, 7.9, sigma}},  {"g6", {20, 8.9, sigma}},  {"g7", {20, 11, sigma}},
+        {"g8", {5, 12.8, sigma}}, {"g9", {10, 14.8, sigma}}, {"g10", {10, 16, sigma}},  {"ps0", {0.1}},
     };
+    // Reread in case file exists
+    auto outfile {TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().data())};
+    if(!gSystem->AccessPathName(outfile))
+    {
+        initPars = Fitters::ReadInit(outfile.Data());
+    }
+    // Eval correct sigma
+    for(auto& [key, vals] : initPars)
+        vals[2] = sigmas.Eval(vals[1]);
+
     // Set bounds and fix parameters
     double minmean {0.3};
     double maxmean {0.3};

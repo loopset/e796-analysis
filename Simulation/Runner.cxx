@@ -1,7 +1,10 @@
+#include "TROOT.h"
 #include "TString.h"
+#include "TSystem.h"
 
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "../Selector/Selector.h"
@@ -44,7 +47,9 @@ void Runner(TString what = "plot", bool standalone = true)
             if(light == "2H")
                 Eexs = {0, 1.67};
             if(light == "3H")
-                Eexs = {0., 1.47, 3.24, 4.4, 5.2, 6.9};
+            {
+                Eexs = {0., 1.47, 3.24, 4.4, 5.2, 6.9, 10, 12.8, 14.9};
+            }
             if(light == "3He")
                 Eexs = {0};
             if(light == "4He")
@@ -58,13 +63,30 @@ void Runner(TString what = "plot", bool standalone = true)
     else
         throw std::runtime_error("Simulation::Runner(): No confs with neutronPS and protonPS enabled at the same time");
 
+    ROOT::EnableThreadSafety();
+    std::vector<std::thread> threads;
+    auto worker {[](TString str) { return gSystem->Exec(str); }};
     if(what.Contains("simu"))
     {
         for(const auto& Eex : Eexs)
         {
-            Simulation_E796(beam, target, light, neutronPS, protonPS, T1, Eex, standalone);
             if(standalone)
+            {
+                Simulation_E796(beam, target, light, neutronPS, protonPS, T1, Eex, standalone);
                 break;
+            }
+            else
+            {
+                auto str {TString::Format(
+                    "root -l -b -x -q \'Simulation_E796.cpp(\"%s\",\"%s\",\"%s\",%d,%d,%f,%f,%d)\'", beam.c_str(),
+                    target.c_str(), light.c_str(), neutronPS, protonPS, T1, Eex, standalone)};
+                threads.emplace_back(worker, str);
+            }
+        }
+        if(!standalone)
+        {
+            for(auto& thread : threads)
+                thread.join();
         }
     }
     if(what.Contains("plot"))

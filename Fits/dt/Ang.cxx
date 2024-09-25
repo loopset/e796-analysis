@@ -27,45 +27,39 @@ void Ang()
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
-    // Read PS
-    ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
-                                              "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
-    auto hPS {phase.Histo1D(E796Fit::Exdt, "Ex_cal", "Weight_sim")};
-    hPS->SetNameTitle("hPS", "1n PS");
-    // Format phase space
-    hPS->Smooth(20);
-    // Scale it
-    auto intEx {hEx->Integral()};
-    auto intPS {hPS->Integral()};
-    double factor {0.10};
-    hPS->Scale(factor * intEx / intPS);
+    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile(0, 1, 0)};
 
     // Init intervals
     double thetaCMMin {8};
     double thetaCMMax {14};
     double thetaCMStep {1.5};
-    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdt, thetaCMStep};
+    int nps {1};
+    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdt, thetaCMStep, nps};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
-    // ivs.Draw();
+    // FillPS
+    phase.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(0, thetacm, ex, weight); },
+                  {"theta3CM", "Eex", "weight"});
+    ivs.TreatPS();
+    ivs.Draw();
 
     // Init fitter
     // Set range
     Angular::Fitter fitter {&ivs};
-    fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data(), {*hPS});
+    fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
     fitter.Draw();
     fitter.ComputeIntegrals(2);
     fitter.DrawCounts();
 
     // Read efficiency files
-    std::vector<std::string> peaks {"g0", "g2", "g3", "g4"};
+    std::vector<std::string> peaks {"g0", "g2", "g3", "g4", "g9"};
     std::vector<std::string> effFiles {
-        // "/media/Data/E796v2/Simulation/Outputs/Old/e796_beam_20O_target_2H_light_3H_Eex_0.00_nPS_0_pPS_0.root",
         gSelector->GetSimuFile("20O", "2H", "3H", 0).Data(),
         gSelector->GetSimuFile("20O", "2H", "3H", 3.24).Data(),
         gSelector->GetSimuFile("20O", "2H", "3H", 4.40).Data(),
         gSelector->GetSimuFile("20O", "2H", "3H", 6.90).Data(),
+        gSelector->GetSimuFile("20O", "2H", "3H", 14.9).Data(),
     };
     Interpolators::Efficiency eff;
     for(int p = 0; p < peaks.size(); p++)
@@ -110,6 +104,10 @@ void Ang()
     Angular::Comparator comp4 {"g4 = ? @ 6.68 MeV", xs.Get("g4")};
     comp4.Draw();
     // how do I compute the 2fnr without a guess of Jpi?
+
+    // For g9
+    Angular::Comparator comp9 {"g9 = ? @ 14.9 MeV", xs.Get("g9")};
+    comp9.Draw();
 
 
     // // Debug efficiency

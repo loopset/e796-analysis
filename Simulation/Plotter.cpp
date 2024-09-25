@@ -71,7 +71,7 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
         idx++;
     }
     // Fit to gaussians!
-    auto* gsigma {new TGraphErrors()};
+    auto* gsigmas {new TGraphErrors()};
     double range {4.5}; // MeV autour de la moyenne
     for(int i = 0; i < hsEx.size(); i++)
     {
@@ -79,8 +79,8 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
             continue;
         hsEx[i]->Fit("gaus", "0Q", "", Exs[i] - range, Exs[i] + range);
         auto* f {hsEx[i]->GetFunction("gaus")};
-        gsigma->SetPoint(gsigma->GetN(), Exs[i], f->GetParameter("Sigma"));
-        gsigma->SetPointError(gsigma->GetN() - 1, 0, f->GetParError(2));
+        gsigmas->SetPoint(gsigmas->GetN(), Exs[i], f->GetParameter("Sigma"));
+        gsigmas->SetPointError(gsigmas->GetN() - 1, 0, f->GetParError(2));
     }
 
     // plot!
@@ -120,9 +120,16 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
         return;
 
     auto* csigma {new TCanvas("csigma", "Sigmas from fits")};
-    gsigma->SetTitle(";E_{x} [MeV];#sigma in E_{x} [MeV]");
-    gsigma->SetMarkerStyle(24);
-    gsigma->SetLineColor(kViolet);
-    gsigma->SetLineWidth(2);
-    gsigma->Draw("apl0");
+    gsigmas->SetTitle(";E_{x} [MeV];#sigma in E_{x} [MeV]");
+    gsigmas->SetMarkerStyle(24);
+    gsigmas->SetLineColor(kViolet);
+    gsigmas->SetLineWidth(2);
+    gsigmas->Draw("apl0");
+
+    auto* file {new TFile {TString::Format("/media/Data/E796v2/Simulation/Outputs/%s/sigmas_%s_%s_%s.root",
+                                           gSelector->GetFlag().c_str(), beam.c_str(), target.c_str(), light.c_str()),
+                           "recreate"}};
+    file->cd();
+    gsigmas->Write("gsigmas");
+    file->Close();
 }
