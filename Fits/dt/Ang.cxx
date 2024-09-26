@@ -53,12 +53,10 @@ void Ang()
     fitter.DrawCounts();
 
     // Read efficiency files
-    std::vector<std::string> peaks {"g0", "g2", "g3", "g4", "g9"};
+    std::vector<std::string> peaks {"g0", "g2", "v0", "v1", "v5"};
     std::vector<std::string> effFiles {
-        gSelector->GetSimuFile("20O", "2H", "3H", 0).Data(),
-        gSelector->GetSimuFile("20O", "2H", "3H", 3.24).Data(),
-        gSelector->GetSimuFile("20O", "2H", "3H", 4.40).Data(),
-        gSelector->GetSimuFile("20O", "2H", "3H", 6.90).Data(),
+        gSelector->GetSimuFile("20O", "2H", "3H", 0).Data(),    gSelector->GetSimuFile("20O", "2H", "3H", 3.24).Data(),
+        gSelector->GetSimuFile("20O", "2H", "3H", 4.40).Data(), gSelector->GetSimuFile("20O", "2H", "3H", 6.90).Data(),
         gSelector->GetSimuFile("20O", "2H", "3H", 14.9).Data(),
     };
     Interpolators::Efficiency eff;
@@ -82,6 +80,7 @@ void Ang()
     // comp.Add("l = 2 Juan", "./Inputs/gs/Juan/GS/OP1_1/21.XS");
     comp.Add("l = 2 Franck", "./Inputs/gs/Franck/gs.xs");
     comp.Add("l = 2 E_{x} = 96 keV", "./Inputs/gs/cl_2/21.c");
+    comp.Add("L = 2 Mine", "./Inputs/gs/Fresco/fort.202");
     comp.Fit(thetaCMMin, thetaCMMax);
     comp.Draw();
     // comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
@@ -95,18 +94,18 @@ void Ang()
     // comp2.ScaleToExp("l = 1", 3.43, fitter.GetIgCountsGraph("g2"), eff.GetTEfficiency("g2"));
 
     // For g3
-    Angular::Comparator comp3 {"g3 = 3/2^{-} @ 4.58 MeV", xs.Get("g3")};
+    Angular::Comparator comp3 {"v0 = 3/2^{-} @ 4.58 MeV", xs.Get("v0")};
     comp3.Add("l = 1", "./Inputs/g3/21.g3");
     comp3.Fit(thetaCMMin, thetaCMMax);
     comp3.Draw();
 
     // For g4
-    Angular::Comparator comp4 {"g4 = ? @ 6.68 MeV", xs.Get("g4")};
+    Angular::Comparator comp4 {"v1 = ? @ 6.68 MeV", xs.Get("v1")};
     comp4.Draw();
     // how do I compute the 2fnr without a guess of Jpi?
 
     // For g9
-    Angular::Comparator comp9 {"g9 = ? @ 14.9 MeV", xs.Get("g9")};
+    Angular::Comparator comp9 {"v5 = ? @ 14.9 MeV", xs.Get("v5")};
     comp9.Draw();
 
 

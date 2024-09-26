@@ -2,9 +2,11 @@
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
+#include "TLine.h"
 #include "TROOT.h"
 #include "TString.h"
 #include "TSystem.h"
+#include "TVirtualPad.h"
 
 #include "FitModel.h"
 #include "FitRunner.h"
@@ -51,17 +53,18 @@ void Fit()
     double exmax {25};
 
     // Model
-    int ngauss {11};
-    int nvoigt {0};
+    int ngauss {3};
+    int nvoigt {8};
     Fitters::Model model {ngauss, nvoigt, {*hPS}};
 
     // Set init parameters
     // double sigma {0.374};
     double sigma {0.364};
     Fitters::Runner::Init initPars {
-        {"g0", {400, 0, sigma}},  {"g1", {10, 1.5, sigma}},  {"g2", {110, 3.2, sigma}}, {"g3", {60, 4.5, sigma}},
-        {"g4", {60, 6.7, sigma}}, {"g5", {65, 7.9, sigma}},  {"g6", {20, 8.9, sigma}},  {"g7", {20, 11, sigma}},
-        {"g8", {5, 12.8, sigma}}, {"g9", {10, 14.8, sigma}}, {"g10", {10, 16, sigma}},  {"ps0", {0.1}},
+        {"g0", {400, 0, sigma}},       {"g1", {10, 1.5, sigma}},       {"g2", {110, 3.2, sigma}},
+        {"v0", {60, 4.5, sigma, 0.1}}, {"v1", {60, 6.7, sigma, 0.1}},  {"v2", {65, 7.9, sigma, 0.1}},
+        {"v3", {20, 11, sigma, 0.1}},  {"v4", {5, 12.8, sigma, 0.1}},  {"v5", {20, 14.9, sigma, 0.1}},
+        {"v6", {10, 16, sigma, 0.1}},  {"v7", {10, 17.5, sigma, 0.1}}, {"ps0", {0.1}},
     };
     // Reread in case file exists
     auto outfile {TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().data())};
@@ -74,8 +77,8 @@ void Fit()
         vals[2] = sigmas.Eval(vals[1]);
 
     // Set bounds and fix parameters
-    double minmean {0.3};
-    double maxmean {0.3};
+    double minmean {0.5};
+    double maxmean {0.5};
     Fitters::Runner::Bounds initBounds {};
     Fitters::Runner::Fixed fixedPars {};
     for(const auto& [key, init] : initPars)
@@ -110,8 +113,13 @@ void Fit()
                 pair = {-11, -11};
                 boo = true; // fix it
             }
+            else if(par == 3)
+            {
+                pair = {0, 10};
+                boo = false;
+            }
             else
-                throw std::runtime_error("No automatic config for this parameter index (only gaussians so far)!");
+                throw std::runtime_error("No automatic config for this parameter index");
             // Fill
             initBounds[key].push_back(pair);
             fixedPars[key].push_back(boo);
@@ -124,4 +132,10 @@ void Fit()
         Fitters::RunFit(hExs[i], exmin, exmax, model, initPars, initBounds, fixedPars,
                         ("./Outputs/fit_" + labels[i] + ".root"), labels[i]);
     }
+    gPad->Update();
+    gPad->cd();
+    auto* line {new TLine {3.956, gPad->GetUymin(), 3.956, gPad->GetUymax()}};
+    line->SetLineWidth(2);
+    line->SetLineColor(kMagenta);
+    line->Draw("same");
 }

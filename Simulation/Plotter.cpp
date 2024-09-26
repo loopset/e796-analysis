@@ -79,6 +79,8 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
             continue;
         hsEx[i]->Fit("gaus", "0Q", "", Exs[i] - range, Exs[i] + range);
         auto* f {hsEx[i]->GetFunction("gaus")};
+        if(!f)
+            continue;
         gsigmas->SetPoint(gsigmas->GetN(), Exs[i], f->GetParameter("Sigma"));
         gsigmas->SetPointError(gsigmas->GetN() - 1, 0, f->GetParError(2));
     }
