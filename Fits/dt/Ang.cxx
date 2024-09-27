@@ -28,18 +28,21 @@ void Ang()
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile(0, 1, 0)};
+    ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile(0, 2, 0)};
 
     // Init intervals
-    double thetaCMMin {8};
+    double thetaCMMin {6};
     double thetaCMMax {14};
     double thetaCMStep {1.5};
-    int nps {1};
+    int nps {2};
     Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdt, thetaCMStep, nps};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
     // FillPS
     phase.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(0, thetacm, ex, weight); },
                   {"theta3CM", "Eex", "weight"});
+    phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
+                   {"theta3CM", "Eex", "weight"});
     ivs.TreatPS();
     ivs.Draw();
 
@@ -50,7 +53,7 @@ void Ang()
     fitter.Run();
     fitter.Draw();
     fitter.ComputeIntegrals(2);
-    fitter.DrawCounts();
+    fitter.DrawCounts(false);
 
     // Read efficiency files
     std::vector<std::string> peaks {"g0", "g2", "v0", "v1", "v5"};
@@ -106,40 +109,10 @@ void Ang()
 
     // For g9
     Angular::Comparator comp9 {"v5 = ? @ 14.9 MeV", xs.Get("v5")};
+    comp9.Add("l = 0", "./Inputs/r_15/l0/fort.202");
+    comp9.Add("l = 1", "./Inputs/r_15/l1/fort.202");
+    comp9.Fit();
     comp9.Draw();
-
-
-    // // Debug efficiency
-    // std::vector<Interpolators::Efficiency> veff;
-    // Interpolators::Efficiency deff;
-    // std::vector<std::string> dpeaks {"gs_all", "gs_1", "gs_2"};
-    // std::vector<std::string> dfiles {
-    //     "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_all.root",
-    //     // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_0.00_nPS_0_pPS_0.root",
-    //     "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_1.root",
-    //     "/media/Data/E796v2/Simulation/Outputs/Eff_study/d_t_gs_2.root",
-    // };
-    // for(int i = 0; i < dpeaks.size(); i++)
-    // {
-    //     deff.Add(dpeaks[i], dfiles[i]);
-    //     veff.push_back({});
-    //     veff.back().Add("g0", dfiles[i]);
-    // }
-    // deff.Draw();
-    // // Do calculation
-    // std::vector<Angular::DifferentialXS> dxs;
-    // std::vector<Angular::Comparator> dcomp;
-    // for(int i = 0; i < dpeaks.size(); i++)
-    // {
-    //     dxs.push_back(Angular::DifferentialXS {&ivs, &fitter, &veff[i], &exp});
-    //     dxs.back().DoFor({"g0"});
-    //     // and compare
-    //     dcomp.push_back(Angular::Comparator {dpeaks[i], dxs.back().Get("g0")});
-    //     dcomp.back().Add("l = 2 Franck", "./Inputs/gs/Franck/gs.xs");
-    //     dcomp.back().Fit(thetaCMMin, thetaCMMax);
-    //     dcomp.back().Draw();
-    // }
-
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

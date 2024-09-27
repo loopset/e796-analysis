@@ -36,7 +36,7 @@ void Ang()
 
     // Init fitter
     Angular::Fitter fitter {&ivs};
-    fitter.Configure("./Outputs/fit_pd.root", {});
+    fitter.Configure("./Outputs/fit_pd.root");
     fitter.Run();
     fitter.Draw();
     fitter.ComputeIntegrals(2);

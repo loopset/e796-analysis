@@ -40,10 +40,13 @@ void Fit()
     // ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
     //                                           "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile(0, 1, 0)};
-    // auto hPS {phase.Histo1D(E796Fit::Exdt, "Ex_cal", "Weight_sim")};
     auto hPS {phase.Histo1D(E796Fit::Exdt, "Eex", "weight")};
     hPS->SetNameTitle("hPS", "1n PS");
     Fitters::TreatPS(hExs.front(), hPS.GetPtr());
+    ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile(0, 2, 0)};
+    auto hPS2 {phase2.Histo1D(E796Fit::Exdt, "Eex", "weight")};
+    hPS2->SetNameTitle("hPS", "2n PS");
+    Fitters::TreatPS(hExs.front(), hPS2.GetPtr());
 
     // Sigma interpolators
     Interpolators::Sigmas sigmas {gSelector->GetSigmasFile().Data()};
@@ -55,17 +58,24 @@ void Fit()
     // Model
     int ngauss {3};
     int nvoigt {8};
-    Fitters::Model model {ngauss, nvoigt, {*hPS}};
+    Fitters::Model model {ngauss, nvoigt, {*hPS, *hPS2}};
 
     // Set init parameters
     // double sigma {0.374};
     double sigma {0.364};
-    Fitters::Runner::Init initPars {
-        {"g0", {400, 0, sigma}},       {"g1", {10, 1.5, sigma}},       {"g2", {110, 3.2, sigma}},
-        {"v0", {60, 4.5, sigma, 0.1}}, {"v1", {60, 6.7, sigma, 0.1}},  {"v2", {65, 7.9, sigma, 0.1}},
-        {"v3", {20, 11, sigma, 0.1}},  {"v4", {5, 12.8, sigma, 0.1}},  {"v5", {20, 14.9, sigma, 0.1}},
-        {"v6", {10, 16, sigma, 0.1}},  {"v7", {10, 17.5, sigma, 0.1}}, {"ps0", {0.1}},
-    };
+    Fitters::Runner::Init initPars {{"g0", {400, 0, sigma}},
+                                    {"g1", {10, 1.5, sigma}},
+                                    {"g2", {110, 3.2, sigma}},
+                                    {"v0", {60, 4.5, sigma, 0.1}},
+                                    {"v1", {60, 6.7, sigma, 0.1}},
+                                    {"v2", {65, 7.9, sigma, 0.1}},
+                                    {"v3", {20, 11, sigma, 0.1}},
+                                    {"v4", {5, 12.8, sigma, 0.1}},
+                                    {"v5", {20, 14.9, sigma, 0.1}},
+                                    {"v6", {10, 16, sigma, 0.1}},
+                                    {"v7", {10, 17.5, sigma, 0.1}},
+                                    {"ps0", {0.1}},
+                                    {"ps1", {0.1}}};
     // Reread in case file exists
     auto outfile {TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().data())};
     if(!gSystem->AccessPathName(outfile))
@@ -138,4 +148,12 @@ void Fit()
     line->SetLineWidth(2);
     line->SetLineColor(kMagenta);
     line->Draw("same");
+    auto* line2 {new TLine {17.069, gPad->GetUymin(), 17.069, gPad->GetUymax()}};
+    line2->SetLineWidth(2);
+    line2->SetLineColor(kOrange);
+    line2->Draw("same");
+    auto* line3 {new TLine {12, gPad->GetUymin(), 12, gPad->GetUymax()}};
+    line3->SetLineWidth(2);
+    line3->SetLineColor(kCyan);
+    line3->Draw("same");
 }
