@@ -27,8 +27,8 @@ void Ang()
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
-    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile(0, 1, 0)};
-    ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile(0, 2, 0)};
+    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
+    ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
 
     // Init intervals
     double thetaCMMin {6};
@@ -56,11 +56,11 @@ void Ang()
     fitter.DrawCounts(false);
 
     // Read efficiency files
-    std::vector<std::string> peaks {"g0", "g2", "v0", "v1", "v5"};
+    std::vector<std::string> peaks {"g0", "g1", "g2", "v0", "v1", "v5"};
     std::vector<std::string> effFiles {
-        gSelector->GetSimuFile("20O", "2H", "3H", 0).Data(),    gSelector->GetSimuFile("20O", "2H", "3H", 3.24).Data(),
-        gSelector->GetSimuFile("20O", "2H", "3H", 4.40).Data(), gSelector->GetSimuFile("20O", "2H", "3H", 6.90).Data(),
-        gSelector->GetSimuFile("20O", "2H", "3H", 14.9).Data(),
+        gSelector->GetSimuFile("20O", "2H", "3H", 0).Data(),    gSelector->GetSimuFile("20O", "2H", "3H", 1.47).Data(),
+        gSelector->GetSimuFile("20O", "2H", "3H", 3.24).Data(), gSelector->GetSimuFile("20O", "2H", "3H", 4.40).Data(),
+        gSelector->GetSimuFile("20O", "2H", "3H", 6.90).Data(), gSelector->GetSimuFile("20O", "2H", "3H", 14.9).Data(),
     };
     Interpolators::Efficiency eff;
     for(int p = 0; p < peaks.size(); p++)
@@ -84,26 +84,39 @@ void Ang()
     comp.Add("l = 2 Franck", "./Inputs/gs/Franck/gs.xs");
     comp.Add("l = 2 E_{x} = 96 keV", "./Inputs/gs/cl_2/21.c");
     comp.Add("L = 2 Mine", "./Inputs/gs/Fresco/fort.202");
-    comp.Fit(thetaCMMin, thetaCMMax);
+    comp.Fit();
     comp.Draw();
-    // comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
+
+    // For g1
+    Angular::Comparator comp1 {"g1 = 5/2+", xs.Get("g1")};
+    comp1.Add("l = 2", "./Inputs/ex_1.57/fort.202");
+    comp1.Fit();
+    comp1.Draw();
 
     // For g2
     Angular::Comparator comp2 {"g2 = 1/2^{-} @ 3.2 MeV", xs.Get("g2")};
-    comp2.Add("l = 1", "./Inputs/g2/l_1/21.g2");
-    comp2.Add("l = 2", "./Inputs/g2/l_2/21.g2");
-    comp2.Fit(thetaCMMin, thetaCMMax);
+    // comp2.Add("l = 1", "./Inputs/g2/l_1/21.g2");
+    // comp2.Add("l = 2", "./Inputs/g2/l_2/21.g2");
+    comp2.Add("l = 1", "./Inputs/ex_3.16/l1/fort.202");
+    comp2.Add("l = 2", "./Inputs/ex_3.16/l2/fort.202");
+    comp2.Fit();
     comp2.Draw();
     // comp2.ScaleToExp("l = 1", 3.43, fitter.GetIgCountsGraph("g2"), eff.GetTEfficiency("g2"));
 
-    // For g3
-    Angular::Comparator comp3 {"v0 = 3/2^{-} @ 4.58 MeV", xs.Get("v0")};
-    comp3.Add("l = 1", "./Inputs/g3/21.g3");
-    comp3.Fit(thetaCMMin, thetaCMMax);
+    // For v0
+    Angular::Comparator comp3 {"v0 = 3/2^{-} or 5/2^{+} @ 4.64 MeV", xs.Get("v0")};
+    // comp3.Add("l = 1", "./Inputs/g3/21.g3");
+    comp3.Add("l = 1", "./Inputs/ex_4.64/l1/fort.202");
+    comp3.Add("l = 2", "./Inputs/ex_4.64/l2/fort.202");
+    comp3.Fit();
     comp3.Draw();
 
-    // For g4
+    // For v1
     Angular::Comparator comp4 {"v1 = ? @ 6.68 MeV", xs.Get("v1")};
+    comp4.Add("l = 2", "./Inputs/ex_6.55/l2/fort.202");
+    comp4.Add("l = 3", "./Inputs/ex_6.55/l3/fort.202");
+    comp4.Add("l = 4", "./Inputs/ex_6.55/l4/fort.202");
+    comp4.Fit();
     comp4.Draw();
     // how do I compute the 2fnr without a guess of Jpi?
 

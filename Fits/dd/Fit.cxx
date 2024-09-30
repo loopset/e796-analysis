@@ -14,9 +14,8 @@
 #include <utility>
 #include <vector>
 
-#include "/media/Data/E796v2/Fits/FitHist.h"
-#include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
 #include "../../Selector/Selector.h"
+#include "/media/Data/E796v2/Fits/FitHist.h"
 void Fit()
 {
     ROOT::EnableImplicitMT();
@@ -24,9 +23,8 @@ void Fit()
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "2H")};
 
     // Nodes at which compute global fit
-    std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1<>, {"fRP"}),
-                                         df.Filter(E796Gates::rpx2<>, {"fRP"})};
-    std::vector<std::string> labels {"dt", "dt_1", "dt_2"};
+    std::vector<ROOT::RDF::RNode> nodes {df};
+    std::vector<std::string> labels {"dd"};
     std::vector<TH1D*> hExs;
     for(int i = 0; i < nodes.size(); i++)
     {
@@ -38,14 +36,14 @@ void Fit()
     double exmax {10};
 
     // Model
-    int ngauss {2};
+    int ngauss {4};
     int nvoigt {0};
     Fitters::Model model {ngauss, nvoigt, {}};
 
     // Set init parameters
     double sigma {0.3};
     Fitters::Runner::Init initPars {
-        {"g0", {400, 0, sigma}}, {"g1", {100, 1.5, sigma}},
+        {"g0", {400, 0, sigma}}, {"g1", {100, 1.5, sigma}}, {"g2", {50, 4, sigma}}, {"g3", {50, 5.5, sigma}}
         // {"g2", {110, 3.2, sigma}}, {"g3", {60, 4.5, sigma}},
         // {"g4", {60, 6.7, sigma}}, {"g5", {65, 7.9, sigma}}, {"g6", {20, 8.9, sigma}},
     };

@@ -1,0 +1,40 @@
+20O(d,t) @ 30AMeV Haixia (d) + Pang (t)
+NAMELIST
+ &FRESCO  hcm=0.05 rmatch=60.000 rintp=0.10
+     hnl=0.05 rnl=5.00 centre=0.10
+     jtmin=0.0 jtmax=60.0 absend=-0.1000
+     thmin=3.00 thmax=-180.00 thinc=1.00
+     iter=1 iblock=1 nnu=36
+     chans=1 listcc=0 treneg=0 cdetr=0 smats=2 xstabl=1 
+     elab(1)=70 /
+
+ &PARTITION namep='d' massp=2.0141 zp=1 nex=1 namet='O20' masst=19.999687 zt=8 qval=0/
+ &STATES jp=1 bandp=1 ep=0.0000  cpot=1 jt=0.0 bandt=1 et=0.0000/
+
+ &PARTITION namep='t' massp=3.016049 zp=1 nex=1 namet='O19' masst=18.999189 zt=8 qval=-1.351/
+ &STATES jp=0.5 bandp=1 ep=0.0000  cpot=2 jt=4.5 bandt=+1 et=6.552/
+ &partition /
+
+ &pot kp=1 type=0 p(1:7)= 20.0000  0.0000  1.303  0.00  0.0000  0.0000  0.0000 /
+ &pot kp=1 type=1 p(1:7)= 76.7652  1.1491  0.7532  5.4875   1.3417  0.5836  0.0000 /
+ &pot kp=1 type=2 p(1:7)= 0.0000  0.0000   0.000   8.6735  1.3900  0.6993  0.0000 /
+ &pot kp=1 type=3 p(1:7)= 1.7785  0.9720   1.0110  0.0000  0.0000  0.0000  0.0000 /
+ &pot kp=2 type=0 p(1:7)= 19.00  0.0000  1.2850  0.000  0.0000  0.0000  0.0000 /
+ &pot kp=2 type=1 p(1:7)= 109.915  1.1201  0.8200  5.7090  1.2613  0.8400  0.0000 /
+ &pot kp=2 type=2 p(1:7)= 0.0000  0.0000   0.000   12.4757  1.2613  0.8400  0.0000 /
+ &pot kp=3 type=0 p(1:7)= 1.000  0.0000  2.00  0.00  0.0000  0.0000  0.0000 / ! Vdn core
+ &pot kp=3 type=1 p(1:3)= 172.88  0.56  0.6900 /
+ &pot kp=3 type=1 shape=2 p(1:3)= -198.812  0.00  0.64 /
+ &pot kp=4 type=0 p(1:7)= 19.00    0.0000  1.2500  0.000  0.0000  0.0000  0.0000 / ! V19O + n core
+ &pot kp=4 type=1 p(1:3)= 50.000  1.2500  0.6500 /
+ &pot kp=4 type=3 p(1:3)= 6.000  1.1000  0.6500 /
+ &pot /   ! END OF DEFINING POTENTIALS
+
+ &OVERLAP kn1=1 kn2=0 ic1=1 ic2=2 in=1 kind=0 nn=1 l=0 sn=0.5 j=0.5 kbpot=3 krpot=0 be=6.2572 isc=1 ipc=4 nfl=0 nam=1 ampl=1.00000 / ! Overlap projectile 3H = d + n
+ &OVERLAP kn1=2 kn2=0 ic1=1 ic2=2 in=2 kind=0 nn=1 l=4 sn=0.5 j=4.5 kbpot=4 krpot=0 be=14.1601 isc=1 ipc=4 nfl=0 nam=1 ampl=1.0000 / ! Overlap 20O = 19O + n
+ &overlap /   ! END OF DEFINING OVERLAPS
+
+ &COUPLING icto=-2 icfrom=1 kind=7 ip1=1 ip2=0 ip3=0 /
+   &cfp  in=1 ib=1 ia=1 kn=1  a=1.1402     /
+   &cfp  in=-2 ib=1 ia=1 kn=2  a=1.000     /
+ &COUPLING /

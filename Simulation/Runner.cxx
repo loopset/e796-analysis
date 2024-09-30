@@ -45,7 +45,7 @@ void Runner(TString what = "plot", bool standalone = true)
         if(target == "2H")
         {
             if(light == "2H")
-                Eexs = {0, 1.67};
+                Eexs = {0, 1.67, 4.1, 5.52};
             if(light == "3H")
             {
                 Eexs = {0., 1.47, 3.24, 4.4, 5.2, 6.9, 10, 12.8, 14.9};

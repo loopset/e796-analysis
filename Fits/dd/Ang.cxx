@@ -14,8 +14,8 @@
 #include <vector>
 
 #include "../../PostAnalysis/HistConfig.h"
-#include "../FitHist.h"
 #include "../../Selector/Selector.h"
+#include "../FitHist.h"
 
 void Ang()
 {
@@ -37,17 +37,17 @@ void Ang()
 
     // Init fitter
     Angular::Fitter fitter {&ivs};
-    fitter.Configure("./Outputs/fit_dt.root", {});
+    fitter.Configure("./Outputs/fit_dd.root");
     fitter.Run();
     fitter.Draw();
     fitter.ComputeIntegrals(2);
     fitter.DrawCounts();
 
     // Read efficiency files
-    std::vector<std::string> peaks {"g0", "g1"};
+    std::vector<std::string> peaks {"g0", "g1", "g2", "g3"};
     std::vector<std::string> effFiles {
-        gSelector->GetSimuFile("20O", "2H", "2H", 0).Data(),
-        gSelector->GetSimuFile("20O", "2H", "2H", 1.67).Data(),
+        gSelector->GetSimuFile("20O", "2H", "2H", 0).Data(), gSelector->GetSimuFile("20O", "2H", "2H", 1.67).Data(),
+        gSelector->GetSimuFile("20O", "2H", "2H", 4.1).Data(), gSelector->GetSimuFile("20O", "2H", "2H", 5.52).Data(),
         // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_2H_Eex_0.00_nPS_0_pPS_0.root",
         // "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_2H_Eex_1.67_nPS_0_pPS_0.root",
     };
@@ -75,9 +75,10 @@ void Ang()
 
     // For g1
     Angular::Comparator comp1 {"g1 = 2^{+} @ 1.67 MeV", xs.Get("g1")};
+    comp1.Add("Deformed", "./Inputs/g1_Haixia/fort.202");
     // comp2.Add("l = 1", "./Inputs/g2/l_1/21.g2");
     // comp2.Add("l = 2", "./Inputs/g2/l_2/21.g2");
-    // comp2.Fit(thetaCMMin, thetaCMMax);
+    comp1.Fit();
     comp1.Draw();
 
     // plotting
