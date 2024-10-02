@@ -23,6 +23,6 @@ void compd3He()
 
     Interpolators::Efficiency effsdd {};
     effsdd.Add("Ours", "/media/Data/E796v2/Simulation/Outputs/juan_RPx/tree_20O_2H_2H_0.00_nPS_0_pPS_0.root");
-    effsdd.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_2H_to_2H_NumN_0_NumP_0_Ex0_Date_2024_10_1_Time_12_18.root");
+    effsdd.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_2H_to_2H_NumN_0_NumP_0_Ex0_Date_2024_10_2_Time_10_23.root");
     effsdd.Draw();
 }

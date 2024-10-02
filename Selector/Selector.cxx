@@ -130,10 +130,10 @@ TString E796::Selector::GetSimuFile(double Ex, int nPS, int pPS)
     return GetSimuFile(fBeam, fTarget, fLight, Ex, nPS, pPS);
 }
 
-TString E796::Selector::GetSigmasFile()
+TString E796::Selector::GetSigmasFile(const std::string& target, const std::string& light)
 {
     auto path {TString::Format("/media/Data/E796v2/Simulation/Outputs/%s/", fFlag.c_str())};
-    auto name {TString::Format("sigmas_%s_%s_%s.root", fBeam.c_str(), fTarget.c_str(), fLight.c_str())};
+    auto name {TString::Format("sigmas_%s_%s_%s.root", "20O", target.c_str(), light.c_str())};
     std::cout << BOLDCYAN << "Opening sigmas file : " << name << RESET << '\n';
     return path + name;
 }

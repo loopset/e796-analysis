@@ -25,23 +25,39 @@ ActPhysics::SilMatrix* GetAntiVetoMatrix()
     return sm;
 }
 
-ActPhysics::SilMatrix* GetEffSilMatrix(const std::string& light)
+ActPhysics::SilMatrix* GetSideMatrix()
 {
-    // if 3He or 4He we need all data -> bigger matrix
-    // if(light == "3He" || light == "4He")
-    if(false)
+    auto* sm {new ActPhysics::SilMatrix {"SideMatrix"}};
+    sm->Read("/media/Data/E796v2/Macros/SilVetos/Outputs/side_matrix.root");
+    return sm;
+}
+
+ActPhysics::SilMatrix* GetEffSilMatrix(const std::string& target, const std::string& light)
+{
+    bool isEl {target == light};
+    if(isEl)
     {
-        std::cout << BOLDYELLOW << "E796Utils: Reading veto sil matrix for -> " << light << RESET << '\n';
-        return GetVetoMatrix();
-    }
-    else if(light == "1H" || light == "2H" || light == "3H" || light == "3He" || light == "4He")
-    // else if(light == "1H" || light == "2H" || light == "3H")
-    {
-        std::cout << BOLDYELLOW << "E796Utils: Reading antiveto sil matrix for -> " << light << RESET << '\n';
-        return GetAntiVetoMatrix();
+        std::cout << BOLDYELLOW << "E796Utils: Reading side sil matrix for -> " << light << RESET << '\n';
+        return GetSideMatrix();
     }
     else
-        throw std::runtime_error("E748Utils::GetEffSilMatrix(): not recognized light particle " + light);
+    {
+        // if 3He or 4He we need all data -> bigger matrix
+        // if(light == "3He" || light == "4He")
+        if(false)
+        {
+            std::cout << BOLDYELLOW << "E796Utils: Reading veto sil matrix for -> " << light << RESET << '\n';
+            return GetVetoMatrix();
+        }
+        else if(light == "1H" || light == "2H" || light == "3H" || light == "3He" || light == "4He")
+        // else if(light == "1H" || light == "2H" || light == "3H")
+        {
+            std::cout << BOLDYELLOW << "E796Utils: Reading antiveto sil matrix for -> " << light << RESET << '\n';
+            return GetAntiVetoMatrix();
+        }
+        else
+            throw std::runtime_error("E748Utils::GetEffSilMatrix(): not recognized light particle " + light);
+    }
 }
 
 std::string GetParticleName(const std::string& filename, const std::string& what)

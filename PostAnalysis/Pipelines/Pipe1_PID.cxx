@@ -32,14 +32,23 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     ROOT::RDataFrame df {*chain};
 
     // Apply cuts
-    ActPhysics::SilMatrix* sm {};
+    auto* sm {E796Utils::GetEffSilMatrix(target, light)};
     ROOT::RDF::RNode vetoed {df};
     if(isEl)
-        vetoed = vetoed.Filter(E796Gates::left0, {"MergerData"});
+    {
+        vetoed = vetoed.Filter(
+            [&](const ActRoot::MergerData& d)
+            {
+                bool isL0 {E796Gates::left0(d)};
+                if(!isL0)
+                    return isL0;
+                bool isInMatrix {sm->IsInside(d.fSilNs.front(), d.fSP.X(), d.fSP.Z())};
+                return isInMatrix;
+            },
+            {"MergerData"});
+    }
     else
     {
-        // Read matrix
-        sm = E796Utils::GetEffSilMatrix(light);
         // Build extra lambda to apply silicon matrix
         auto veto {[&](const ActRoot::MergerData& d)
                    {

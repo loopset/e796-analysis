@@ -4,10 +4,12 @@
 
 #include "TROOT.h"
 #include "TString.h"
+#include "TSystem.h"
 
 #include "FitModel.h"
 #include "FitRunner.h"
 #include "FitUtils.h"
+#include "Interpolators.h"
 
 #include <stdexcept>
 #include <string>
@@ -24,7 +26,7 @@ void Fit()
 
     // Nodes at which compute global fit
     std::vector<ROOT::RDF::RNode> nodes {df};
-    std::vector<std::string> labels {"dd"};
+    std::vector<std::string> labels {gSelector->GetFlag()};
     std::vector<TH1D*> hExs;
     for(int i = 0; i < nodes.size(); i++)
     {
@@ -40,6 +42,10 @@ void Fit()
     int nvoigt {0};
     Fitters::Model model {ngauss, nvoigt, {}};
 
+    // Sigmas
+    Interpolators::Sigmas sigmas;
+    sigmas.Read(gSelector->GetSigmasFile("2H", "2H").Data());
+
     // Set init parameters
     double sigma {0.3};
     Fitters::Runner::Init initPars {
@@ -47,6 +53,16 @@ void Fit()
         // {"g2", {110, 3.2, sigma}}, {"g3", {60, 4.5, sigma}},
         // {"g4", {60, 6.7, sigma}}, {"g5", {65, 7.9, sigma}}, {"g6", {20, 8.9, sigma}},
     };
+    // Reread in case file exists
+    auto outfile {TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().data())};
+    if(!gSystem->AccessPathName(outfile))
+    {
+        std::cout << "Setting parameters from previous fit" << '\n';
+        initPars = Fitters::ReadInit(outfile.Data());
+    }
+    // Eval correct sigma
+    for(auto& [key, vals] : initPars)
+        vals[2] = sigmas.Eval(vals[1]);
     // Set bounds and fix parameters
     double minmean {0.3};
     double maxmean {0.3};
@@ -82,7 +98,7 @@ void Fit()
             else if(par == 2) // Sigma
             {
                 pair = {-11, -11};
-                boo = false; // fix it
+                boo = true; // fix it
             }
             else
                 throw std::runtime_error("No automatic config for this parameter index (only gaussians so far)!");

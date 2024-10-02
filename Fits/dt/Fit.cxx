@@ -49,7 +49,7 @@ void Fit()
     Fitters::TreatPS(hExs.front(), hPS2.GetPtr());
 
     // Sigma interpolators
-    Interpolators::Sigmas sigmas {gSelector->GetSigmasFile().Data()};
+    Interpolators::Sigmas sigmas {gSelector->GetSigmasFile("2H", "3H").Data()};
 
     // Fitting range
     double exmin {-5};

@@ -1,6 +1,5 @@
 #include "ActInputParser.h"
 
-
 #include "TCanvas.h"
 #include "TF1.h"
 #include "TH1.h"
@@ -76,7 +75,13 @@ ProjMap FitToScaleFunc(ProjMap& hs, const PairMap& limits, const TString& func =
         auto [xmin, xmax] {limits.at(i)};
         h->Fit("expo", "0", "", xmin, xmax);
         auto* func {h->GetFunction("expo")};
-        ret[i] = ScaleWithFunc(h, func);
+        if(!func)
+        {
+            std::cout << "No scaling function for histogram " << i << '\n';
+            ret[i] = h;
+        }
+        else
+            ret[i] = ScaleWithFunc(h, func);
     }
     return std::move(ret);
 }
