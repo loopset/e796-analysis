@@ -2,6 +2,7 @@
 
 #include "TCanvas.h"
 #include "TROOT.h"
+#include "TString.h"
 
 #include "AngComparator.h"
 #include "AngDifferentialXS.h"
@@ -14,40 +15,40 @@
 #include <vector>
 
 #include "../../PostAnalysis/HistConfig.h"
-#include "../../PostAnalysis/Utils.cxx"
+#include "../../Selector/Selector.h"
 #include "../FitHist.h"
 
 void Ang()
 {
     ROOT::EnableImplicitMT();
 
-    ROOT::RDataFrame df {"Final_Tree", E796Utils::GetFileName(2, "20O", "1H", "1H", true)};
+    ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "1H", "1H")};
 
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
-    auto hEx {df.Histo1D(E796Fit::Exdd, "Ex")};
+    auto hEx {df.Histo1D(E796Fit::Expp, "Ex")};
 
     // Init intervals
     double thetaCMMin {18};
     double thetaCMMax {25};
-    double thetaCMStep {1};
-    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdt, thetaCMStep};
+    double thetaCMStep {0.5};
+    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Expp, thetaCMStep};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
 
     // Init fitter
     Angular::Fitter fitter {&ivs};
-    fitter.Configure("./Outputs/fit_pp.root", {});
+    fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
     fitter.Draw();
     fitter.ComputeIntegrals(2);
     fitter.DrawCounts();
 
     // Read efficiency files
-    std::vector<std::string> peaks {"g0"};
+    std::vector<std::string> peaks {"g0", "g1"};
     std::vector<std::string> effFiles {
-        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_1H_light_1H_Eex_0.00_nPS_0_pPS_0.root",
-        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_1H_light_1H_Eex_1.67_nPS_0_pPS_0.root",
+        gSelector->GetSimuFile("20O", "1H", "1H", 0).Data(),
+        gSelector->GetSimuFile("20O", "1H", "1H", 1.67).Data(),
     };
     Interpolators::Efficiency eff;
     for(int p = 0; p < peaks.size(); p++)
@@ -55,10 +56,9 @@ void Ang()
     // Draw to check is fine
     eff.Draw(true);
 
-    // Set experiment info
-    // Nt is different: now H from C4H10
-    // remember we are using an effective length!
-    PhysUtils::Experiment exp {4.5625e20, 279932, 30000};
+    // Recompute normalzation
+    gSelector->RecomputeNormalization();
+    PhysUtils::Experiment exp {"../norms/p_target.dat"};
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
@@ -69,12 +69,11 @@ void Ang()
     comp.Fit();
     comp.Draw("g.s", true, true);
 
-    // // For g1
-    // Angular::Comparator comp1 {"g1 = 2^{+} @ 1.67 MeV", xs.Get("g1")};
-    // // comp2.Add("l = 1", "./Inputs/g2/l_1/21.g2");
-    // // comp2.Add("l = 2", "./Inputs/g2/l_2/21.g2");
-    // // comp2.Fit(thetaCMMin, thetaCMMax);
-    // comp1.Draw();
+    // For g1
+    Angular::Comparator comp1 {"g1 = 2^{+} @ 1.67 MeV", xs.Get("g1")};
+    comp1.Add("B(E2) E.Khan", "./Inputs/g1_KD/fort.202");
+    comp1.Fit();
+    comp1.Draw();
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

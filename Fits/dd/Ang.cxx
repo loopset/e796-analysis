@@ -31,8 +31,8 @@ void Ang()
     // Init intervals
     double thetaCMMin {15};
     double thetaCMMax {22};
-    double thetaCMStep {0.5};
-    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdt, thetaCMStep};
+    double thetaCMStep {1};
+    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdd, thetaCMStep};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
 
@@ -64,7 +64,9 @@ void Ang()
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
-    xs.TrimX("g1", 16.5);
+    xs.TrimX("g1", 17);
+    xs.TrimX("g2", 16.2);
+    xs.TrimX("g3", 16.2);
     xs.Write("./Outputs/");
 
     // For gs
@@ -77,19 +79,19 @@ void Ang()
 
     // For g1
     Angular::Comparator comp1 {"g1 = 2^{+} @ 1.67 MeV", xs.Get("g1")};
-    comp1.Add("Deformed", "./Inputs/g1_Haixia/fort.202");
+    comp1.Add("B(E2) = 28.1 E. Khan", "./Inputs/g1_Haixia/fort.202");
     comp1.Fit();
     comp1.Draw();
 
     // For g2
     Angular::Comparator comp2 {"g2 = 2^{+} @ 4 MeV", xs.Get("g2")};
-    comp2.Add("B(E2) lit", "./Inputs/g2_Haixia/fort.202");
+    comp2.Add("B(E2) = 28.1 E.Khan", "./Inputs/g2_Haixia/fort.202");
     comp2.Fit();
     comp2.Draw();
     
     // For g3
     Angular::Comparator comp3 {"g3 = 3^{-} @ 5.6 MeV", xs.Get("g2")};
-    comp3.Add("B(E3) E. Khan", "./Inputs/g3_Haixia/fort.202");
+    comp3.Add("B(E3) = 882 E. Khan", "./Inputs/g3_Haixia/fort.202");
     comp3.Fit();
     comp3.Draw();
 

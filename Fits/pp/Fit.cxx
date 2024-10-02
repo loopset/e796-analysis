@@ -8,52 +8,56 @@
 #include "FitModel.h"
 #include "FitRunner.h"
 #include "FitUtils.h"
+#include "Interpolators.h"
 
 #include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "../../Selector/Selector.h"
 #include "/media/Data/E796v2/Fits/FitHist.h"
-#include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
-#include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
 
 void Fit()
 {
     ROOT::EnableImplicitMT();
 
-    ROOT::RDataFrame df {"Final_Tree", E796Utils::GetFileName(2, "20O", "1H", "1H", true)};
+    ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "1H", "1H")};
 
     // Nodes at which compute global fit
     std::vector<ROOT::RDF::RNode> nodes {df};
-    // std::vector<ROOT::RDF::RNode> nodes {df, df.Filter(E796Gates::rpx1<>, {"fRP"}),
-    //                                      df.Filter(E796Gates::rpx2<>, {"fRP"})};
-    std::vector<std::string> labels {"pp", "pp_1", "pp_2"};
+    std::vector<std::string> labels {gSelector->GetFlag()};
     std::vector<TH1D*> hExs;
     for(int i = 0; i < nodes.size(); i++)
     {
-        auto h {nodes[i].Histo1D(E796Fit::Exdd, "Ex")};
+        auto h {nodes[i].Histo1D(E796Fit::Expp, "Ex")};
         hExs.push_back((TH1D*)h->Clone());
     }
     // Fitting range
     double exmin {-5};
     double exmax {10};
 
+    // Sigmas
+    Interpolators::Sigmas sigmas;
+    sigmas.Read(gSelector->GetSigmasFile("1H", "1H").Data());
+
     // Model
     int ngauss {2};
     int nvoigt {0};
-    Fitters::Model model {ngauss, nvoigt, {}};
+    bool cte {true};
+    Fitters::Model model {ngauss, nvoigt, {}, cte};
 
     // Set init parameters
     double sigma {0.3};
     Fitters::Runner::Init initPars {
-        {"g0", {400, 0, sigma}}, {"g1", {100, 1.5, sigma}},
-        // {"g2", {110, 3.2, sigma}}, {"g3", {60, 4.5, sigma}},
-        // {"g4", {60, 6.7, sigma}}, {"g5", {65, 7.9, sigma}}, {"g6", {20, 8.9, sigma}},
+        {"g0", {400, 0, sigma}}, {"g1", {100, 1.67, sigma}}, {"cte0", {40}},
     };
+    // Eval correct sigma
+    for(auto& [key, vals] : initPars)
+        vals[2] = sigmas.Eval(vals[1]);
     // Set bounds and fix parameters
-    double minmean {0.3};
-    double maxmean {0.3};
+    double minmean {0.1};
+    double maxmean {0.1};
     Fitters::Runner::Bounds initBounds {};
     Fitters::Runner::Fixed fixedPars {};
     for(const auto& [key, init] : initPars)
@@ -65,7 +69,7 @@ void Fit()
             npars = 3; // gaussian
         else if(strkey.Contains("v"))
             npars = 4; // voigt
-        else if(strkey.Contains("ps"))
+        else if(strkey.Contains("ps") || strkey.Contains("cte"))
             npars = 1;
         else
             throw std::runtime_error("Wrong key received in initPars");
@@ -85,7 +89,7 @@ void Fit()
             }
             else if(par == 2) // Sigma
             {
-                pair = {0.05, 0.5};
+                pair = {0.05, 0.25};
                 boo = false; // fix it
             }
             else

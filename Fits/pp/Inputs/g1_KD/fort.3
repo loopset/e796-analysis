@@ -1,8 +1,8 @@
 &PARTITION
  NAMEP='p       ',
- MASSP=  1.00000000    ,
- ZP=  1.00727654    ,
- NEX=1          ,
+ MASSP=  1.00727654    ,
+ ZP=  1.00000000    ,
+ NEX=2          ,
  PWF=T,
  NAMET='O20     ',
  MASST=  19.9996872    ,
@@ -31,6 +31,27 @@
  INFAM=0          ,
  OUTFAM=0          ,
  /
+&STATES
+ JP=  0.00000000    ,
+ COPYP=1          ,
+ PTYP=0          ,
+ BANDP=0          ,
+ EP=  0.00000000    ,
+ KKP=  0.00000000    ,
+ TP=  0.00000000    ,
+ CPOT=1          ,
+ JT=  2.00000000    ,
+ COPYT=0          ,
+ PTYT=1          ,
+ BANDT=1          ,
+ ET=  1.66999996    ,
+ KKT=  0.00000000    ,
+ TT=  0.00000000    ,
+ FEXCH=F,
+ IGNORE=F,
+ INFAM=0          ,
+ OUTFAM=0          ,
+ /
  &partition /
 &POTL
  KPI=1          ,
@@ -40,6 +61,18 @@
  SHAPEI=0          ,
  P=  0.00000000    ,  20.0000000    ,  0.00000000    ,  1.38080001    , 5*0.00000000      ,
  
+ LSHAPEI=0          ,
+ JL=' ',
+ XLVARY=  0.0000000000000000     ,
+ ALVARY=  0.0000000000000000     ,
+ /
+&POTL
+ KPI=1          ,
+ TYPEI=11         ,
+ ITT=F,
+ NOSUB=F,
+ SHAPEI=0          ,
+ P= 2*0.00000000      ,  5.29150009    , 6*0.00000000      ,
  LSHAPEI=0          ,
  JL=' ',
  XLVARY=  0.0000000000000000     ,
@@ -60,12 +93,36 @@
  /
 &POTL
  KPI=1          ,
+ TYPEI=11         ,
+ ITT=F,
+ NOSUB=F,
+ SHAPEI=0          ,
+ P= 2*0.00000000      , 0.834100008    , 6*0.00000000      ,
+ LSHAPEI=0          ,
+ JL=' ',
+ XLVARY=  0.0000000000000000     ,
+ ALVARY=  0.0000000000000000     ,
+ /
+&POTL
+ KPI=1          ,
  TYPEI=2          ,
  ITT=F,
  NOSUB=F,
  SHAPEI=0          ,
  P= 4*0.00000000      ,  4.66650009    ,  1.29939997    , 0.529100001    , 2*0.00000000      ,
  
+ LSHAPEI=0          ,
+ JL=' ',
+ XLVARY=  0.0000000000000000     ,
+ ALVARY=  0.0000000000000000     ,
+ /
+&POTL
+ KPI=1          ,
+ TYPEI=11         ,
+ ITT=F,
+ NOSUB=F,
+ SHAPEI=0          ,
+ P= 2*0.00000000      , 0.834100008    , 6*0.00000000      ,
  LSHAPEI=0          ,
  JL=' ',
  XLVARY=  0.0000000000000000     ,
@@ -91,17 +148,17 @@
 
 
  parameters:    mxx    mxp  mxpex  maxit maxcpl maxnnu 
-   required:      1      1      2      0      1     18
+   required:      2      1      3      0      1     18
 
  parameters:   maxn  mint  maxnln maxnlo    msp  lmax1  mpair
    required:   2002   1990    118      4      1     70      1
 
  parameters:     mloc   mclist   maxqrn
-   required:        4        6        1
+   required:        7       12        1
 
 
  parameters:     mloc   mclist   maxqrn
-   required:        4        6        1
+   required:        7       12        1
 
 
 p+O20 with Konig-Delaroche;                                                     
@@ -148,7 +205,7 @@ NAMELIST
  COMPLEXBINS=F,
  IPS=  0.0000000000000000     ,
  IT0=0          ,
- ITER=0          ,
+ ITER=1          ,
  FATAL=T,
  IBLOCK=0          ,
  PADE=0          ,
