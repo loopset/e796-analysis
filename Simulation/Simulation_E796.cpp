@@ -116,13 +116,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     cuts.ReadCut(light, TString::Format("/media/Data/E796v2/PostAnalysis/Cuts/LightPID/pid_%s%s.root", light.c_str(),
                                         (isEl) ? "_side" : "")
                             .Data());
-    // for(auto i : {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10})
-    //     cuts.ReadCut(std::to_string(i), TString::Format("/media/Data/E796/Cuts/veto_sil%d.root", i).Data());
     std::pair<double, double> eLoss0Cut;
     if(cuts.GetCut(light))
     {
         eLoss0Cut = cuts.GetXRange(light);
-        // eLoss0Cut = {1.5, 19};
         std::cout << BOLDGREEN << "-> ESil range for " << light << ": [" << eLoss0Cut.first << ", " << eLoss0Cut.second
                   << "] MeV" << RESET << '\n';
     }
@@ -132,23 +129,17 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
                   << " -> using default eLoss0Cut" << RESET << '\n';
         eLoss0Cut = {0, 1000};
     }
-    // std::pair<double, double> eLoss0Cut {0, 1000}; //{6.5, 27.};
-
 
     // Silicon masks
-    ActPhysics::SilMatrix* sm {};
-    std::set<int> silIndxs;
-    if(!isEl)
+    auto* sm {E796Utils::GetEffSilMatrix(target, light)};
+    if(isEl)
     {
-        sm = E796Utils::GetEffSilMatrix(light);
-        silIndxs = sm->GetSilIndexes();
-        // Move Z of silicons to match centre of chamber. The centred silicons are 3 and 4
-        sm->MoveZTo(zVertexMean - zOffsetBeam, {3, 4});
-        // // Try removing faulty silicon 7
-        // auto found {silIndxs.find(7)};
-        // if(found != silIndxs.end())
-        //     silIndxs.erase(found);
+        // for(auto i : {0, 3, 6})
+        //     sm->Erase(i);
+        sm->MoveZTo(zVertexMean - zOffsetBeam, {3, 4, 5});
     }
+    else
+        sm->MoveZTo(zVertexMean - zOffsetBeam, {3, 4});
 
     // RPx histogram to sample
     // auto* hRPx {GetRPXProj(E796Utils::GetFileName(2, beam, target, light, false, "rpx"))};
@@ -187,11 +178,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // To compute a fine-grain efficiency, we require at least a binning width of 0.25 degrees!
     auto hThetaCM {HistConfig::ThetaCM.GetHistogram()};
     auto hThetaCMAll {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all", "All").GetHistogram()};
-    // Add additional histograms to compute eff per sections of actar
-    auto hThetaCM1 {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM1").GetHistogram()};
-    auto hThetaCMAll1 {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all 1").GetHistogram()};
-    auto hThetaCM2 {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM2").GetHistogram()};
-    auto hThetaCMAll2 {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all 2").GetHistogram()};
 
     auto hDistF0 {HistConfig::ChangeTitle(HistConfig::TL, "Distance to F0").GetHistogram()};
 
@@ -301,16 +287,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // to compute geometric efficiency by CM interval and with our set reference direction
         double theta3CMBefore {kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
         hThetaCMAll->Fill(theta3CMBefore * TMath::RadToDeg());
-        // Divide per regions
-        if(E796Gates::rpx1<double>(vertex))
-            hThetaCMAll1->Fill(theta3CMBefore * TMath::RadToDeg());
-        if(E796Gates::rpx2<double>(vertex))
-            hThetaCMAll2->Fill(theta3CMBefore * TMath::RadToDeg());
 
         // 4-> Include thetaLab resolution to compute thetaCM and Ex
         if(thetaResolution) // resolution in
             theta3Lab = runner.GetRand()->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
-        // auto phi3Lab {runner.GetRand()->Uniform(0., 2 * TMath::Pi())};
         auto phi3Lab {PLight->Phi()};
 
         // 4.1 -> Apply cut on vertex position
@@ -338,15 +318,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         distance0 *= 10.;
 
         // skip tracks that doesn't reach silicons or are in silicon index cut
-        if(silIndex0 == -1 || (!isEl && silIndxs.find(silIndex0) == silIndxs.end()))
+        if(silIndex0 == -1 || !(sm->IsInMatrix(silIndex0)))
             continue;
         auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
         // Apply SilMatrix cut
-        if(!isEl)
-        {
-            if(!sm->IsInside(silIndex0, silPoint0InMM.Y(), silPoint0InMM.Z()))
-                continue;
-        }
+        if(!sm->IsInside(silIndex0, isEl ? silPoint0InMM.X() : silPoint0InMM.Y(), silPoint0InMM.Z()))
+            continue;
 
         // auto T3EnteringSil {runner.EnergyAfterGas(T3Lab, distance0, "light", stragglingInGas)};
         auto T3EnteringSil {srim->SlowWithStraggling("light", T3Lab, distance0)};
@@ -457,11 +434,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             hSPTheta->Fill(silPoint0InMM.Y(), silPoint0InMM.Z(), theta3CM * TMath::RadToDeg());
             // RP histogram
             hRP->Fill(vertex.X(), vertex.Y());
-            // Fill new efficiency histograms
-            if(E796Gates::rpx1<double>(vertex))
-                hThetaCM1->Fill(theta3CM * TMath::RadToDeg());
-            if(E796Gates::rpx2<double>(vertex))
-                hThetaCM2->Fill(theta3CM * TMath::RadToDeg());
             hELoss0->Fill(T3EnteringSil, eLoss0);
 
             // write to TTree
@@ -482,18 +454,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Efficiencies as quotient of histograms in TEfficiency class
     auto* eff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
     eff->SetNameTitle("eff", TString::Format("#theta_{CM} eff E_{x} = %.2f MeV", Ex));
-    // Efficiencies for the other sections of actar
-    auto* eff1 {new TEfficiency {*hThetaCM1, *hThetaCMAll1}};
-    eff1->SetNameTitle("eff1", TString::Format("#theta_{CM} eff section 1 E_{x} = %.2f MeV", Ex));
-    auto* eff2 {new TEfficiency {*hThetaCM2, *hThetaCMAll2}};
-    eff2->SetNameTitle("eff2", TString::Format("#theta_{CM} eff section 2 E_{x} = %.2f MeV", Ex));
 
     // SAVING
     outFile->cd();
     outTree->Write();
     eff->Write();
-    eff1->Write();
-    eff2->Write();
     outFile->Close();
     delete outFile;
     outFile = nullptr;
@@ -532,7 +497,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         gtheo->Draw("same");
         c1->cd(2);
         hSP->DrawClone("col");
-        if(!isEl)
+        if(sm)
             sm->Draw();
         c1->cd(3);
         hEexAfter->DrawClone("hist");
@@ -540,12 +505,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         eff->Draw("apl");
         c1->cd(5);
         hSPTheta->DrawClone("colz");
-        auto* p6 {c1->cd(6)};
-        p6->Divide(2, 1);
-        p6->cd(1);
-        eff1->Draw("apl");
-        p6->cd(2);
-        eff2->Draw("apl");
 
         // hRPx->DrawNormalized();
         // hRPxSimu->SetLineColor(kRed);

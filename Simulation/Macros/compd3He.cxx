@@ -16,8 +16,13 @@ void compd3He()
     // effsd3H.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_2H_to_3H_NumN_0_NumP_0_Ex0_Date_2024_9_18_Time_15_57.root");
     // effsd3H.Draw();
     
-    Interpolators::Efficiency effsSet;
-    effsSet.Add("Onte", "../Outputs/Old/e796_beam_20O_target_2H_light_3H_Eex_0.00_nPS_0_pPS_0.root");
-    effsSet.Add("Hoje", "/media/Data/E796v2/Simulation/Outputs/tree_20O_2H_3H_0.00_nPS_0_pPS_0_low_RPx.root");
-    effsSet.Draw();
+    // Interpolators::Efficiency effsSet;
+    // effsSet.Add("Onte", "../Outputs/Old/e796_beam_20O_target_2H_light_3H_Eex_0.00_nPS_0_pPS_0.root");
+    // effsSet.Add("Hoje", "/media/Data/E796v2/Simulation/Outputs/tree_20O_2H_3H_0.00_nPS_0_pPS_0_low_RPx.root");
+    // effsSet.Draw();
+
+    Interpolators::Efficiency effsdd {};
+    effsdd.Add("Ours", "/media/Data/E796v2/Simulation/Outputs/juan_RPx/tree_20O_2H_2H_0.00_nPS_0_pPS_0.root");
+    effsdd.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_2H_to_2H_NumN_0_NumP_0_Ex0_Date_2024_10_1_Time_12_18.root");
+    effsdd.Draw();
 }
