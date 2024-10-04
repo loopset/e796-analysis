@@ -28,11 +28,18 @@ void Pipe3_Selector(const std::string& beam, const std::string target, const std
         [&](ActRoot::MergerData& merger)
         {
             // Apply cut in RPx
-            return E796Gates::rp(merger.fRP.X());
+            auto rp {E796Gates::rp(merger.fRP.X())};
+            bool masksilel {true};
+            if(isEl)
+                masksilel = E796Gates::maskelsil(merger.fSilNs.front());
+            return rp && masksilel;
         },
         {"MergerData"})};
+
     // Book histograms
     auto hRP {gated.Histo2D(HistConfig::RP, "fRP.fCoordinates.fX", "fRP.fCoordinates.fY")};
+    auto hSP {
+        gated.Histo2D(HistConfig::SP, (isEl) ? "fSP.fCoordinates.fX" : "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
 
     // Save
     gated.Snapshot("Sel_Tree", gSelector->GetAnaFile(3, beam, target, light, true));
@@ -42,5 +49,7 @@ void Pipe3_Selector(const std::string& beam, const std::string target, const std
     c30->DivideSquare(4);
     c30->cd(1);
     hRP->DrawClone("colz");
+    c30->cd(2);
+    hSP->DrawClone("colz");
 }
 #endif

@@ -139,8 +139,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     auto* sm {E796Utils::GetEffSilMatrix(target, light)};
     if(isEl)
     {
-        // for(auto i : {0, 3, 6})
-        //     sm->Erase(i);
         sm->MoveZTo(zVertexMean - zOffsetBeam, {3, 4, 5});
     }
     else
@@ -332,6 +330,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // Apply SilMatrix cut
         if(!sm->IsInside(silIndex0, (isEl ? silPoint0InMM.X() : silPoint0InMM.Y()), silPoint0InMM.Z()))
             continue;
+        // And if elastic, apply cut in silicon index
+        if(isEl)
+            if(!E796Gates::maskelsil(silIndex0))
+                continue;
 
         auto T3EnteringSil {srim->SlowWithStraggling("light", T3Lab, distance0)};
         ApplyNaN(T3EnteringSil);

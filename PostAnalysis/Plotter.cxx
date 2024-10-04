@@ -107,7 +107,7 @@ void Plotter(const std::string& beam = "", const std::string& target = "", const
         hsSP[c]->DrawClone("colz");
         if(!signatures[c].isSide)
         {
-            E796Utils::GetEffSilMatrix(signatures[c].light)->Draw();
+            E796Utils::GetEffSilMatrix(signatures[c].target, signatures[c].light)->Draw();
         }
         cs[c]->cd(4);
         hsExZ[c]->DrawClone("colz");

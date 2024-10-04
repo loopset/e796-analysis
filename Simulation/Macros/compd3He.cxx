@@ -21,8 +21,13 @@ void compd3He()
     // effsSet.Add("Hoje", "/media/Data/E796v2/Simulation/Outputs/tree_20O_2H_3H_0.00_nPS_0_pPS_0_low_RPx.root");
     // effsSet.Draw();
 
-    Interpolators::Efficiency effsdd {};
-    effsdd.Add("Ours", "/media/Data/E796v2/Simulation/Outputs/juan_RPx/tree_20O_2H_2H_0.00_nPS_0_pPS_0.root");
-    effsdd.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_2H_to_2H_NumN_0_NumP_0_Ex0_Date_2024_10_2_Time_10_23.root");
-    effsdd.Draw();
+    // Interpolators::Efficiency effsdd {};
+    // effsdd.Add("Ours", "/media/Data/E796v2/Simulation/Outputs/juan_RPx/tree_20O_2H_2H_0.00_nPS_0_pPS_0.root");
+    // effsdd.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_2H_to_2H_NumN_0_NumP_0_Ex0_Date_2024_10_2_Time_10_23.root");
+    // effsdd.Draw();
+    
+    Interpolators::Efficiency effspp {};
+    effspp.Add("Ours", "/media/Data/E796v2/Simulation/Outputs/juan_RPx/tree_20O_1H_1H_0.00_nPS_0_pPS_0.root");
+    effspp.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_1H_to_1H_NumN_0_NumP_0_Ex0_Date_2024_10_4_Time_9_27.root");
+    effspp.Draw();
 }

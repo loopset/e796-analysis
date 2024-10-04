@@ -3,10 +3,6 @@
 
 #include "ActMergerData.h"
 
-#include "Math/GenVector/Cartesian3D.h"
-#include "Math/GenVector/PositionVector3D.h"
-#include "Math/Point3Dfwd.h"
-
 #include "/media/Data/E796v2/Selector/Selector.h"
 
 namespace E796Gates
@@ -15,13 +11,13 @@ namespace E796Gates
 auto rp {[](double xrp) -> bool
          { return (gSelector->GetRPxLow() <= xrp) && (xrp <= gSelector->GetRPxUp()); }}; // same as Juan
 
-// auto rpMerger {[](const ActRoot::MergerData& d) -> bool { return rp(d.fRP.X()); }};
-
-template <typename T = float>
-auto rpx1 {[](const ROOT::Math::PositionVector3D<ROOT::Math::Cartesian3D<T>>& rp) -> bool { return rp.X() < 128; }};
-
-template <typename T = float>
-auto rpx2 {[](const ROOT::Math::PositionVector3D<ROOT::Math::Cartesian3D<T>>& rp) -> bool { return rp.X() > 128; }};
+auto maskelsil {[](int idx) -> bool
+                {
+                    if(gSelector->GetMaskElSil() && (idx == 0 || idx == 3 || idx == 6))
+                        return false;
+                    else
+                        return true;
+                }};
 
 auto left0 {[](const ActRoot::MergerData& d) -> bool
             {

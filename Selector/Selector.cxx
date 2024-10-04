@@ -8,6 +8,7 @@
 #include "TString.h"
 #include "TSystem.h"
 
+#include <ios>
 #include <iostream>
 #include <memory>
 #include <mutex>
@@ -20,12 +21,14 @@ void E796::Config::ReadConfig(std::shared_ptr<ActRoot::InputBlock> b)
     auto vrpx {b->GetDoubleVector("RPx")};
     fRPx = {vrpx[0], vrpx[1]};
     fLengthX = fRPx.second - fRPx.first;
+    fMaskElSil = b->GetBool("MaskElSil");
 }
 
 void E796::Config::Print() const
 {
-    std::cout << "  RPx      : [" << fRPx.first << " , " << fRPx.second << "] mm" << '\n';
-    std::cout << "  LengthX  : " << fLengthX << " mm" << '\n';
+    std::cout << "  RPx       : [" << fRPx.first << " , " << fRPx.second << "] mm" << '\n';
+    std::cout << "  LengthX   : " << fLengthX << " mm" << '\n';
+    std::cout << "  MaskSilEl : " << std::boolalpha << fMaskElSil << '\n';
 }
 
 E796::Selector* E796::Selector::fInstance {nullptr};
@@ -99,10 +102,9 @@ void E796::Selector::Print() const
 TString E796::Selector::GetAnaFile(int pipe, const std::string& beam, const std::string& target,
                                    const std::string& light, bool withFlag)
 {
-    bool isEl {target == light};
     auto path {TString::Format("/media/Data/E796v2/PostAnalysis/RootFiles/Pipe%d/", pipe)};
     auto name {TString::Format("tree_%s_%s_%s_%s%s.root", beam.c_str(), target.c_str(), light.c_str(),
-                               (isEl) ? "side" : "front", (withFlag) ? ("_" + fFlag).c_str() : "")};
+                               (GetIsElastic()) ? "side" : "front", (withFlag) ? ("_" + fFlag).c_str() : "")};
     std::cout << BOLDMAGENTA << "Opening ana file : " << name << RESET << '\n';
     return path + name;
 }

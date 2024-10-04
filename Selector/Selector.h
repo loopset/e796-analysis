@@ -17,6 +17,7 @@ class Config
 public:
     std::pair<double, double> fRPx {};
     double fLengthX {};
+    bool fMaskElSil {};
 
     void ReadConfig(std::shared_ptr<ActRoot::InputBlock> b);
     void Print() const;
@@ -59,6 +60,7 @@ public:
     double GetRPxUp() const { return fCurrent->fRPx.second; }
     std::pair<double, double> GetRPx() const { return fCurrent->fRPx; }
     double GetLengthX() const { return fCurrent->fLengthX; }
+    bool GetMaskElSil() const { return fCurrent->fMaskElSil; }
 
     std::vector<std::string> GetFlags() const;
 
@@ -78,6 +80,7 @@ public:
     const std::string GetBeam() const { return fBeam; }
     const std::string GetTarget() const { return fTarget; }
     const std::string GetLight() const { return fLight; }
+    const bool GetIsElastic() const { return fTarget == fLight; }
 
 private:
     void ReassignNames();
