@@ -27,7 +27,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
 {
     ROOT::EnableImplicitMT();
     // Read data
-    ActRoot::DataManager datman {"/media/Data/E796v2/configs/data_old.conf"};
+    ActRoot::DataManager datman {"/media/Data/E796v2/configs/data.conf"};
     auto chain {datman.GetJoinedData()};
     ROOT::RDataFrame df {*chain};
 
