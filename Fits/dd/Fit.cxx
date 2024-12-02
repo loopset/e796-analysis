@@ -98,7 +98,7 @@ void Fit()
             else if(par == 2) // Sigma
             {
                 pair = {-11, -11};
-                boo = true; // fix it
+                boo = false; // fix it
             }
             else
                 throw std::runtime_error("No automatic config for this parameter index (only gaussians so far)!");

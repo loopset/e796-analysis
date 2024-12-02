@@ -1,8 +1,9 @@
 #include "ActCutsManager.h"
-#include "ActJoinData.h"
+#include "ActDataManager.h"
 #include "ActMergerData.h"
 #include "ActPIDCorrector.h"
 #include "ActSilMatrix.h"
+#include "ActTypes.h"
 
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RVec.hxx"
@@ -20,17 +21,19 @@
 
 void CorrectPID(bool write)
 {
-    ActRoot::JoinData data {"./../../configs/merger.runs"};
     ROOT::EnableImplicitMT();
-    ROOT::RDataFrame d {*data.Get()};
+    ActRoot::DataManager data {"../../configs/data.conf", ActRoot::ModeType::EMerge};
+    auto chain {data.GetJoinedData()};
+    ROOT::RDataFrame d {*chain};
 
     // Just for front now with ESil f1 = 0
     auto f0 {d.Filter(E796Gates::front0, {"MergerData"})};
 
     // Which particle to gate on?
+    std::string target {"2H"};
     std::string light {"3H"};
     // Read silicon matrix
-    auto* sm {E796Utils::GetEffSilMatrix(light)};
+    auto* sm {E796Utils::GetEffSilMatrix(target, light)};
 
     // Apply cuts
     auto vetof0 {f0.Filter([&](const ROOT::RVecF& silN, float y, float z) { return sm->IsInside(silN.front(), y, z); },
@@ -42,7 +45,7 @@ void CorrectPID(bool write)
 
     // Read preliminary PID cuts
     ActRoot::CutsManager<std::string> cuts;
-    cuts.ReadCut(light, "./Cuts/unpid_tritons_f0.root");
+    cuts.ReadCut(light, "./Cuts/unpid_2H_f0.root");
 
 
     // Init PIDCorrector
@@ -70,9 +73,8 @@ void CorrectPID(bool write)
         pidcorr.Write("/media/Data/E796v2/Calibrations/Actar/pid_corr_tritons_f0.root");
 
     // Apply correction
-    vetof0 = vetof0.Define("corrQave",
-                           [&](const ActRoot::MergerData& data) { return pidcorr.Apply(data.fQave, data.fSP.Z()); },
-                           {"MergerData"});
+    vetof0 = vetof0.Define("corrQave", [&](const ActRoot::MergerData& data)
+                           { return pidcorr.Apply(data.fQave, data.fSP.Z()); }, {"MergerData"});
 
     // Book corrected histogram
     auto hPIDCorr {vetof0.Define("x", "fSilEs.front()")

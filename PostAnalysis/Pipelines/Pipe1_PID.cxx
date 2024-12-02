@@ -76,33 +76,33 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     // streamer.close();
 
 
-    // // Read PID cut
-    // ActRoot::CutsManager<std::string> cut;
-    // TString pidfile {};
-    // if(isEl)
-    //     pidfile = TString::Format("./Cuts/LightPID/pid_%s_side.root", light.c_str());
-    // else
-    //     pidfile = TString::Format("./Cuts/LightPID/pid_%s.root", light.c_str());
-    // cut.ReadCut(light, pidfile);
-    // std::cout << BOLDCYAN << "Reading light PID in : " << pidfile << RESET << '\n';
+    // Read PID cut
+    ActRoot::CutsManager<std::string> cut;
+    TString pidfile {};
+    if(isEl)
+        pidfile = TString::Format("./Cuts/LightPID/pid_%s_side.root", light.c_str());
+    else
+        pidfile = TString::Format("./Cuts/LightPID/pid_%s.root", light.c_str());
+    cut.ReadCut(light, pidfile);
+    std::cout << BOLDCYAN << "Reading light PID in : " << pidfile << RESET << '\n';
 
-    // if(cut.GetCut(light))
-    // {
-    //     // Filter
-    //     auto pid {vetoed.Filter([&](const ActRoot::MergerData& d)
-    //                             { return cut.IsInside(light, d.fSilEs.front(), d.fQave); }, {"MergerData"})};
-    //     auto filename {gSelector->GetAnaFile(1, beam, target, light, false)};
-    //     pid.Snapshot("PID_Tree", filename);
-    //
-    // }
+    if(cut.GetCut(light))
+    {
+        // Filter
+        auto pid {vetoed.Filter([&](const ActRoot::MergerData& d)
+                                { return cut.IsInside(light, d.fSilEs.front(), d.fQave); }, {"MergerData"})};
+        auto filename {gSelector->GetAnaFile(1, beam, target, light, false)};
+        pid.Snapshot("PID_Tree", filename);
+
+    }
 
     // plotting
     auto* c10 {new TCanvas("c10", "Pipe1 canvas 0")};
     c10->DivideSquare(2);
     c10->cd(1);
     hPID->DrawClone("colz");
-    // cut.SetLineAttributes(light, kMagenta, 2);
-    // cut.DrawAll();
+    cut.SetLineAttributes(light, kMagenta, 2);
+    cut.DrawAll();
     c10->cd(2);
     hSP->DrawClone("colz");
     if(sm)
