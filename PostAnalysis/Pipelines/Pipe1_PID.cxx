@@ -26,7 +26,7 @@
 
 void Pipe1_PID(const std::string& beam, const std::string& target, const std::string& light, bool isEl)
 {
-    // ROOT::EnableImplicitMT();
+    ROOT::EnableImplicitMT();
     // Read data
     ActRoot::DataManager datman {"/media/Data/E796v2/configs/data.conf"};
     auto chain {datman.GetJoinedData()};
@@ -67,13 +67,13 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     auto hSP {
         vetoed.Histo2D(HistConfig::SP, (isEl) ? "fSP.fCoordinates.fX" : "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
 
-    // Write entries
-    std::cout << "Writing : " << vetoed.Count().GetValue() << " entries" << '\n';
-    std::ofstream streamer {
-        TString::Format("./Entries/entries_%s_%s_%s_befRPDist.dat", beam.c_str(), target.c_str(), light.c_str())};
-    vetoed.Foreach([&](const ActRoot::MergerData& d) { streamer << d.fRun << " " << d.fEntry << '\n'; },
-                   {"MergerData"});
-    streamer.close();
+    // // Write entries
+    // std::cout << "Writing : " << vetoed.Count().GetValue() << " entries" << '\n';
+    // std::ofstream streamer {
+    //     TString::Format("./Entries/entries_%s_%s_%s_befRPDist.dat", beam.c_str(), target.c_str(), light.c_str())};
+    // vetoed.Foreach([&](const ActRoot::MergerData& d) { streamer << d.fRun << " " << d.fEntry << '\n'; },
+    //                {"MergerData"});
+    // streamer.close();
 
 
     // // Read PID cut
