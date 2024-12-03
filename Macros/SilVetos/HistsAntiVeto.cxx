@@ -1,7 +1,9 @@
-#include "ActJoinData.h"
+#include "ActDataManager.h"
+#include "ActMergerData.h"
 
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RResultPtr.hxx"
+#include "ROOT/TThreadedObject.hxx"
 #include "Rtypes.h"
 
 #include "TCanvas.h"
@@ -10,7 +12,6 @@
 #include "TString.h"
 
 #include <algorithm>
-#include <iostream>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -18,12 +19,12 @@
 void HistsAntiVeto()
 {
     ROOT::EnableImplicitMT();
-    ActRoot::JoinData join {"./../../configs/merger.runs"};
-    ROOT::RDataFrame d {*join.Get()};
+    ActRoot::DataManager datman {"./../../configs/data.conf"};
+    auto chain {datman.GetJoinedData()};
+    ROOT::RDataFrame d {*chain};
 
-    // VETO using only ESi0 > 0, suitable for
-    // 3He and 4He reactions
-    // Get ANTIVETO condition
+    // ANTI-VETO using ESi0 && ESi1 > 0, suitable for
+    // p, d, t reactions
     std::set<int> maskedSiN {1, 6, 9};
     auto antiveto {d.Filter(
         [&](const ROOT::VecOps::RVec<std::string>& siL, const ROOT::RVecF& siN)
@@ -65,61 +66,55 @@ void HistsAntiVeto()
 
     // Get projections
     std::vector<int> idxs {0, 2, 3, 4, 5, 7, 8, 10};
-    std::vector<ROOT::RDF::RResultPtr<TH1D>> pys(idxs.size());
-    std::vector<ROOT::RDF::RResultPtr<TH1D>> pzs(idxs.size());
-    // Filter and fill
-    int count = -1;
-    for(const auto& idx : idxs)
+    std::map<int, ROOT::TThreadedObject<TH1D>> pys, pzs;
+    auto* pmodel {new TH1D {"pmodel", "Model", 250, -20, 300}};
+    for(const auto& i : idxs)
     {
-        count++;
-        auto cut {df.Filter(TString::Format("fSilNs.front() == %d", idx).Data())};
-        std::cout << "For idx " << idx << " count : " << cut.Count().GetValue() << '\n';
-        pys[count] =
-            cut.Histo1D({TString::Format("py%d", idx), TString::Format("Y proj for %d;Y [mm]", idx), 250, -20, 300},
-                        "fSP.fCoordinates.fY");
-        pzs[count] =
-            cut.Histo1D({TString::Format("pz%d", idx), TString::Format("Z proj for %d;Z [mm]", idx), 250, -20, 300},
-                        "fSP.fCoordinates.fZ");
+        pys.emplace(i, *pmodel);
+        pys[i].Get()->SetNameTitle(TString::Format("py%d", i), TString::Format("Y proj for %d;Y [mm]", i));
+        pzs.emplace(i, *pmodel);
+        pzs[i].Get()->SetNameTitle(TString::Format("pz%d", i), TString::Format("Z proj for %d;Z [mm]", i));
     }
+    df.Foreach(
+        [&](const ActRoot::MergerData& d)
+        {
+            auto n {d.fSilNs.front()};
+            if(pys.count(n))
+            {
+                pys[n].Get()->Fill(d.fSP.Y());
+                pzs[n].Get()->Fill(d.fSP.Z());
+            }
+        },
+        {"MergerData"});
 
     // plot
     auto* c1 {new TCanvas("c1", "Veto mode 3He and 4He")};
     hSP->DrawClone("colz");
-    // cut.DrawAll();
 
     auto* cpy {new TCanvas("cpy", "Y projection canvas")};
     cpy->DivideSquare(pys.size());
-    for(int i = 0; i < pys.size(); i++)
+    int pad {0};
+    for(auto& [_, p] : pys)
     {
-        cpy->cd(i + 1);
-        pys[i]->DrawClone();
+        cpy->cd(pad + 1);
+        p.Merge()->DrawClone();
+        pad++;
     }
 
     auto* cpz {new TCanvas("cpz", "Z projection canvas")};
     cpz->DivideSquare(pzs.size());
-    for(int i = 0; i < pzs.size(); i++)
+    pad = 0;
+    for(auto& [_, p] : pzs)
     {
-        cpz->cd(i + 1);
-        pzs[i]->DrawClone();
+        cpz->cd(pad + 1);
+        p.Merge()->DrawClone();
+        pad++;
     }
-
     // Write them
     auto fout {std::make_unique<TFile>("./Inputs/antiveto_histograms.root", "recreate")};
     fout->cd();
-    for(auto& h : pys)
+    for(auto& [_, h] : pys)
         h->Write();
-    for(auto& h : pzs)
+    for(auto& [_, h] : pzs)
         h->Write();
-
-    // auto* c2 {new TCanvas("c2", "Debug canvas")};
-    // c2->DivideSquare(4);
-    // c2->cd(1);
-    // hPID->DrawClone("colz");
-    // hQaveE0->SetMarkerStyle(6);
-    // hQaveE0->SetMarkerColor(kRed);
-    // hQaveE0->DrawClone("scat same");
-    // c2->cd(2);
-    // hQaveESil->DrawClone("colz");
-    // c2->cd(3);
-    // hTwoSils->DrawClone("colz");
 }

@@ -11,6 +11,7 @@
 #include "TCanvas.h"
 #include "TH2.h"
 #include "TROOT.h"
+#include "TString.h"
 
 #include <string>
 #include <utility>
@@ -45,7 +46,7 @@ void CorrectPID(bool write)
 
     // Read preliminary PID cuts
     ActRoot::CutsManager<std::string> cuts;
-    cuts.ReadCut(light, "./Cuts/unpid_2H_f0.root");
+    cuts.ReadCut(light, "./Cuts/unpid_tritons_f0.root");
 
 
     // Init PIDCorrector

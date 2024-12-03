@@ -1,8 +1,9 @@
-#include "ActJoinData.h"
+#include "ActDataManager.h"
 #include "ActMergerData.h"
 
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RResultPtr.hxx"
+#include "ROOT/TThreadedObject.hxx"
 
 #include "TCanvas.h"
 #include "TH1.h"
@@ -16,8 +17,9 @@
 void HistsVeto()
 {
     ROOT::EnableImplicitMT();
-    ActRoot::JoinData join {"./../../configs/merger.runs"};
-    ROOT::RDataFrame d {*join.Get()};
+    ActRoot::DataManager datman {"./../../configs/data.conf"};
+    auto chain {datman.GetJoinedData()};
+    ROOT::RDataFrame d {*chain};
 
     // VETO using only ESi0 > 0, suitable for
     // 3He and 4He reactions
@@ -43,21 +45,26 @@ void HistsVeto()
 
     // Gate and get projections
     std::vector<int> idxs {0, 2, 3, 4, 5, 7, 8, 10};
-    std::vector<ROOT::RDF::RResultPtr<TH1D>> pys {idxs.size()};
-    std::vector<ROOT::RDF::RResultPtr<TH1D>> pzs {idxs.size()};
-    int count {-1};
-    for(const auto& idx : idxs)
+    std::map<int, ROOT::TThreadedObject<TH1D>> pys, pzs;
+    auto* pmodel {new TH1D {"pmodel", "Model", 250, -20, 300}};
+    for(const auto& i : idxs)
     {
-        count++;
-        auto cut {df.Filter(TString::Format("fSilNs.front() == %d", idx).Data())};
-        std::cout << "For idx " << idx << " count : " << cut.Count().GetValue() << '\n';
-        pys[count] =
-            cut.Histo1D({TString::Format("py%d", idx), TString::Format("Y proj for %d;Y [mm]", idx), 250, -20, 300},
-                        "fSP.fCoordinates.fY");
-        pzs[count] =
-            cut.Histo1D({TString::Format("pz%d", idx), TString::Format("Z proj for %d;Z [mm]", idx), 250, -20, 300},
-                        "fSP.fCoordinates.fZ");
+        pys.emplace(i, *pmodel);
+        pys[i].Get()->SetNameTitle(TString::Format("py%d", i), TString::Format("Y proj for %d;Y [mm]", i));
+        pzs.emplace(i, *pmodel);
+        pzs[i].Get()->SetNameTitle(TString::Format("pz%d", i), TString::Format("Z proj for %d;Z [mm]", i));
     }
+    df.Foreach(
+        [&](const ActRoot::MergerData& d)
+        {
+            auto n {d.fSilNs.front()};
+            if(pys.count(n))
+            {
+                pys[n].Get()->Fill(d.fSP.Y());
+                pzs[n].Get()->Fill(d.fSP.Z());
+            }
+        },
+        {"MergerData"});
 
     // plot
     auto* c1 {new TCanvas("c1", "Veto mode 3He and 4He")};
@@ -65,25 +72,29 @@ void HistsVeto()
 
     auto* cpy {new TCanvas("cpy", "Y projection canvas")};
     cpy->DivideSquare(pys.size());
-    for(int i = 0; i < pys.size(); i++)
+    int pad {0};
+    for(auto& [_, p] : pys)
     {
-        cpy->cd(i + 1);
-        pys[i]->DrawClone();
+        cpy->cd(pad + 1);
+        p.Merge()->DrawClone();
+        pad++;
     }
 
     auto* cpz {new TCanvas("cpz", "Z projection canvas")};
     cpz->DivideSquare(pzs.size());
-    for(int i = 0; i < pzs.size(); i++)
+    pad = 0;
+    for(auto& [_, p] : pzs)
     {
-        cpz->cd(i + 1);
-        pzs[i]->DrawClone();
+        cpz->cd(pad + 1);
+        p.Merge()->DrawClone();
+        pad++;
     }
 
     // Write them
     auto fout {std::make_unique<TFile>("./Inputs/veto_histograms.root", "recreate")};
     fout->cd();
-    for(auto& h : pys)
+    for(auto& [_, h] : pys)
         h->Write();
-    for(auto& h : pzs)
+    for(auto& [_, h] : pzs)
         h->Write();
 }

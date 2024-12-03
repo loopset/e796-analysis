@@ -1,9 +1,10 @@
 #include "ActCutsManager.h"
-#include "ActJoinData.h"
+#include "ActDataManager.h"
 #include "ActMergerData.h"
 
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RVec.hxx"
+#include "ROOT/TThreadedObject.hxx"
 
 #include "TCanvas.h"
 #include "TH2.h"
@@ -18,33 +19,36 @@
 
 void PlotSP()
 {
-    ROOT::EnableImplicitMT();
+    // ROOT::EnableImplicitMT();
 
-    ActRoot::JoinData data {"../configs/merger.runs"};
-    ROOT::RDataFrame d {*data.Get()};
+    ActRoot::DataManager data {"../../configs/data.conf"};
+    auto chain {data.GetJoinedData()};
+    ROOT::RDataFrame d {*chain};
     // d.Describe().Print();
 
     // Gate on events stopped in first layer
     auto df {d.Filter("fSilLayers.size() == 1")};
 
+    // Gate on sides
+    auto f0 {df.Filter("fSilLayers.front() == \"f0\"")};
+    auto l0 {df.Filter("fSilLayers.front() == \"l0\"")};
+
+
     // Book histograms
     auto hF0 {
-        df.Filter("fSilLayers.front() == \"f0\"")
-            .Histo2D({"hF0", "F0 SPs", 200, -20, 300, 200, -20, 300}, "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
+        f0.Histo2D({"hF0", "F0 SPs", 200, -20, 300, 200, -20, 300}, "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
     auto hL0 {
-        df.Filter("fSilLayers.front() == \"l0\"")
-            .Histo2D({"hL0", "L0 SPs", 200, -20, 276, 200, -20, 276}, "fSP.fCoordinates.fX", "fSP.fCoordinates.fZ")};
+        l0.Histo2D({"hL0", "L0 SPs", 200, -20, 276, 200, -20, 276}, "fSP.fCoordinates.fX", "fSP.fCoordinates.fZ")};
     // FOr computing ZOffset
     auto hZOff {
-        df.Filter("fSilLayers.front() == \"f0\"")
-            .Histo1D({"hZOff", "ZOffset", hF0->GetNbinsY(), hF0->GetYaxis()->GetXmin(), hF0->GetYaxis()->GetXmax()},
-                     "fSP.fCoordinates.fZ")};
+        f0.Histo1D({"hZOff", "ZOffset", hF0->GetNbinsY(), hF0->GetYaxis()->GetXmin(), hF0->GetYaxis()->GetXmax()},
+                   "fSP.fCoordinates.fZ")};
 
-    // Write
-    // std::ofstream streamer {"./debug_sp_sil1.dat"};
+    // // Write
+    // std::ofstream streamer {"./Debug/sp_sil1.dat"};
     // ActRoot::CutsManager<int> cut;
-    // cut.ReadCut(0, "./Cuts/debug_sp_sil1.root");
-    // df.Foreach(
+    // cut.ReadCut(0, "./Cuts/debug_sil1.root");
+    // f0.Foreach(
     //     [&](const ActRoot::MergerData& d)
     //     {
     //         if(d.fSilNs.front() == 1 && cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
@@ -54,17 +58,19 @@ void PlotSP()
     // streamer.close();
 
     int nsils {11};
-    std::vector<TH2D*> hs(nsils);
+    std::map<int, ROOT::TThreadedObject<TH2D>> hs;
+    auto* hmodel {new TH2D {"hmodel", "Model", 200, -20, 300, 200, -20, 300}};
     for(int s = 0; s < nsils; s++)
-        hs[s] = new TH2D(TString::Format("hSil%d", s), TString::Format("SP for sil %d;Y [mm];Z [mm]", s), 200, -20, 300,
-                         200, -20, 300);
-
+    {
+        hs.emplace(s, *hmodel);
+        hs[s].Get()->SetNameTitle(TString::Format("h%d", s), TString::Format("SP for %d;Y [mm];Z [mm]", s));
+    }
     // Fill them
     df.Foreach(
         [&](const ROOT::VecOps::RVec<std::string>& silL, const ROOT::RVecF& silN, const ROOT::Math::XYZPointF& sp)
         {
             if(silL.front() == "f0")
-                hs[silN.front()]->Fill(sp.Y(), sp.Z());
+                hs[silN.front()].Get()->Fill(sp.Y(), sp.Z());
         },
         {"fSilLayers", "fSilNs", "fSP"});
 
@@ -90,7 +96,7 @@ void PlotSP()
             if(idx < hs.size())
             {
                 cs[c]->cd(p + 1);
-                hs[idx]->Draw("colz");
+                hs[idx].Merge()->DrawClone("colz");
             }
             idx++;
         }

@@ -43,14 +43,14 @@ ActPhysics::SilMatrix* GetEffSilMatrix(const std::string& target, const std::str
     else
     {
         // if 3He or 4He we need all data -> bigger matrix
-        // if(light == "3He" || light == "4He")
-        if(false)
+        if(light == "3He" || light == "4He")
+        // if(false)
         {
             std::cout << BOLDYELLOW << "E796Utils: Reading veto sil matrix for -> " << light << RESET << '\n';
             return GetVetoMatrix();
         }
-        else if(light == "1H" || light == "2H" || light == "3H" || light == "3He" || light == "4He")
-        // else if(light == "1H" || light == "2H" || light == "3H")
+        // else if(light == "1H" || light == "2H" || light == "3H" || light == "3He" || light == "4He")
+        else if(light == "1H" || light == "2H" || light == "3H")
         {
             std::cout << BOLDYELLOW << "E796Utils: Reading antiveto sil matrix for -> " << light << RESET << '\n';
             return GetAntiVetoMatrix();
