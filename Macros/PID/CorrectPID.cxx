@@ -50,9 +50,9 @@ void CorrectPID(bool write)
 
 
     // Init PIDCorrector
-    auto* hModel {new TH2D("hModel", "PID Corr", 100, -10, 300, 400, 0, 2000)};
+    auto* hModel {new TH2D("hModel", "PID Corr", 60, 0, 300, 400, 0, 2000)};
     std::pair<double, double> silELimits {3.5, 4.};
-    ActPhysics::PIDCorrector pc {"front", cuts.GetListOfKeys(), hModel};
+    ActPhysics::PIDCorrector pc {"f0", cuts.GetListOfKeys(), hModel};
     // Fill it
     vetof0.Foreach(
         [&](const ActRoot::MergerData& data)
@@ -71,7 +71,7 @@ void CorrectPID(bool write)
     auto pidcorr {pc.GetCorrection()};
     // Save it
     if(write)
-        pidcorr.Write("/media/Data/E796v2/Calibrations/Actar/pid_corr_tritons_f0.root");
+        pidcorr.Write("/media/Data/E796v2/Calibrations/Actar/pid_corr_3H_Dec24.root");
 
     // Apply correction
     vetof0 = vetof0.Define("corrQave", [&](const ActRoot::MergerData& data)

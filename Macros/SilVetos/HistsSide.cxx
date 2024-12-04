@@ -15,7 +15,7 @@ void HistsSide()
 {
     ROOT::EnableImplicitMT();
 
-    ActRoot::DataManager data {"../../configs/data_old.conf"};
+    ActRoot::DataManager data {"../../configs/data.conf"};
     auto chain {data.GetJoinedData()};
 
     ROOT::RDataFrame df {*chain};

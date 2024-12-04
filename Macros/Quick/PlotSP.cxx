@@ -24,7 +24,6 @@ void PlotSP()
     ActRoot::DataManager data {"../../configs/data.conf"};
     auto chain {data.GetJoinedData()};
     ROOT::RDataFrame d {*chain};
-    // d.Describe().Print();
 
     // Gate on events stopped in first layer
     auto df {d.Filter("fSilLayers.size() == 1")};
@@ -44,18 +43,18 @@ void PlotSP()
         f0.Histo1D({"hZOff", "ZOffset", hF0->GetNbinsY(), hF0->GetYaxis()->GetXmin(), hF0->GetYaxis()->GetXmax()},
                    "fSP.fCoordinates.fZ")};
 
-    // // Write
-    // std::ofstream streamer {"./Debug/sp_sil1.dat"};
-    // ActRoot::CutsManager<int> cut;
-    // cut.ReadCut(0, "./Cuts/debug_sil1.root");
-    // f0.Foreach(
-    //     [&](const ActRoot::MergerData& d)
-    //     {
-    //         if(d.fSilNs.front() == 1 && cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
-    //             streamer << d.fRun << " " << d.fEntry << '\n';
-    //     },
-    //     {"MergerData"});
-    // streamer.close();
+    // Write
+    std::ofstream streamer {"./Debug/sp_scat.dat"};
+    ActRoot::CutsManager<int> cut;
+    cut.ReadCut(0, "./Cuts/debug_scat.root");
+    f0.Foreach(
+        [&](const ActRoot::MergerData& d)
+        {
+            if(cut.IsInside(0, d.fSP.Y(), d.fSP.Z()))
+                streamer << d.fRun << " " << d.fEntry << '\n';
+        },
+        {"MergerData"});
+    streamer.close();
 
     int nsils {11};
     std::map<int, ROOT::TThreadedObject<TH2D>> hs;
@@ -80,6 +79,7 @@ void PlotSP()
     c1->DivideSquare(4);
     c1->cd(1);
     hF0->DrawClone("colz");
+    cut.DrawAll();
     c1->cd(2);
     hL0->DrawClone("colz");
     c1->cd(3);

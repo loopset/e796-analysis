@@ -9,7 +9,7 @@ namespace HistConfig
 {
 using namespace ROOT::RDF;
 
-const TH2DModel PID {"hPID", "PID;E_{Sil} [MeV];Q_{ave} [mm^{-1}]", 300, 0, 40, 800, 0, 2000};
+const TH2DModel PID {"hPID", "PID;E_{Sil} [MeV];Q_{ave} [mm^{-1}]", 400, 0, 40, 800, 0, 2000};
 
 const TH2DModel PIDTwo {"hPIDTwo", "PID with two silicons;E_{Si1} [MeV];E_{Si0} [MeV]", 500, 0, 40, 500, 0, 40};
 
