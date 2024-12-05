@@ -15,7 +15,7 @@
 void GetProfile()
 {
     // Set value
-    double driftfactor {2.344};
+    double driftfactor {2.544};
 
     // Read data
     ROOT::EnableImplicitMT();
@@ -26,7 +26,7 @@ void GetProfile()
     auto hExZ {df.Histo2D(HistConfig::ExRPZ, "fSP.fCoordinates.fZ", "Ex")};
     // Fit g.s
     double gswidth {2};
-    hEx->Fit("gaus", "0Q+", "", -gswidth / 2, + gswidth / 2);
+    hEx->Fit("gaus", "0Q+", "", -gswidth / 2, +gswidth / 2);
     auto* gaus {hEx->GetFunction("gaus")};
     gaus->ResetBit(TF1::kNotDraw);
     // Profile
@@ -63,11 +63,14 @@ void GetProfile()
     hProf->Draw();
 
     // Save things
+    std::cout << "Saving for drift factor : " << driftfactor << '\n';
     TString path {"./Outputs/"};
-    auto name {TString::Format("_%s_%s_%s_%s_drift_%.4f.root", gSelector->GetBeam().c_str(), gSelector->GetTarget().c_str(),
-                               gSelector->GetLight().c_str(), gSelector->GetFlag().c_str(), driftfactor)};
+    auto name {TString::Format("_%s_%s_%s_%s_drift_%.4f.root", gSelector->GetBeam().c_str(),
+                               gSelector->GetTarget().c_str(), gSelector->GetLight().c_str(),
+                               gSelector->GetFlag().c_str(), driftfactor)};
     df.Snapshot("Sel_Tree", (path + "df" + name).Data());
     auto file {std::make_unique<TFile>(path + "hs" + name, "recreate")};
+    hEx->Write();
     hExZ->Write();
     hProf->Write();
 }

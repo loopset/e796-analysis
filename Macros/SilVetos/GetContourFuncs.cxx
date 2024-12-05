@@ -2,14 +2,18 @@
 
 #include "TCanvas.h"
 #include "TF1.h"
+#include "TFitResult.h"
 #include "TH1.h"
 #include "TString.h"
 
+#include <algorithm>
 #include <iostream>
+#include <iterator>
 #include <map>
 #include <stdexcept>
 #include <string>
 #include <utility>
+#include <vector>
 
 // Declare types
 typedef std::map<int, TH1D*> ProjMap;
@@ -120,4 +124,35 @@ void PlotAll(TCanvas* c, ProjMap& hs)
             if(o)
                 o->Draw("same");
     }
+}
+
+void FindBestFit(TH1D* h, double width, double step, TString func = "expo")
+{
+    // Find guesses
+    auto max {h->GetMaximum()};
+    auto thresh {0.1 * max};
+    auto bmin {h->FindFirstBinAbove(thresh)};
+    auto bmax {h->FindLastBinAbove(thresh)};
+    double minguess {h->GetBinCenter(bmin)};
+    double maxguess {h->GetBinCenter(bmax)};
+    // Fit for all the ranges
+    std::vector<double> chis;
+    std::vector<std::pair<double, double>> ranges;
+    for(double a = minguess - width; a <= minguess + width; a += step)
+    {
+        for(double b = maxguess - width; b <= maxguess + width; b += step)
+        {
+            auto res {h->Fit(func, "0QSM", "", a, b)};
+            chis.push_back(res.Get()->Chi2());
+            ranges.push_back({a, b});
+        }
+    }
+    // Find minimum
+    auto min {std::min_element(chis.begin(), chis.end())};
+    auto range {ranges[std::distance(chis.begin(), min)]};
+    h->Fit(func, "0M", "", range.first, range.second);
+    h->GetFunction(func)->ResetBit(TF1::kNotDraw);
+    std::cout << "Initial guess : <" << minguess << ", " << maxguess << ">" << '\n';
+    std::cout << "Best range    : <" << range.first << ", " << range.second << ">" << '\n';
+    std::cout << "Chi2          : " << *min << '\n';
 }

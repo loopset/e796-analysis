@@ -5,6 +5,7 @@
 #include "TH1.h"
 #include "TString.h"
 
+#include <iostream>
 #include <map>
 #include <memory>
 #include <string>
@@ -35,8 +36,16 @@ void FitsAntiVeto()
     // Fit to normalize shape
     // Y
     auto nys {FitToScaleFunc(pys, ylimits)};
-    // Z
-    auto nzs {FitToScaleFunc(pzs, zlimits)};
+    // // Z
+    // auto nzs {FitToScaleFunc(pzs, zlimits)};
+    ProjMap nzs;
+    for(auto& [idx, _] : ylimits)
+    {
+        FindBestFit(pzs[idx], 5, 0.2);
+        auto* func {pzs[idx]->GetFunction("expo")};
+        nzs[idx] = ScaleWithFunc(pzs[idx], func);
+    }
+
 
     // Fit to contour
     double thresh {0.65};
