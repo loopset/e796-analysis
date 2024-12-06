@@ -25,14 +25,18 @@ void FitsVeto()
     }
 
 
-    // Read limits
-    auto [ylimits, zlimits] {ReadFile("./antiveto_fits.dat")};
-
-    // Fit to normalize shape
-    // Y
-    auto nys {FitToScaleFunc(pys, ylimits)};
-    // Z
-    auto nzs {FitToScaleFunc(pzs, zlimits)};
+    ProjMap nys, nzs;
+    for(const auto& idx : idxs)
+    {
+        double w {5};
+        double s {0.2};
+        // Y
+        auto* fy {FindBestFit(pys[idx], w, s)};
+        nys[idx] = ScaleWithFunc(pys[idx], fy);
+        // Z
+        auto* fz {FindBestFit(pzs[idx], w, s)};
+        nzs[idx] = ScaleWithFunc(pzs[idx], fz);
+    }
 
 
     // Fit to contour

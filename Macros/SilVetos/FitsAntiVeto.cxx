@@ -30,22 +30,18 @@ void FitsAntiVeto()
         pzs[idx]->SetDirectory(nullptr);
     }
 
-    // Read limits
-    auto [ylimits, zlimits] {ReadFile("./antiveto_fits.dat")};
-
-    // Fit to normalize shape
-    // Y
-    auto nys {FitToScaleFunc(pys, ylimits)};
-    // // Z
-    // auto nzs {FitToScaleFunc(pzs, zlimits)};
-    ProjMap nzs;
-    for(auto& [idx, _] : ylimits)
+    ProjMap nys, nzs;
+    for(const auto& idx : idxs)
     {
-        FindBestFit(pzs[idx], 5, 0.2);
-        auto* func {pzs[idx]->GetFunction("expo")};
-        nzs[idx] = ScaleWithFunc(pzs[idx], func);
+        double w {5};
+        double s {0.2};
+        // Y
+        auto* fy {FindBestFit(pys[idx], w, s)};
+        nys[idx] = ScaleWithFunc(pys[idx], fy);
+        // Z
+        auto* fz {FindBestFit(pzs[idx], w, s)};
+        nzs[idx] = ScaleWithFunc(pzs[idx], fz);
     }
-
 
     // Fit to contour
     double thresh {0.65};

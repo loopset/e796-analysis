@@ -126,7 +126,7 @@ void PlotAll(TCanvas* c, ProjMap& hs)
     }
 }
 
-void FindBestFit(TH1D* h, double width, double step, TString func = "expo")
+TF1* FindBestFit(TH1D* h, double width, double step, TString func = "expo")
 {
     // Find guesses
     auto max {h->GetMaximum()};
@@ -155,4 +155,9 @@ void FindBestFit(TH1D* h, double width, double step, TString func = "expo")
     std::cout << "Initial guess : <" << minguess << ", " << maxguess << ">" << '\n';
     std::cout << "Best range    : <" << range.first << ", " << range.second << ">" << '\n';
     std::cout << "Chi2          : " << *min << '\n';
+    auto* fit {h->GetFunction(func)};
+    if(fit)
+        return fit;
+    else
+        throw std::runtime_error("FindBestFit: nullptr after fit best model");
 }

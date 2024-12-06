@@ -5,10 +5,10 @@
 #include "TGraphErrors.h"
 #include "TH1.h"
 #include "TH2.h"
-#include "TPaveText.h"
 #include "TMarker.h"
 #include "TMultiGraph.h"
 #include "TObject.h"
+#include "TPaveText.h"
 #include "TProfile.h"
 #include "TString.h"
 #include "TTree.h"
@@ -17,6 +17,7 @@
 #include "uncertainties.hpp"
 #include "ureal.hpp"
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
@@ -46,8 +47,17 @@ std::pair<double, double> FindExtreme(TF1* func)
 void Compare()
 {
     // List values
-    std::vector<double> drifts {2.144, 2.344, 2.544};
     const double conv {1. / 4 / 0.08};
+    // std::vector<double> drifts {2.144, 2.344, 2.544};
+    std::vector<double> drifts;
+    for(double d = 2.3; d <= 2.65; d += 0.05)
+    {
+        drifts.push_back(d);
+        std::cout << "vdrift : " << d * conv << '\n';
+    }
+    drifts.push_back(2.344); // to leave everything where we started
+    // Sort values
+    std::sort(drifts.begin(), drifts.end());
     std::map<std::string, std::string> names {{"pd", "1H_2H"}, {"dt", "2H_3H"}};
 
     // Read data
@@ -63,7 +73,7 @@ void Compare()
         for(const auto& drift : drifts)
         {
             auto fullname {"./Outputs/hs_20O_" + name + "_" + gSelector->GetFlag().c_str() + "_drift_" +
-                           TString::Format("%.4f", drift).Data() + ".root"};
+                           TString::Format("%.3f", drift).Data() + ".root"};
             auto file {std::make_unique<TFile>(fullname.c_str())};
             auto* h2d {file->Get<TH2D>("hExRPZ")};
             auto* hp {file->Get<TProfile>("hProfX")};
@@ -207,18 +217,18 @@ void Compare()
             pad++;
         }
     }
-    // auto* c2 {new TCanvas {"c2", "Prof canvas"}};
-    // pad = 1;
-    // c2->DivideSquare(hsp["pd"].size() + hsp["dt"].size());
-    // for(const auto& [key, vec] : hsp)
-    // {
-    //     for(const auto& h : vec)
-    //     {
-    //         c2->cd(pad);
-    //         h->Draw();
-    //         pad++;
-    //     }
-    // }
+    auto* c2 {new TCanvas {"c2", "Prof canvas"}};
+    pad = 1;
+    c2->DivideSquare(hsp["pd"].size() + hsp["dt"].size());
+    for(const auto& [key, vec] : hsp)
+    {
+        for(const auto& h : vec)
+        {
+            c2->cd(pad);
+            h->Draw();
+            pad++;
+        }
+    }
     // auto* c3 {new TCanvas {"c3", "Ex canvas"}};
     // pad = 1;
     // c3->DivideSquare(hsex["pd"].size() + hsex["dt"].size());

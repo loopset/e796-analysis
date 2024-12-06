@@ -12,11 +12,9 @@
 
 #include "../../PostAnalysis/HistConfig.h"
 #include "../../Selector/Selector.h"
-void GetProfile()
-{
-    // Set value
-    double driftfactor {2.544};
 
+void GetProfile(double driftfactor)
+{
     // Read data
     ROOT::EnableImplicitMT();
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, true)};
@@ -25,7 +23,7 @@ void GetProfile()
     auto hEx {df.Histo1D(HistConfig::Ex, "Ex")};
     auto hExZ {df.Histo2D(HistConfig::ExRPZ, "fSP.fCoordinates.fZ", "Ex")};
     // Fit g.s
-    double gswidth {2};
+    double gswidth {3};
     hEx->Fit("gaus", "0Q+", "", -gswidth / 2, +gswidth / 2);
     auto* gaus {hEx->GetFunction("gaus")};
     gaus->ResetBit(TF1::kNotDraw);
@@ -41,7 +39,8 @@ void GetProfile()
     // Fit
     TString funcstr {"pol2"};
     hProf->Fit(funcstr, "0Q+");
-    hProf->GetFunction(funcstr)->ResetBit(TF1::kNotDraw);
+    if(hProf->GetFunction(funcstr))
+        hProf->GetFunction(funcstr)->ResetBit(TF1::kNotDraw);
 
     // Draw
     auto* c0 {new TCanvas {"c0", "Drift correction canvas"}};
@@ -65,7 +64,7 @@ void GetProfile()
     // Save things
     std::cout << "Saving for drift factor : " << driftfactor << '\n';
     TString path {"./Outputs/"};
-    auto name {TString::Format("_%s_%s_%s_%s_drift_%.4f.root", gSelector->GetBeam().c_str(),
+    auto name {TString::Format("_%s_%s_%s_%s_drift_%.3f.root", gSelector->GetBeam().c_str(),
                                gSelector->GetTarget().c_str(), gSelector->GetLight().c_str(),
                                gSelector->GetFlag().c_str(), driftfactor)};
     df.Snapshot("Sel_Tree", (path + "df" + name).Data());

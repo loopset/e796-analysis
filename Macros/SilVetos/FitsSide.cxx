@@ -24,22 +24,25 @@ void FitsSide()
         pzs[idx]->SetDirectory(nullptr);
     }
 
-
-    // Read limits
-    auto [ylimits, zlimits] {ReadFile("./side_fits.dat")};
-
-    // Fit to normalize shape
-    // Y
-    auto nys {FitToScaleFunc(pxs, ylimits)};
-    // Z
-    auto nzs {FitToScaleFunc(pzs, zlimits)};
+    ProjMap nxs, nzs;
+    for(const auto& idx : idxs)
+    {
+        double w {5};
+        double s {0.2};
+        // X
+        auto* fx {FindBestFit(pxs[idx], w, s)};
+        nxs[idx] = ScaleWithFunc(pxs[idx], fx);
+        // Z
+        auto* fz {FindBestFit(pzs[idx], w, s)};
+        nzs[idx] = ScaleWithFunc(pzs[idx], fz);
+    }
 
 
     // Fit to contour
     double thresh {0.65};
     double width {15};
-    // Y
-    auto ypoints {FitToCountour(nys, thresh, width)};
+    // X
+    auto ypoints {FitToCountour(nxs, thresh, width)};
     // Z
     auto zpoints {FitToCountour(nzs, thresh, width)};
 
@@ -53,11 +56,11 @@ void FitsSide()
     }
 
     // plot
-    auto* cpx {new TCanvas("cpy", "X projection canvas")};
+    auto* cpx {new TCanvas("cpx", "X projection canvas")};
     PlotAll(cpx, pxs);
 
-    auto* cnx {new TCanvas("cny", "Normalized X canvas")};
-    PlotAll(cnx, nys);
+    auto* cnx {new TCanvas("cnx", "Normalized X canvas")};
+    PlotAll(cnx, nxs);
 
     auto* cpz {new TCanvas("cpz", "Z projection canvas")};
     PlotAll(cpz, pzs);
