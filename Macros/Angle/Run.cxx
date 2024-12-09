@@ -17,6 +17,7 @@
 #include "Fit/Fitter.h"
 #include "Math/Functor.h"
 
+#include <memory>
 #include <vector>
 
 #include "../../PostAnalysis/HistConfig.h"
@@ -53,7 +54,7 @@ TF1* FitCorr2(TProfile* h, double min, double max)
     return f;
 }
 
-void Plot()
+void Run()
 {
     gStyle->SetOptFit();
     // Read data
@@ -96,7 +97,7 @@ void Plot()
     auto hTheoLeg {def.Filter(gateGS, {"ExLegacy"}).Histo2D(mTheoLeg, "fThetaLegacy", "ThetaTheo")};
     // Profile in DiffRPx
     auto* px {hDiffRPx->ProfileX("px")};
-    auto* func1 = FitCorr1(px, 20, 210);
+    auto* func1 {FitCorr1(px, 20, 210)};
 
     // Define new columns
     def = def.Define("ThetaLightRP", [&](float thetalegacy, float rpx) { return thetalegacy + func1->Eval(rpx); },
@@ -121,7 +122,7 @@ void Plot()
     hDiffThetaLeg->GetYaxis()->SetTitle("#delta#theta_{1} [#circ]");
     // Profile
     auto* px2 {hDiffThetaRP->ProfileX("px2")};
-    auto* func2 {FitCorr2(px2, 0, 60)};
+    // auto* func2 {FitCorr2(px2, 0, 60)};
 
     // Attempt to fit
     auto chisquared {[&](const double* p)
@@ -150,21 +151,21 @@ void Plot()
     ROOT::Fit::Fitter fitter;
     double pStart[2] = {-2.5, 1};
     fitter.SetFCN(fcn, pStart);
-    fitter.Config().ParSettings(0).SetName("a");
-    fitter.Config().ParSettings(1).SetName("b");
+    fitter.Config().ParSettings(0).SetName("p0");
+    fitter.Config().ParSettings(1).SetName("p1");
     // do the fit
     bool ok = fitter.FitFCN();
-    TF1* fman {};
+    TF1* func2 {};
     if(ok)
     {
         const auto& result = fitter.Result();
         result.Print(std::cout);
-        fman = new TF1 {"fman", "pol1", 0, 90};
-        fman->SetFitResult(result);
-        hDiffThetaRP->GetListOfFunctions()->Add(fman, "same");
+        func2 = new TF1 {"func2", "pol1", 0, 90};
+        func2->SetFitResult(result);
+        hDiffThetaRP->GetListOfFunctions()->Add(func2, "same");
     }
     // Correct
-    def = def.Define("Diff3", [&](double diff2, double thetarp) { return diff2 - fman->Eval(thetarp); },
+    def = def.Define("Diff3", [&](double diff2, double thetarp) { return diff2 - func2->Eval(thetarp); },
                      {"Diff2", "ThetaLightRP"});
     auto h3 {def.Filter(gateGS, {"ExLegacy"}).Histo2D(mDiffTheta, "ThetaLightRP", "Diff3")};
 
@@ -210,4 +211,8 @@ void Plot()
     c1->cd(5);
     h3->DrawClone("colz");
 
+    // Save on file
+    auto file {std::make_unique<TFile>("./Outputs/angle_corr_v0.root", "recreate")};
+    func1->Write("func1");
+    func2->Write("func2");
 }
