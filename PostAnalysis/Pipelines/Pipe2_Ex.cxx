@@ -29,10 +29,9 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     // Use beam-corrected or legacy fThetaLight
     bool debug {false};
     std::cout << BOLDYELLOW << "is DebugTheta enabled ? " << std::boolalpha << debug << '\n';
-    // Get file
+
+    // Read data
     auto filename {gSelector->GetAnaFile(1, beam, target, light, false)};
-    std::cout << BOLDMAGENTA << "Reading file: " << filename << RESET << '\n';
-    // Read
     ROOT::EnableImplicitMT();
     ROOT::RDataFrame df {"PID_Tree", filename};
 
@@ -88,12 +87,20 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                          [&](unsigned int slot, const ActRoot::MergerData& d, double EVertex, double EBeam)
                          {
                              vkins[slot].SetBeamEnergy(EBeam);
-                             // vkins[slot].SetEx(Ex);
                              return vkins[slot].ReconstructTheta3CMFromLab(
                                         EVertex, ((isSide) ? d.fThetaLegacy : d.fThetaLight) * TMath::DegToRad()) *
                                     TMath::RadToDeg();
                          },
                          {"MergerData", "EVertex", "EBeam"});
+    def =
+        def.DefineSlot("ThetaCMLegacy",
+                       [&](unsigned int slot, const ActRoot::MergerData& d, double EVertex, double EBeam)
+                       {
+                           vkins[slot].SetBeamEnergy(EBeam);
+                           return vkins[slot].ReconstructTheta3CMFromLab(EVertex, d.fThetaLegacy * TMath::DegToRad()) *
+                                  TMath::RadToDeg();
+                       },
+                       {"MergerData", "EVertex", "EBeam"});
 
     // Book new histograms
     auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin,
@@ -121,14 +128,13 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     auto hExThetaLegacy {
         def.Histo2D(HistConfig::ChangeTitle(HistConfig::ExThetaLab, "E_{x}^{Legacy} vs #theta_{Legacy}"),
                     "fThetaLegacy", "ExLegacy")};
-    auto hExRP {def.Histo2D(HistConfig::ExRPZ, "fRP.fCoordinates.fZ", "Ex")};
+    auto hExRP {def.Histo2D(HistConfig::ExRPx, "fRP.fCoordinates.fX", "Ex")};
 
     // Heavy histograms
     auto hThetaHLLab {def.Histo2D(HistConfig::ChangeTitle(HistConfig::ThetaHeavyLight, "Lab correlations"),
                                   "fThetaLight", "fThetaHeavy")};
     // Save!
     auto outfile {gSelector->GetAnaFile(2, beam, target, light, false)};
-    std::cout << BOLDCYAN << "Writing in file : " << outfile << RESET << '\n';
     def.Snapshot("Final_Tree", outfile);
 
     // Save also RP histogram!

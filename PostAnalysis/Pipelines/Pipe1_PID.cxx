@@ -6,6 +6,7 @@
 #include "ActDataManager.h"
 #include "ActMergerData.h"
 #include "ActSilMatrix.h"
+#include "ActTypes.h"
 
 #include "ROOT/RDF/InterfaceUtils.hxx"
 #include "ROOT/RDataFrame.hxx"
@@ -29,7 +30,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     ROOT::EnableImplicitMT();
     // Read data
     ActRoot::DataManager datman {"/media/Data/E796v2/configs/data.conf"};
-    auto chain {datman.GetJoinedData()};
+    auto chain {datman.GetChain()};
     ROOT::RDataFrame df {*chain};
 
     // Apply cuts
@@ -93,7 +94,6 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
                                 { return cut.IsInside(light, d.fSilEs.front(), d.fQave); }, {"MergerData"})};
         auto filename {gSelector->GetAnaFile(1, beam, target, light, false)};
         pid.Snapshot("PID_Tree", filename);
-
     }
 
     // plotting

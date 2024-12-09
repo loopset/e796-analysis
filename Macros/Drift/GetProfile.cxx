@@ -21,7 +21,7 @@ void GetProfile(double driftfactor)
 
     // Book
     auto hEx {df.Histo1D(HistConfig::Ex, "Ex")};
-    auto hExZ {df.Histo2D(HistConfig::ExRPZ, "fSP.fCoordinates.fZ", "Ex")};
+    auto hExZ {df.Histo2D(HistConfig::ExZ, "fSP.fCoordinates.fZ", "Ex")};
     // Fit g.s
     double gswidth {3};
     hEx->Fit("gaus", "0Q+", "", -gswidth / 2, +gswidth / 2);

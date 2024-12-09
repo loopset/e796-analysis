@@ -46,7 +46,7 @@ const TH2DModel ExThetaCM {
 const TH2DModel ExThetaLab {
     "hExThetaLab", "E_{x} vs #theta_{Lab};#theta_{Lab} [#circ];E_{x} [MeV]", 400, 0, 60, 200, -10, 20};
 
-const TH2DModel ExRPZ {"hExRPZ", "E_{x} vs RP.Z;RP.Z() [mm];E_{x} [MeV]", 200, -10, 300, 200, -10, 20};
+const TH2DModel ExRPx {"hExRPX", "E_{x} vs RP.X;RP.X() [mm];E_{x} [MeV]", 200, -10, 300, 200, -10, 20};
 
 const TH2DModel ThetaHeavyLight {
     "hThetaHL", "#theta heavy vs light;#theta_{Light} [#circ];#theta_{Heavy} [#circ]", 400, 0, 60, 400, 0, 60};
