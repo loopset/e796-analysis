@@ -8,6 +8,7 @@
 #include "TF1.h"
 #include "TFile.h"
 #include "TGraphErrors.h"
+#include "TH2.h"
 #include "THStack.h"
 #include "TMath.h"
 #include "TMultiGraph.h"
@@ -30,20 +31,20 @@ void DrawFuncs(THStack* s)
     }
 }
 
-void Check()
+void CheckEl()
 {
     // Read data
     ROOT::EnableImplicitMT();
-    // pd
-    ROOT::RDataFrame pd {"Final_Tree", gSelector->GetAnaFile(2, "20O", "1H", "2H", false)};
+    // pp
+    ROOT::RDataFrame pp {"Final_Tree", gSelector->GetAnaFile(2, "20O", "1H", "1H", false)};
     // dt
-    ROOT::RDataFrame dt {"Final_Tree", gSelector->GetAnaFile(2, "20O", "2H", "3H", false)};
-    std::vector<ROOT::RDF::RNode> dfs {pd, dt};
-    std::vector<std::string> labels {"(p,d)", "(d,t)"};
+    ROOT::RDataFrame dd {"Final_Tree", gSelector->GetAnaFile(2, "20O", "2H", "2H", false)};
+    std::vector<ROOT::RDF::RNode> dfs {pp, dd};
+    std::vector<std::string> labels {"(p,p)", "(d,d)"};
 
     // Create kinematics
-    ActPhysics::Kinematics kpd {"20O(p,d)@700"};
-    ActPhysics::Kinematics kdt {"20O(d,t)@700"};
+    ActPhysics::Kinematics kpd {"20O(p,p)@700"};
+    ActPhysics::Kinematics kdt {"20O(d,d)@700"};
     std::vector<std::vector<ActPhysics::Kinematics>> vks;
     for(int i = 0; i < dfs.size(); i++)
     {
@@ -57,7 +58,7 @@ void Check()
             e = k;
     }
     // Read correction functions
-    auto file {std::make_unique<TFile>("./Outputs/angle_corr_front_v0.root")};
+    auto file {std::make_unique<TFile>("./Outputs/angle_corr_side_v0.root")};
     auto* func1 {file->Get<TF1>("func1")};
     auto* func2 {file->Get<TF1>("func2")};
     file->Close();
@@ -84,8 +85,17 @@ void Check()
                         {
                             // 1-> RP.X correction
                             auto temp {thetalegacy + func1->Eval(rpx)};
-                            // 2-> Self correction
-                            return temp + func2->Eval(temp);
+                            // 2-> Self correction not needed for elastic
+                            return temp;
+                        },
+                        {"fRP.fCoordinates.fX", "fThetaLegacy"})
+                .Define("ThetaLightJuan",
+                        [&](float rpx, float thetalegacy)
+                        {
+                            // 1-> RP.X correction
+                            auto temp {thetalegacy + (-2.14353 + 0.0114464 * rpx - 8.52223e-5 * rpx * rpx)};
+                            // 2-> Self correction not needed for elastic
+                            return temp + (-1.58175 + 0.0889058 * temp);
                         },
                         {"fRP.fCoordinates.fX", "fThetaLegacy"})
                 .DefineSlot("ExOK",
@@ -95,6 +105,13 @@ void Check()
                                 return vks[i][slot].ReconstructExcitationEnergy(EVertex, thetaOK * TMath::DegToRad());
                             },
                             {"EBeam", "EVertex", "ThetaLightOK"})
+                .DefineSlot("ExJuan",
+                            [&, i](unsigned int slot, double EBeam, double EVertex, double thetaJuan)
+                            {
+                                vks[i][slot].SetBeamEnergy(EBeam);
+                                return vks[i][slot].ReconstructExcitationEnergy(EVertex, thetaJuan * TMath::DegToRad());
+                            },
+                            {"EBeam", "EVertex", "ThetaLightJuan"})
                 .DefineSlot("ThetaCMOK",
                             [&, i](unsigned int slot, double EBeam, double EVertex, double thetaOK)
                             {
@@ -109,11 +126,14 @@ void Check()
         hsEx.push_back((TH1D*)hEx->Clone());
         hEx->Scale(1. / hEx->Integral());
         // Fit
+        std::vector<double> Exs {0., 1.6};
+        if(idx == 0)
+            Exs.pop_back();
         gs.push_back(new TGraphErrors);
         gs[idx]->SetTitle(labels[idx].c_str());
         double w {1.5};
         int p {};
-        for(auto ex : {0., 3.15})
+        for(auto ex : Exs)
         {
             auto name {TString::Format("fit%d", p)};
             auto* func {new TF1 {name, "gaus", ex - w / 2, ex + w / 2}};
@@ -128,10 +148,10 @@ void Check()
         sEx->Add((TH1D*)hEx->Clone(), "hist");
 
         // Legacy Ex to compare
-        auto hExLeg {node.Histo1D(HistConfig::Ex, "ExLegacy")};
+        auto hExLeg {node.Histo1D(HistConfig::Ex, "Ex")};
 
         // With Juan's correction for angle
-        auto hExJuan {node.Histo1D(HistConfig::Ex, "Ex")};
+        auto hExJuan {node.Histo1D(HistConfig::Ex, "ExJuan")};
         for(auto h : {hExLeg, hExJuan})
         {
             h->Scale(1. / h->Integral());
@@ -142,21 +162,20 @@ void Check()
         gsj.push_back(new TGraphErrors);
         gsj[idx]->SetTitle(labels[idx].c_str());
         p = 0;
-        for(auto ex : {0., 3.15})
+        for(auto ex : Exs)
         {
             auto name {TString::Format("fitJ%d", p)};
             auto* func {new TF1 {name, "gaus", ex - w / 2, ex + w / 2}};
             func->SetLineColor(colors[idx]);
-            hExJuan->Fit(func, "0QR+");
-            hExJuan->GetFunction(name)->ResetBit(TF1::kNotDraw);
+            hExLeg->Fit(func, "0QR+");
+            hExLeg->GetFunction(name)->ResetBit(TF1::kNotDraw);
             gsj[idx]->AddPoint(func->GetParameter(1), func->GetParameter(2));
             gsj[idx]->SetPointError(gsj[idx]->GetN() - 1, func->GetParError(1), func->GetParError(2));
             p++;
         }
-
         sExLeg->Add((TH1D*)hExLeg->Clone(), "hist");
         sExJuan->Add((TH1D*)hExJuan->Clone(), "hist");
-        
+
         // Ex vs RPx
         auto hExRPx {node.Histo2D(HistConfig::ExThetaCM, "ThetaCMOK", "ExOK")};
         hExRPx->SetTitle(labels[idx].c_str());
@@ -198,9 +217,9 @@ void Check()
     DrawFuncs(sEx);
     c0->cd(2);
     sExLeg->Draw("nostack plc pmc");
+    DrawFuncs(sExLeg);
     c0->cd(3);
     sExJuan->Draw("nostack plc pmc");
-    DrawFuncs(sExJuan);
     c0->cd(4);
     mg->Draw("apl");
     c0->cd(5);

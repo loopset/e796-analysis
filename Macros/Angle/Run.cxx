@@ -1,3 +1,4 @@
+#include "ActColors.h"
 #include "ActKinematics.h"
 
 #include "ROOT/RDF/HistoModels.hxx"
@@ -7,21 +8,22 @@
 #include "TCanvas.h"
 #include "TF1.h"
 #include "TFile.h"
+#include "TGraph.h"
 #include "TLine.h"
 #include "TMath.h"
 #include "TProfile.h"
 #include "TROOT.h"
+#include "TString.h"
 #include "TStyle.h"
 #include "TVirtualPad.h"
 
-#include "Fit/Fitter.h"
-#include "Math/Functor.h"
-
+#include <ios>
 #include <memory>
 #include <vector>
 
 #include "../../PostAnalysis/HistConfig.h"
 #include "../../Selector/Selector.h"
+#include "./FitTH2.h"
 
 std::pair<double, double> FitGS(TH1D* h)
 {
@@ -63,6 +65,7 @@ void Run()
 
     // Define new columns
     bool isEl {gSelector->GetIsElastic()};
+    std::cout << BOLDYELLOW << "isElastic ? " << std::boolalpha << isEl << RESET << '\n';
     ActPhysics::Kinematics kin {gSelector->GetBeam(), gSelector->GetTarget(), gSelector->GetLight(), 700};
     std::vector<ActPhysics::Kinematics> vks {df.GetNSlots()};
     for(auto& k : vks)
@@ -72,7 +75,6 @@ void Run()
                             [&](unsigned int slot, double EBeam, double EVertex, double ExLegacy, float thetalegacy)
                             {
                                 vks[slot].SetBeamEnergy(EBeam);
-                                // vks[slot].SetEx(ExLegacy);
                                 return vks[slot].ComputeTheta3FromT3(EVertex) * TMath::RadToDeg();
                             },
                             {"EBeam", "EVertex", "ExLegacy", "fThetaLegacy"})
@@ -97,7 +99,9 @@ void Run()
     auto hTheoLeg {def.Filter(gateGS, {"ExLegacy"}).Histo2D(mTheoLeg, "fThetaLegacy", "ThetaTheo")};
     // Profile in DiffRPx
     auto* px {hDiffRPx->ProfileX("px")};
-    auto* func1 {FitCorr1(px, 20, 210)};
+    // auto* func1 {FitCorr1(px, 20, 210)};
+    FitTH2 fit1 {hDiffRPx.GetPtr(), 3};
+    auto func1 {fit1.Fit()};
 
     // Define new columns
     def = def.Define("ThetaLightRP", [&](float thetalegacy, float rpx) { return thetalegacy + func1->Eval(rpx); },
@@ -124,50 +128,16 @@ void Run()
     auto* px2 {hDiffThetaRP->ProfileX("px2")};
     // auto* func2 {FitCorr2(px2, 0, 60)};
 
-    // Attempt to fit
-    auto chisquared {[&](const double* p)
-                     {
-                         double chi {};
-                         auto h {hDiffThetaRP};
-                         int nx {h->GetNbinsX()};
-                         int ny {h->GetNbinsY()};
-                         for(int i = 1; i <= nx; i++)
-                         {
-                             for(int j = 1; j <= ny; j++)
-                             {
-                                 auto c {h->GetBinContent(i, j)};
-                                 if(!c)
-                                     continue;
-                                 auto x {h->GetXaxis()->GetBinCenter(i)};
-                                 auto y {h->GetYaxis()->GetBinCenter(j)};
-                                 auto num {TMath::Power(y - (p[0] + p[1] * x), 2)};
-                                 auto denom {TMath::Power(1. / h->GetBinError(i, j), 2)};
-                                 chi += num / denom;
-                             }
-                         }
-                         return chi;
-                     }};
-    ROOT::Math::Functor fcn(chisquared, 2);
-    ROOT::Fit::Fitter fitter;
-    double pStart[2] = {-2.5, 1};
-    fitter.SetFCN(fcn, pStart);
-    fitter.Config().ParSettings(0).SetName("p0");
-    fitter.Config().ParSettings(1).SetName("p1");
-    // do the fit
-    bool ok = fitter.FitFCN();
-    TF1* func2 {};
-    if(ok)
-    {
-        const auto& result = fitter.Result();
-        result.Print(std::cout);
-        func2 = new TF1 {"func2", "pol1", 0, 90};
-        func2->SetFitResult(result);
-        hDiffThetaRP->GetListOfFunctions()->Add(func2, "same");
-    }
+    int npar {(isEl) ? 1 : 2};
+    FitTH2 fitth2 {hDiffThetaRP.GetPtr(), npar};
+    auto func2 {fitth2.Fit()};
+
     // Correct
     def = def.Define("Diff3", [&](double diff2, double thetarp) { return diff2 - func2->Eval(thetarp); },
                      {"Diff2", "ThetaLightRP"});
     auto h3 {def.Filter(gateGS, {"ExLegacy"}).Histo2D(mDiffTheta, "ThetaLightRP", "Diff3")};
+    FitTH2 fit3 {h3.GetPtr(), npar};
+    fit3.Fit();
 
     // Draw
     auto* c0 {new TCanvas {"c0", "Angle correction"}};
@@ -212,7 +182,8 @@ void Run()
     h3->DrawClone("colz");
 
     // Save on file
-    auto file {std::make_unique<TFile>("./Outputs/angle_corr_v0.root", "recreate")};
+    auto file {
+        std::make_unique<TFile>(TString::Format("./Outputs/angle_corr_%s_v0.root", isEl ? "side" : "front"), "recreate")};
     func1->Write("func1");
     func2->Write("func2");
 }

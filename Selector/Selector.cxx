@@ -104,7 +104,7 @@ TString E796::Selector::GetAnaFile(int pipe, const std::string& beam, const std:
 {
     auto path {TString::Format("/media/Data/E796v2/PostAnalysis/RootFiles/Pipe%d/", pipe)};
     auto name {TString::Format("tree_%s_%s_%s_%s%s.root", beam.c_str(), target.c_str(), light.c_str(),
-                               (GetIsElastic()) ? "side" : "front", (withFlag) ? ("_" + fFlag).c_str() : "")};
+                               (target == light) ? "side" : "front", (withFlag) ? ("_" + fFlag).c_str() : "")};
     std::cout << BOLDMAGENTA << "Opening ana file : " << name << RESET << '\n';
     return path + name;
 }
