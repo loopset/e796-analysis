@@ -70,7 +70,9 @@ void CheckEl()
     sExLeg->SetTitle(HistConfig::ChangeTitle(HistConfig::Ex, "No correction E_{x}").fTitle);
     auto* sExJuan {new THStack};
     sExJuan->SetTitle(HistConfig::ChangeTitle(HistConfig::Ex, "Juan's correction E_{x}").fTitle);
-    std::vector<TH1D*> hsEx;
+    auto* sDiff {new THStack};
+    sDiff->SetTitle("Diff in #theta");
+    std::vector<TH1D*> hsEx, hsDiff;
     std::vector<TH2D*> hsExRPx;
     // TGraphs for sigmas
     std::vector<TGraphErrors*> gs, gsj;
@@ -86,15 +88,15 @@ void CheckEl()
                             // 1-> RP.X correction
                             auto temp {thetalegacy + func1->Eval(rpx)};
                             // 2-> Self correction not needed for elastic
-                            return temp;
+                            return temp + func2->Eval(temp);
                         },
                         {"fRP.fCoordinates.fX", "fThetaLegacy"})
+                .Define("Diff", "ThetaLightOK - fThetaLight")
                 .Define("ThetaLightJuan",
                         [&](float rpx, float thetalegacy)
                         {
                             // 1-> RP.X correction
                             auto temp {thetalegacy + (-2.14353 + 0.0114464 * rpx - 8.52223e-5 * rpx * rpx)};
-                            // 2-> Self correction not needed for elastic
                             return temp + (-1.58175 + 0.0889058 * temp);
                         },
                         {"fRP.fCoordinates.fX", "fThetaLegacy"})
@@ -116,7 +118,8 @@ void CheckEl()
                             [&, i](unsigned int slot, double EBeam, double EVertex, double thetaOK)
                             {
                                 vks[i][slot].SetBeamEnergy(EBeam);
-                                return vks[i][slot].ReconstructTheta3CMFromLab(EVertex, thetaOK * TMath::DegToRad()) * TMath::RadToDeg();
+                                return vks[i][slot].ReconstructTheta3CMFromLab(EVertex, thetaOK * TMath::DegToRad()) *
+                                       TMath::RadToDeg();
                             },
                             {"EBeam", "EVertex", "ThetaLightOK"});
 
@@ -131,7 +134,7 @@ void CheckEl()
             Exs.pop_back();
         gs.push_back(new TGraphErrors);
         gs[idx]->SetTitle(labels[idx].c_str());
-        double w {1.5};
+        double w {1.75};
         int p {};
         for(auto ex : Exs)
         {
@@ -180,6 +183,12 @@ void CheckEl()
         auto hExRPx {node.Histo2D(HistConfig::ExThetaCM, "ThetaCMOK", "ExOK")};
         hExRPx->SetTitle(labels[idx].c_str());
         hsExRPx.push_back((TH2D*)hExRPx->Clone());
+
+        // Diff with new computed values
+        auto hDiff {node.Histo1D("Diff")};
+        hDiff->Scale(1. / hDiff->Integral());
+        sDiff->Add((TH1D*)hDiff->Clone(), "hist");
+
         idx++;
     }
 
@@ -223,7 +232,8 @@ void CheckEl()
     c0->cd(4);
     mg->Draw("apl");
     c0->cd(5);
-    hsExRPx.front()->Draw("colz");
-    c0->cd(6);
-    hsExRPx.back()->Draw("colz");
+    sDiff->Draw("nostack plc pmc");
+    // hsExRPx.front()->Draw("colz");
+    // c0->cd(6);
+    // hsExRPx.back()->Draw("colz");
 }

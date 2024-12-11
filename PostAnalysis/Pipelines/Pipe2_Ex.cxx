@@ -71,8 +71,7 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                          {
                              vkins[slot].SetBeamEnergy(EBeam);
                              return vkins[slot].ReconstructExcitationEnergy(
-                                 EVertex, ((debug) ? d.fThetaDebug : ((isSide) ? d.fThetaLegacy : d.fThetaLight)) *
-                                              TMath::DegToRad());
+                                 EVertex, ((debug) ? d.fThetaDebug : d.fThetaLight) * TMath::DegToRad());
                          },
                          {"MergerData", "EVertex", "EBeam"});
     def =
@@ -88,7 +87,7 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                          {
                              vkins[slot].SetBeamEnergy(EBeam);
                              return vkins[slot].ReconstructTheta3CMFromLab(
-                                        EVertex, ((isSide) ? d.fThetaLegacy : d.fThetaLight) * TMath::DegToRad()) *
+                                        EVertex, ((debug) ? d.fThetaDebug : d.fThetaLight) * TMath::DegToRad()) *
                                     TMath::RadToDeg();
                          },
                          {"MergerData", "EVertex", "EBeam"});
@@ -103,10 +102,7 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
                        {"MergerData", "EVertex", "EBeam"});
 
     // Book new histograms
-    auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin,
-                           (debug)    ? "fThetaDebug"
-                           : (isSide) ? "fThetaLegacy"
-                                      : "fThetaLight",
+    auto hKin {def.Histo2D((isSide) ? HistConfig::KinEl : HistConfig::Kin, (debug) ? "fThetaDebug" : "fThetaLight",
                            "EVertex")};
 
     auto hKinCM {def.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
@@ -114,7 +110,7 @@ void Pipe2_Ex(const std::string& beam, const std::string& target, const std::str
     auto hEBeam {def.Histo1D("EBeam")};
     auto hEx {def.Histo1D(HistConfig::Ex, "Ex")};
 
-    auto hTheta {def.Histo1D((debug) ? "fThetaDebug" : (isSide) ? "fThetaLegacy" : "fThetaLight")};
+    auto hTheta {def.Histo1D((debug) ? "fThetaDebug" : "fThetaLight")};
 
     auto hThetaBeam {def.Histo2D(HistConfig::ThetaBeam, "fRP.fCoordinates.fX", "fThetaBeam")};
 

@@ -188,6 +188,10 @@ void Compare()
         text->SetBorderSize(0);
         text->SetTextFont(132);
         g->GetListOfFunctions()->Add(text);
+        // Print to terminal
+        std::cout << "-> Reaction : " << key << '\n';
+        std::cout << "   Vdrift   : " << root.format(2) << '\n';
+        std::cout << "   DriftF   : " << (root / conv).format(2) << '\n';
     }
 
 
