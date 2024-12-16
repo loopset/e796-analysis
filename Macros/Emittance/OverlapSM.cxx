@@ -1,4 +1,5 @@
 #include "ActSilMatrix.h"
+#include "ActSilSpecs.h"
 
 #include "TCanvas.h"
 #include "TFile.h"
@@ -7,7 +8,9 @@
 #include "TString.h"
 
 #include <iostream>
+#include <memory>
 #include <numeric>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -23,6 +26,10 @@ void OverlapSM()
     auto meanSide {hxz->GetMean(2)};
     auto meanFront {hyz->GetMean(2)};
 
+    // Real silicon specs
+    ActPhysics::SilSpecs specs;
+    specs.ReadFile("../../configs/detailedSilicons.conf");
+
     // Read SM
     auto* veto {E796Utils::GetVetoMatrix()};
     auto* antiveto {E796Utils::GetAntiVetoMatrix()};
@@ -31,6 +38,15 @@ void OverlapSM()
     std::vector<TH2D*> hs {hxz, hyz, hyz};
     std::vector<ActPhysics::SilMatrix*> sms {side, antiveto, veto};
     std::vector<std::string> labels {"Side", "Antiveto", "Veto"};
+    std::vector<std::string> layers {"l0", "f0", "f1"};
+    std::vector<ActPhysics::SilMatrix*> phys;
+    // Format phys sms
+    for(int i = 0; i < labels.size(); i++)
+    {
+        auto sm {specs.GetLayer(layers[i]).GetSilMatrix()};
+        phys.push_back(sm->Clone());
+        phys.back()->SetName(labels[i]);
+    }
 
     // Get means of desired silicons
     std::vector<double> zmeans;
@@ -42,7 +58,7 @@ void OverlapSM()
         TString label {labels[idx]};
         label.ToLower();
         std::vector<double> temp;
-        std::vector<int> sils;
+        std::set<int> sils;
         double ref {};
         if(label.Contains("side"))
         {
@@ -71,8 +87,11 @@ void OverlapSM()
         texts.push_back(text);
         // Print:
         std::cout << "Mean for " << labels[idx] << " : " << zmeans.back() << " mm" << '\n';
+        // Move center of physical sms to this value
+        phys[idx]->MoveZTo(zmeans.back(), sils);
         idx++;
     }
+
 
     // Draw
     auto* c0 {new TCanvas {"c0", "SM and Emittance canvas"}};
@@ -84,12 +103,15 @@ void OverlapSM()
         sms[i]->Draw();
         texts[i]->Draw();
     }
-    // c0->cd(1);
-    // hxz->DrawCopy()->SetTitle("Side");
-    // side->Draw();
-    // c0->cd(2);
-    // hyz->DrawCopy()->SetTitle("Veto");
-    // veto->Draw();
-    // c0->cd(3);
-    // hyz->DrawCopy()->SetTitle("Antiveto");
+
+    auto* c1 {new TCanvas {"c1", "Physical silicons"}};
+    c1->DivideSquare(4);
+    for(int i = 0; i < phys.size(); i++)
+    {
+        c1->cd(i + 1);
+        phys[i]->Draw(false);
+        auto* cl {sms[i]->Clone()};
+        cl->SetSyle(false, 0, 0, 3001);
+        cl->Draw();
+    }
 }

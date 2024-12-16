@@ -7,19 +7,42 @@
 
 #include "TCanvas.h"
 #include "TFile.h"
+#include "TMath.h"
+#include "TMathBase.h"
+
+#include "Math/Vector3Dfwd.h"
 
 #include <memory>
 void Plot()
 {
     ROOT::EnableImplicitMT();
     ROOT::RDataFrame df {"Emittance_Tree", "./Outputs/emittance.root"};
+    // Compute angles
+    auto def {df.Define("thetaXY",
+                        [](ActPhysics::Line& l)
+                        {
+                            ROOT::Math::XYZVector p {l.GetDirection().X(), l.GetDirection().Y(), 0};
+                            auto dot {p.Dot(ROOT::Math::XYZVector {1, 0, 0}) / p.R()};
+                            return TMath::ACos(dot) * TMath::Sign(1, l.GetDirection().Y()) * TMath::RadToDeg();
+                        },
+                        {"Line"})
+                  .Define("thetaXZ",
+                          [](ActPhysics::Line& l)
+                          {
+                              ROOT::Math::XYZVector p {l.GetDirection().X(), 0, l.GetDirection().Z()};
+                              auto dot {p.Dot(ROOT::Math::XYZVector {1, 0, 0}) / p.R()};
+                              return TMath::ACos(dot) * TMath::Sign(1, l.GetDirection().Z()) * TMath::RadToDeg();
+                          },
+                          {"Line"})};
 
     // Define models
     ROOT::RDF::TH2DModel mEmittance {"hEmitt", "Emittance;Y [pad];Z [btb]", 500, 0, 256, 300, 0, 256};
-    auto hBegin {df.Histo2D(mEmittance, "AtBegin.fCoordinates.fY", "AtBegin.fCoordinates.fZ")};
-    auto hEnd {df.Histo2D(mEmittance, "AtEnd.fCoordinates.fY", "AtEnd.fCoordinates.fZ")};
-    auto hPointZ {df.Histo1D("Line.fPoint.fCoordinates.fZ")};
-    auto hDirZ {df.Histo1D("Line.fDirection.fCoordinates.fZ")};
+    auto hBegin {def.Histo2D(mEmittance, "AtBegin.fCoordinates.fY", "AtBegin.fCoordinates.fZ")};
+    auto hEnd {def.Histo2D(mEmittance, "AtEnd.fCoordinates.fY", "AtEnd.fCoordinates.fZ")};
+    auto hPointZ {def.Histo1D("Line.fPoint.fCoordinates.fZ")};
+    auto hDirZ {def.Histo1D("Line.fDirection.fCoordinates.fZ")};
+    auto hThetaXY {def.Histo1D("thetaXY")};
+    auto hThetaXZ {def.Histo1D("thetaXZ")};
     // Trajectories plot
     double maxxy {257};
     double maxz {320};
@@ -27,7 +50,7 @@ void Plot()
     int nbinsz {250};
     ROOT::TThreadedObject<TH2D> hxz {"hxz", "XZ trajectories;X [mm];Z [mm]", nbinsxy, 0, maxxy, nbinsz, 0, maxz};
     ROOT::TThreadedObject<TH2D> hyz {"hyz", "YZ trajectories;Y [mm];Z [mm]", nbinsxy, 0, maxxy, nbinsz, 0, maxz};
-    df.Foreach(
+    def.Foreach(
         [&](ActPhysics::Line& line)
         {
             for(int b = 1; b <= nbinsxy; b++)
@@ -57,9 +80,11 @@ void Plot()
     c0->cd(2);
     hEnd->DrawClone("colz");
     c0->cd(3);
-    hPointZ->DrawClone();
+    hThetaXY->DrawClone();
+    // hPointZ->DrawClone();
     c0->cd(4);
-    hDirZ->DrawClone();
+    hThetaXZ->DrawClone();
+    // hDirZ->DrawClone();
     c0->cd(5);
     hxz.Merge()->DrawClone("colz");
     c0->cd(6);
