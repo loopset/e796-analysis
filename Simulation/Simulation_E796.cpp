@@ -7,6 +7,7 @@
 #include "ActRunner.h"
 #include "ActSRIM.h"
 #include "ActSilMatrix.h"
+#include "ActSilSpecs.h"
 
 #include "Rtypes.h"
 
@@ -90,11 +91,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double sigmaPercentBeam {0.008};
     const double sigmaAngleLight {0.95 / 2.355};
     // Parameters of beam in mm
-    // Beam has to be manually placed in the simulation
-    // Centered in Z and Y with a width of 4 mm
     // Center in Z
-    const double zOffsetBeam {(isEl) ? 6.97 : 8.34}; // mm
-    const double zVertexMean {128. + zOffsetBeam};
     const double zVertexSigma {3.8};
     // Center in Y
     const double yVertexMean {126.5}; // according to juan's emittance
@@ -135,18 +132,38 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         eLoss0Cut = {0, 1000};
     }
 
-    // Silicon masks
+    // Silicon specs
+    auto* specs {new ActPhysics::SilSpecs};
+    specs->ReadFile("../configs/detailedSilicons.conf");
+    // Silicon EFFECTIVE matrix
     auto* sm {E796Utils::GetEffSilMatrix(target, light)};
+    // Set reference position and offset!
+    double silCentre {};
+    double beamOffset {};
+    // Set layers
+    std::string firstLayer {};
+    std::string secondLayer {};
     if(isEl)
     {
-        sm->MoveZTo(zVertexMean - zOffsetBeam, {3, 4, 5});
+        silCentre = specs->GetLayer("l0").MeanZ({3, 4, 5});
+        beamOffset = 8.10; // mm
+        sm->MoveZTo(silCentre, {3, 4, 5});
+        specs->GetLayer("l0").ReplaceWithMatrix(sm);
+        specs->EraseLayer("f0");
+        specs->EraseLayer("f1");
+        firstLayer = "l0";
     }
     else
-        sm->MoveZTo(zVertexMean - zOffsetBeam, {3, 4});
+    {
+        silCentre = specs->GetLayer("f0").MeanZ({3, 4});
+        beamOffset = 9.54; // mm
+        sm->MoveZTo(silCentre, {3, 4});
+        specs->EraseLayer("l0");
+        firstLayer = "f0";
+        secondLayer = "f1";
+    }
+    double zVertexMean {silCentre + beamOffset};
 
-    // RPx histogram to sample
-    // auto* hRPx {GetRPXProj(E796Utils::GetFileName(2, beam, target, light, false, "rpx"))};
-    // // // histogram file
     // Histogram to sample vertex
     auto* histfile {new TFile("./Inputs/BeamY_ThetaXY_and_XZ_space_3Dhisto.root")};
     auto* hBeam {histfile->Get<TH3F>("h_Y_thetaXY_thetaXZ")};
@@ -311,22 +328,24 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // Rotate to world = geometry frame
         auto dirWorldFrame {runner.RotateToWorldFrame(dirBeamFrame, beamDir)};
 
-        auto vertexInGeoFrame {runner.DisplacePointToTGeometryFrame(vertex)};
-        ROOT::Math::XYZPoint silPoint0 {};
-        int silType0 {};
-        int silIndex0 {};
-        double distance0 {};
-        bool side0 {};
-        // Assembly 0
-        runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, dirWorldFrame, idxAssembly0, side0, distance0,
-                                                      silType0, silIndex0, silPoint0);
-        // convert to mm (Geometry::PropagateTracksToSiliconArray works in cm but we need mm to use in SRIM)
-        distance0 *= 10.;
+        auto [silIndex0, silPoint0InMM] {specs->FindSPInLayer(firstLayer, vertex, dirWorldFrame)};
+        // auto vertexInGeoFrame {runner.DisplacePointToTGeometryFrame(vertex)};
+        // ROOT::Math::XYZPoint silPoint0 {};
+        // int silType0 {};
+        // int silIndex0 {};
+        // double distance0 {};
+        // bool side0 {};
+        // // Assembly 0
+        // runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, dirWorldFrame, idxAssembly0, side0,
+        // distance0,
+        //                                               silType0, silIndex0, silPoint0);
+        // // convert to mm (Geometry::PropagateTracksToSiliconArray works in cm but we need mm to use in SRIM)
+        // distance0 *= 10.;
 
         // skip tracks that doesn't reach silicons or are not in SiliconMatrix
         if(silIndex0 == -1 || !(sm->IsInMatrix(silIndex0)))
             continue;
-        auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
+        // auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
         // Apply SilMatrix cut
         if(!sm->IsInside(silIndex0, (isEl ? silPoint0InMM.X() : silPoint0InMM.Y()), silPoint0InMM.Z()))
             continue;
@@ -335,6 +354,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             if(!E796Gates::maskelsil(silIndex0))
                 continue;
 
+        // Define SP distance
+        auto distance0 {(vertex - silPoint0InMM).R()};
         auto T3EnteringSil {srim->SlowWithStraggling("light", T3Lab, distance0)};
         ApplyNaN(T3EnteringSil);
         // nan if stopped in gas
@@ -372,12 +393,14 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         if(T3AfterSil0 > 0 && !isEl)
         {
             // first, propagate in gas
-            runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, dirWorldFrame, 1, side1, distance1,
-                                                          silType1, silIndex1, silPoint1, false);
+            auto [silIndex1, silPoint1InMM] {specs->FindSPInLayer(secondLayer, vertex, dirWorldFrame)};
+            // runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, dirWorldFrame, 1, side1, distance1,
+            //                                               silType1, silIndex1, silPoint1, false);
             if(silIndex1 == -1)
                 continue;
 
-            distance1 = (silPoint1 - silPoint0).R() * 10;
+            // distance1 = (silPoint1 - silPoint0).R() * 10;
+            distance1 = (silPoint1InMM - silPoint0InMM).R();
             T3AfterInterGas = srim->SlowWithStraggling("light", T3AfterSil0, distance1);
             ApplyNaN(T3AfterInterGas);
             if(!std::isfinite(T3AfterInterGas))

@@ -12,13 +12,17 @@
 #include <iostream>
 
 #include "../PostAnalysis/HistConfig.h"
+#include "../PostAnalysis/Utils.cxx"
 
 void test()
 {
     ActPhysics::SilSpecs specs {};
     specs.ReadFile("../configs/detailedSilicons.conf");
-    specs.EraseLayer("f0");
-    specs.EraseLayer("f1");
+    // specs.ReplaceWithMatrix("l0", E796Utils::GetSideMatrix());
+    specs.GetLayer("l0").Print();
+    // specs.ReadFile("../configs/detailedSilicons.conf");
+    // specs.EraseLayer("f0");
+    // specs.EraseLayer("f1");
 
     auto hSP {HistConfig::SP.GetHistogram()};
 
@@ -31,7 +35,7 @@ void test()
         auto phi3Lab {TMath::TwoPi() * gRandom->Uniform()};
         ROOT::Math::XYZVector dir {TMath::Cos(theta3Lab), TMath::Sin(theta3Lab) * TMath::Sin(phi3Lab),
                                    TMath::Sin(theta3Lab) * TMath::Cos(phi3Lab)};
-        auto [layer, idx, sp] {specs.FindLayerAndIdx(vertex, dir)};
+        auto [idx, sp] {specs.FindSPInLayer("l0", vertex, dir)};
         if(idx != -1)
             hSP->Fill(sp.X(), sp.Z());
     }
