@@ -3,6 +3,8 @@
 #include "TAttLine.h"
 #include "TCanvas.h"
 #include "TFile.h"
+#include "TGraph.h"
+#include "TGraphErrors.h"
 
 #include <iostream>
 #include <memory>
@@ -38,6 +40,19 @@ void PlotAll()
         old.push_back(sm);
     }
 
+    auto* gHeight {new TGraphErrors};
+    gHeight->SetMarkerStyle(24);
+    auto& side {sms[2]};
+    for(const auto& [idx, _] : side->GetGraphs())
+    {
+        std::cout << idx << '\n';
+        if(!(idx == 1 || idx == 4 || idx == 7))
+            continue;
+        auto centre {side->GetCentre(idx)};
+        auto height {side->GetHeight(idx)};
+        gHeight->AddPoint(idx, height);
+    }
+
     // Draw
     auto* c0 {new TCanvas {"c0", "SM comparison"}};
     c0->DivideSquare(2);
@@ -58,4 +73,7 @@ void PlotAll()
         old[i]->SetSyle(false, kDashed);
         old[i]->Draw();
     }
+
+    auto* c2 {new TCanvas {"c2", "Size plot with axis"}};
+    gHeight->Draw("ap");
 }

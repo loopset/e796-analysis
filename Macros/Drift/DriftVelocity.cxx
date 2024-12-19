@@ -1,114 +1,101 @@
-#include "ActCutsManager.h"
-#include "ActJoinData.h"
+#include "ActDataManager.h"
 #include "ActMergerData.h"
+#include "ActTypes.h"
 
 #include "ROOT/RDataFrame.hxx"
-#include "ROOT/RVec.hxx"
-#include "Rtypes.h"
+#include "ROOT/TThreadedObject.hxx"
 
 #include "TCanvas.h"
-#include "TF1.h"
+#include "TH2.h"
 #include "TROOT.h"
 #include "TString.h"
 
-#include <fstream>
-#include <iostream>
 #include <string>
 
-void SiliconCountourGetter(TH1* proj)
-{
-    // Set parameters
-    auto leftMin {70.};
-    auto leftMax {85.};
-    auto rightMin {90.};
-    auto rightMax {110.};
-    // Build functions
-    auto* fleft {
-        new TF1("fleft", "0.5 * [0] * (1 + (TMath::Erf((x - [1]) / (TMath::Sqrt(2) * [2]))))", leftMin, leftMax)};
-    auto* fright {
-        new TF1("fright", "0.5 * [0] * (1 - (TMath::Erf((x - [1]) / (TMath::Sqrt(2) * [2]))))", rightMin, rightMax)};
-    // Initial parameters
-    fleft->SetParameters(180, (leftMax + leftMin) / 2, 2);
-    fright->SetParameters(160, (rightMax + rightMin) / 2, 2);
-    // Fit
-    for(auto& f : {fleft, fright})
-    {
-        f->SetParLimits(1, 0, 200);
-        f->SetParLimits(2, 0, 4);
-        proj->Fit(f, "R+");
-    }
-}
+#include "../../PostAnalysis/HistConfig.h"
+#include "../SilVetos/GetContourFuncs.cxx"
 
 void DriftVelocity()
 {
-    // ROOT::EnableImplicitMT();
+    // Read data
+    ActRoot::DataManager datman {"../../configs/data.conf", ActRoot::ModeType::EMerge};
+    datman.SetRuns(155, 175);
+    auto chain {datman.GetChain()};
+    ROOT::EnableImplicitMT();
+    ROOT::RDataFrame df {*chain};
 
-    // Get data
-    ActRoot::JoinData join {"./../../configs/merger.runs"};
-    // join->Print();
-    ROOT::RDataFrame d {*join.Get()};
-    // ROOT::RDataFrame d {"ACTAR_Merged", "./../RootFiles/Merger/Merger_Run_0156.root"};
-    // d.Describe().Print();
-    // gate on events stopped in first sil layer
-    auto df {
-        d.Filter([](const ROOT::VecOps::RVec<std::string>& layers) { return layers.size() == 1; }, {"fSilLayers"})};
-
-    // Config histograms
-    auto hLeft {df.Filter("fSilLayers.front() == \"l0\"")
-                    .Histo2D({"hLeft", "Left;X [pad];Z [tb]", 200, -20, 150, 200, -20, 150}, "fSP.fCoordinates.fX",
-                             "fSP.fCoordinates.fZ")};
-
-    auto hFront {df.Filter("fSilLayers.front() == \"f0\"")
-                     .Histo2D({"hFront", "Front;Y [pad];Z [tb]", 200, -20, 150, 200, -20, 150}, "fSP.fCoordinates.fY",
-                              "fSP.fCoordinates.fZ")};
-
-    auto hFront1 {df.Filter("fSilLayers.front() == \"f1\"")
-                      .Histo2D({"hFront1", "Front 1;Y [pad];Z [tb]", 200, -20, 150, 200, -20, 150},
-                               "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
-
-    // Gate on silicon side to get proper drift velocity
-    auto drift {df.Filter(
-        [](const ROOT::VecOps::RVec<std::string>& silL, const ROOT::RVecF& silN)
+    // For side silicons
+    std::map<int, ROOT::TThreadedObject<TH2D>> hs;
+    auto hModel {HistConfig::SP.GetHistogram()};
+    for(const auto& i : {1, 4, 7})
+        hs.emplace(i, *hModel);
+    // Process
+    df.Foreach(
+        [&](ActRoot::MergerData& d)
         {
-            bool isSide {silL.front() == "l0"};
-            bool isN {silN.front() == 7};
-            return isSide && isN;
+            if(d.fSilLayers.size() == 1)
+            {
+                if(d.fSilLayers.front() == "l0")
+                {
+                    auto n {d.fSilNs.front()};
+                    if(hs.count(n))
+                        hs[n].Get()->Fill(d.fSP.X(), d.fSP.Z());
+                }
+            }
         },
-        {"fSilLayers", "fSilNs"})};
-    auto hDrift {drift.Histo2D({"hDrift", "Drift histo;X [pad];Z [tb]", 200, -20, 150, 200, -20, 150},
-                               "fSP.fCoordinates.fX", "fSP.fCoordinates.fZ")};
-    std::cout << "hDrift entries : " << hDrift->GetEntries() << '\n';
-    // Project along Z
-    auto* proj {hDrift->ProjectionY("proj")};
-    SiliconCountourGetter(proj);
-    // // Write entries
-    // ActRoot::CutsManager<int> cuts;
-    // cuts.ReadCut(0, "./central_clusters.root");
-    // std::ofstream streamer {"./central_clusters.dat"};
-    // df.Foreach(
-    //     [&](const ActRoot::MergerData& data)
-    //     {
-    //         if((cuts.IsInside(0, data.fSP.Y(), data.fSP.Z())))
-    //             streamer << data.fRun << " " << data.fEntry << '\n';
-    //     },
-    //     {"MergerData"});
-    // streamer.close();
+        {"MergerData"});
+    df.Count().GetValue();
 
-    // plotting
-    auto* c1 {new TCanvas("c1", "Preliminary SP")};
-    c1->DivideSquare(2);
-    c1->cd(1);
-    hLeft->DrawClone("colz");
-    c1->cd(2);
-    hFront->DrawClone("colz");
+    // Projections
+    std::map<int, TH1D*> nx, nz;
+    for(auto& [idx, h] : hs)
+    {
+        double w {5};
+        double s {0.2};
+        // X Projection
+        auto namex {TString::Format("Proj X %d", idx)};
+        auto x {h.Merge()->ProjectionX(namex)};
+        auto* fx {FindBestFit(x, w, s)};
+        nx[idx] = ScaleWithFunc(x, fx);
+        // Z Projection
+        auto namez {TString::Format("Proj Z %d", idx)};
+        auto z {h->ProjectionY(namez)};
+        auto* fz {FindBestFit(z, w, s)};
+        nz[idx] = ScaleWithFunc(z, fz);
+    }
+    // Fit to contour
+    double thresh {0.65};
+    double width {15};
+    FitToCountour(nx, thresh, width);
+    FitToCountour(nz, thresh, width);
 
-    auto* c2 {new TCanvas("c2", "Drift canvas")};
-    c2->DivideSquare(2);
-    c2->cd(1);
-    hDrift->DrawClone("colz");
-    c2->cd(2);
-    proj->Draw();
-    // for(auto* o : *(proj->GetListOfFunctions()))
-    //     if(o)
-    //         o->Draw("same");
+
+    // Plot
+    auto* c0 {new TCanvas {"c0", "Drift per silicon"}};
+    c0->DivideSquare(hs.size() * 3);
+    int p {1};
+    for(auto& [idx, h] : hs)
+    {
+        c0->cd(p);
+        p++;
+        h->SetTitle(TString::Format("Side %d", idx));
+        h.Merge()->DrawClone("colz");
+    }
+    p = 4;
+    for(auto& [idx, n] : nx)
+    {
+        c0->cd(p);
+        p++;
+        n->Draw();
+        for(auto* o : *n->GetListOfFunctions())
+            if(o)
+                o->DrawClone("same");
+    }
+    p = 7;
+    for(auto& [idx, n] : nz)
+    {
+        c0->cd(p);
+        p++;
+        n->Draw();
+    }
 }

@@ -8,6 +8,7 @@
 #include "ActSRIM.h"
 #include "ActSilMatrix.h"
 #include "ActSilSpecs.h"
+#include "ActTPCParameters.h"
 
 #include "Rtypes.h"
 
@@ -139,7 +140,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     auto* sm {E796Utils::GetEffSilMatrix(target, light)};
     // Set reference position and offset!
     double silCentre {};
-    double beamOffset {};
+    double beamOffset {}; // determined from emittance calculations
     // Set layers
     std::string firstLayer {};
     std::string secondLayer {};
@@ -148,7 +149,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         silCentre = specs->GetLayer("l0").MeanZ({3, 4, 5});
         beamOffset = 8.10; // mm
         sm->MoveZTo(silCentre, {3, 4, 5});
-        specs->GetLayer("l0").ReplaceWithMatrix(sm);
+        // specs->GetLayer("l0").ReplaceWithMatrix(sm);
         specs->EraseLayer("f0");
         specs->EraseLayer("f1");
         firstLayer = "l0";
@@ -234,16 +235,15 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         "lightInSil",
         TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_silicon.txt", light.c_str()).Data());
 
-    // Load geometry
-    auto* geometry {new ActSim::Geometry()};
-    geometry->ReadGeometry("/media/Data/E796v2/Simulation/Geometries/", "geo_all");
+    // Geometry class
+    ActRoot::TPCParameters tpc {"Actar"};
 
     // Random generator
     auto* rand {new TRandom3()};
     rand->SetSeed(); // random path in each execution of macro
 
     // Runner: contains utility functions to execute multiple actions
-    ActSim::Runner runner(srim, geometry, rand, sigmaSil);
+    ActSim::Runner runner(srim, nullptr, rand, sigmaSil);
 
     // Output from simulation!
     // We only store a few things in the TTree
@@ -288,7 +288,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             nextPrint += step;
         }
         // 1-> Sample vertex
-        auto [start, vertex] {runner.SampleVertex(yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, hBeam)};
+        auto [start,
+              vertex] {runner.SampleVertex(tpc.X(), yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, hBeam)};
 
         // 2-> Beam energy according to its sigma
         auto TBeam {runner.RandomizeBeamEnergy(
@@ -302,7 +303,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         kingen.SetBeamAndExEnergies(TBeam, Ex);
         double weight {kingen.Generate()};
         // focus on recoil 3 (light)
-        // obtain thetas and energies
         auto* PLight {kingen.GetLorentzVector(0)};
         auto theta3Lab {PLight->Theta()};
         auto phi3Lab {PLight->Phi()};
@@ -319,7 +319,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         if(!E796Gates::rp(vertex.X()))
             continue;
 
-        // 5-> Propagate track from vertex to silicon wall using Geometry class
+        // 5-> Propagate track from vertex to silicon wall using SilSpecs class
         // And using the angle with the uncertainty already in
         ROOT::Math::XYZVector dirBeamFrame {TMath::Cos(theta3Lab), TMath::Sin(theta3Lab) * TMath::Sin(phi3Lab),
                                             TMath::Sin(theta3Lab) * TMath::Cos(phi3Lab)};
@@ -327,25 +327,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         auto beamDir {(vertex - start).Unit()};
         // Rotate to world = geometry frame
         auto dirWorldFrame {runner.RotateToWorldFrame(dirBeamFrame, beamDir)};
-
         auto [silIndex0, silPoint0InMM] {specs->FindSPInLayer(firstLayer, vertex, dirWorldFrame)};
-        // auto vertexInGeoFrame {runner.DisplacePointToTGeometryFrame(vertex)};
-        // ROOT::Math::XYZPoint silPoint0 {};
-        // int silType0 {};
-        // int silIndex0 {};
-        // double distance0 {};
-        // bool side0 {};
-        // // Assembly 0
-        // runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, dirWorldFrame, idxAssembly0, side0,
-        // distance0,
-        //                                               silType0, silIndex0, silPoint0);
-        // // convert to mm (Geometry::PropagateTracksToSiliconArray works in cm but we need mm to use in SRIM)
-        // distance0 *= 10.;
 
-        // skip tracks that doesn't reach silicons or are not in SiliconMatrix
+        // skip tracks that doesn't reach silicons or are not in SiliconMatrix indexes
         if(silIndex0 == -1 || !(sm->IsInMatrix(silIndex0)))
             continue;
-        // auto silPoint0InMM {runner.DisplacePointToStandardFrame(silPoint0)};
+
         // Apply SilMatrix cut
         if(!sm->IsInside(silIndex0, (isEl ? silPoint0InMM.X() : silPoint0InMM.Y()), silPoint0InMM.Z()))
             continue;
@@ -366,7 +353,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // Angle with normal
         auto angleNormal0 {AngleWithNormal(dirWorldFrame, {(isEl ? 0. : 1.), (isEl ? 1. : 0.), 0})};
         auto T3AfterSil0 {srim->SlowWithStraggling("lightInSil", T3EnteringSil,
-                                                   geometry->GetAssemblyUnitWidth(idxAssembly0) * 10, angleNormal0)};
+                                                   specs->GetLayer(firstLayer).GetUnit().GetWidth(), angleNormal0)};
         auto eLoss0 {T3EnteringSil - T3AfterSil0};
         // Apply resolution
         if(T3AfterSil0 != 0)
@@ -384,8 +371,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         double T3AfterInterGas {};
         double distance1 {};
         int silIndex1 {};
-        int silType1 {};
-        bool side1 {};
         ROOT::Math::XYZPoint silPoint1 {};
         double eLoss1 {};
         double T3AfterSil1 {};
@@ -394,12 +379,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         {
             // first, propagate in gas
             auto [silIndex1, silPoint1InMM] {specs->FindSPInLayer(secondLayer, vertex, dirWorldFrame)};
-            // runner.GetGeo()->PropagateTrackToSiliconArray(vertexInGeoFrame, dirWorldFrame, 1, side1, distance1,
-            //                                               silType1, silIndex1, silPoint1, false);
             if(silIndex1 == -1)
                 continue;
 
-            // distance1 = (silPoint1 - silPoint0).R() * 10;
             distance1 = (silPoint1InMM - silPoint0InMM).R();
             T3AfterInterGas = srim->SlowWithStraggling("light", T3AfterSil0, distance1);
             ApplyNaN(T3AfterInterGas);
@@ -412,7 +394,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
                 // For e796 angleNormal0 = angleNormal1 but this is not general
                 auto angleNormal1 {angleNormal0};
                 auto T3AfterSil1 {srim->SlowWithStraggling(
-                    "lightInSil", T3AfterInterGas, geometry->GetAssemblyUnitWidth(idxAssembly1) * 10, angleNormal1)};
+                    "lightInSil", T3AfterInterGas, specs->GetLayer(secondLayer).GetUnit().GetWidth(), angleNormal1)};
                 auto eLoss1 {T3AfterInterGas - T3AfterSil1};
                 ApplySilRes(eLoss1, sigmaSil);
                 T3AfterSil1 = T3AfterInterGas - eLoss1;
@@ -441,7 +423,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         bool cutELoss0 {eLoss0Cut.first <= eLoss0 && eLoss0 <= eLoss0Cut.second};
         if(cutEAfterSil0 && cutELoss0) // fill histograms
         {
-            // auto T3Recon {runner.EnergyBeforeGas(EBefSil0, distance0, "light")};
             auto T3Recon {srim->EvalInitialEnergy("light", EBefSil0, distance0)};
             auto EexAfter {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Recon, theta3Lab)};
             auto theta3CM {kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Recon, theta3Lab)};
@@ -537,7 +518,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
 
     // deleting news
-    delete geometry;
     delete srim;
     delete rand;
 
