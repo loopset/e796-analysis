@@ -91,20 +91,26 @@ ProjMap FitToScaleFunc(ProjMap& hs, const PairMap& limits, const TString& func =
     return std::move(ret);
 }
 
+std::pair<double, double> FitToCountour(TH1D* h, double thresh, double width)
+{
+    auto bmin {h->FindFirstBinAbove(thresh)};
+    auto xmin {h->GetBinCenter(bmin)};
+    auto bmax {h->FindLastBinAbove(thresh)};
+    auto xmax {h->GetBinCenter(bmax)};
+    SiliconCountourGetter(h, 1., xmin - width, xmin + width, 1., xmax - width, xmax + width);
+    auto* fleft {h->GetFunction("fleft")};
+    auto* fright {h->GetFunction("fright")};
+    auto low {fleft->GetParameter(1)};
+    auto up {fright->GetParameter(1)};
+    return {low, up};
+}
+
 PairMap FitToCountour(ProjMap& hs, double thresh, double width)
 {
     PairMap ret;
     for(auto& [i, h] : hs)
     {
-        auto bmin {h->FindFirstBinAbove(thresh)};
-        auto xmin {h->GetBinCenter(bmin)};
-        auto bmax {h->FindLastBinAbove(thresh)};
-        auto xmax {h->GetBinCenter(bmax)};
-        SiliconCountourGetter(h, 1., xmin - width, xmin + width, 1., xmax - width, xmax + width);
-        auto* fleft {h->GetFunction("fleft")};
-        auto* fright {h->GetFunction("fright")};
-        auto low {fleft->GetParameter(1)};
-        auto up {fright->GetParameter(1)};
+        auto [low, up] {FitToCountour(h, thresh, width)};
         ret[i] = {low, up};
         std::cout << "Idx : " << i << " left : " << low << ", right : " << up << '\n';
         std::cout << "  width : " << (up - low) << " mm" << '\n';

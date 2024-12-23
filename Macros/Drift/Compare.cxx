@@ -6,6 +6,7 @@
 #include "TH1.h"
 #include "TH2.h"
 #include "TMarker.h"
+#include "TMath.h"
 #include "TMultiGraph.h"
 #include "TObject.h"
 #include "TPaveText.h"
@@ -175,13 +176,18 @@ void Compare()
     {
         g->SetLineWidth(2);
         g->SetMarkerStyle(24);
-        g->Fit("pol1", "0Q");
+        g->Fit("pol1", "0QM");
         auto* fit {g->GetFunction("pol1")};
         fit->ResetBit(TF1::kNotDraw);
         // Find root
         unc::udouble a {fit->GetParameter(0), fit->GetParError(0)};
         unc::udouble b {fit->GetParameter(1), fit->GetParError(1)};
         auto root {-a / b};
+        auto va {fit->GetParameter(0)};
+        auto ua {fit->GetParError(0)};
+        auto vb {fit->GetParameter(1)};
+        auto ub {fit->GetParError(1)};
+        auto unc {TMath::Sqrt(TMath::Power(1. / vb, 2) * ua * ua + TMath::Power(va / vb / vb, 2) * ub * ub)};
         auto* text {new TPaveText {0.55, 0.7, 0.85, 0.85, "NDC"}};
         text->AddText(TString::Format("v_{d} = %.2f", root.n()));
         text->AddText(TString::Format("#pm %.2f mm/#mus", root.s()));
@@ -191,6 +197,7 @@ void Compare()
         // Print to terminal
         std::cout << "-> Reaction : " << key << '\n';
         std::cout << "   Vdrift   : " << root.format(2) << '\n';
+        std::cout << "     Manual unc : " << unc << '\n';
         std::cout << "   DriftF   : " << (root / conv).format(2) << '\n';
     }
 
