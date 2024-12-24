@@ -7,7 +7,6 @@
 #include "TH2D.h"
 #include "TList.h"
 #include "TString.h"
-#include "TSystemDirectory.h"
 
 #include <iostream>
 #include <memory>
@@ -16,7 +15,7 @@
 
 #include "./GetContourFuncs.cxx"
 
-std::pair<double, double> Do(TH1D* p)
+std::pair<double, double> Do(TH1D*& p)
 {
     // Normalize
     double w {5};
@@ -34,6 +33,9 @@ void DistPlot()
 {
     auto f {std::make_unique<TFile>("./Outputs/Dists/histos.root")};
     auto dists {*f->Get<std::vector<double>>("dists")};
+    // auto aux {dists[0]};
+    // dists.clear();
+    // dists.push_back(aux);
     // Process each one
     std::vector<TH2D*> hs2d;
     std::vector<std::map<int, TH1D*>> pxs, pzs;
@@ -81,6 +83,17 @@ void DistPlot()
     {
         c1->cd(i + 1);
         sms[i]->Draw(false);
+    }
+
+    // Plot Projections
+    auto* c2 {new TCanvas {"c2", "Projection canvas"}};
+    c2->DivideSquare(pzs.front().size());
+    int pad {1};
+    for(const auto& [_, h] : pzs.front())
+    {
+        c2->cd(pad);
+        pad++;
+        h->Draw();
     }
 
     // Save

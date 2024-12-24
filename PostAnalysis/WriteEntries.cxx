@@ -4,41 +4,42 @@
 #include "ActCutsManager.h"
 #include "ActDataManager.h"
 #include "ActMergerData.h"
+#include "ActSilData.h"
+#include "ActSilSpecs.h"
+#include "ActTypes.h"
 
 #include "ROOT/RDataFrame.hxx"
 
 #include <fstream>
+#include <memory>
 #include <string>
 
 #include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
 
 void WriteEntries(const std::string& beam, const std::string& target, const std::string& light, bool isSide)
 {
-    ActRoot::DataManager datman {"../configs/data.conf"};
-    auto chain {datman.GetJoinedData()};
+    ActRoot::DataManager datman {"../configs/data.conf", ActRoot::ModeType::EReadSilMod};
+    datman.SetRuns(155, 165);
+    auto chain {datman.GetChain()};
+    auto chain2 {datman.GetChain(ActRoot::ModeType::ECorrect)};
+    chain->AddFriend(chain2.get());
     ROOT::RDataFrame df {*chain};
 
-    // ROOT::RDataFrame d {"Final_Tree", E796Utils::GetFileName(2, beam, target, light, isSide)};
-    //
-    // // Apply any filter function
-    // // auto df {d};
-    // // Read cut
-    // ActRoot::CutsManager<int> cut;
-    // cut.ReadCut(0, "./Cuts/p_d_2.root");
-    // auto df {d.Filter([&](double evertex, float thetalab) { return cut.IsInside(0, thetalab, evertex); },
-    //                   {"EVertex", "fThetaLight"})};
-    // // auto df {d.Filter("fThetaBeam > 1.5")}; // in deg
-    //
+    auto specs {std::make_shared<ActPhysics::SilSpecs>()};
+    specs->ReadFile("../configs/detailedSilicons.conf");
+
     // Write to file
-    std::ofstream streamer {
-        TString::Format("./Entries/entries_%s_%s_%s_befPileUp.dat", beam.c_str(), target.c_str(), light.c_str())};
-    df.Foreach([&](const ActRoot::MergerData& data) { streamer << data.fRun << " " << data.fEntry << '\n'; },
-               {"MergerData"});
+    std::ofstream streamer {"./Entries/sil2_side.dat"};
+    df.Foreach(
+        [&](ActRoot::SilData& sil, ActRoot::MergerData& data)
+        {
+            sil.ApplyFinerThresholds(specs);
+            if(sil.fSiN.count("l0") && sil.fSiN.size() == 1)
+                if(sil.fSiN["l0"].size() == 1 && sil.fSiN["l0"].front() == 2)
+                    streamer << data.fRun << " " << data.fEntry << '\n';
+        },
+        {"SilData", "MergerData"});
     streamer.close();
-    //
-    // // df.Snapshot("dt", "/media/Data/E796v2/PostAnalysis/Cuts/20O_d_t.root",
-    // //             {"Ex", "fThetaLight", "EBeam", "EVertex", "fEntry", "fRun"});
-    //
     std::cout << "Written " << df.Count().GetValue() << " entries to file!" << '\n';
 }
 #endif

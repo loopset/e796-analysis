@@ -137,7 +137,7 @@ TF1* FindBestFit(TH1D* h, double width, double step, TString func = "expo")
 {
     // Find guesses
     auto max {h->GetMaximum()};
-    auto thresh {0.1 * max};
+    auto thresh {0.2 * max};
     auto bmin {h->FindFirstBinAbove(thresh)};
     auto bmax {h->FindLastBinAbove(thresh)};
     double minguess {h->GetBinCenter(bmin)};
@@ -157,7 +157,7 @@ TF1* FindBestFit(TH1D* h, double width, double step, TString func = "expo")
     // Find minimum
     auto min {std::min_element(chis.begin(), chis.end())};
     auto range {ranges[std::distance(chis.begin(), min)]};
-    h->Fit(func, "0M", "", range.first, range.second);
+    h->Fit(func, "0MQ", "", range.first, range.second);
     h->GetFunction(func)->ResetBit(TF1::kNotDraw);
     std::cout << "Initial guess : <" << minguess << ", " << maxguess << ">" << '\n';
     std::cout << "Best range    : <" << range.first << ", " << range.second << ">" << '\n';

@@ -39,7 +39,7 @@ void DistRun()
     // Define distances in mm
     double base {256.};
     std::vector<double> dists;
-    for(double d = 90; d < 115; d += 5)
+    for(double d = 85; d < 115; d += 2)
         dists.push_back(base + d);
 
     int xbins {200};
@@ -63,34 +63,38 @@ void DistRun()
                                     return line.MoveToY(dist);
                                 },
                                 {"MergerData"})};
-        auto hSP {node.Define("x", "NewSP.X()")
-                      .Define("z", "NewSP.Z()")
-                      .Histo2D({"hSP", TString::Format("Side %.2f mm;X [mm];Z [mm]", dist), xbins, xlims.first,
-                                xlims.second, zbins, zlims.first, zlims.second},
-                               "x", "z")};
-
-        // Gate and get projections
+        // Fill histograms!
+        ROOT::TThreadedObject<TH2D> hSP {ROOT::TNumSlots {node.GetNSlots()},
+                                         "hSP",
+                                         TString::Format("Side %.2f mm;X [mm];Z [mm]", dist),
+                                         xbins,
+                                         xlims.first,
+                                         xlims.second,
+                                         zbins,
+                                         zlims.first,
+                                         zlims.second};
         std::map<int, ROOT::TThreadedObject<TH1D>> pxs, pzs;
         std::vector<int> idxs {0, 1, 2, 3, 4, 5, 6, 7};
         for(const auto& idx : idxs)
         {
             pxs.emplace(std::piecewise_construct, std::forward_as_tuple(idx),
-                        std::forward_as_tuple(TString::Format("px%d", idx),
+                        std::forward_as_tuple(ROOT::TNumSlots {node.GetNSlots()}, TString::Format("px%d", idx),
                                               TString::Format("%.2f mm X proj %d;X [mm]", dist, idx), xbins,
                                               xlims.first, xlims.second));
             pzs.emplace(std::piecewise_construct, std::forward_as_tuple(idx),
-                        std::forward_as_tuple(TString::Format("pz%d", idx),
+                        std::forward_as_tuple(ROOT::TNumSlots {node.GetNSlots()}, TString::Format("pz%d", idx),
                                               TString::Format("%.2f mm Z proj %d;Z [mm]", dist, idx), zbins,
                                               zlims.first, zlims.second));
         }
-        node.Foreach(
-            [&](ActRoot::MergerData& data, ROOT::Math::XYZPointF& sp)
+        node.ForeachSlot(
+            [&](unsigned int slot, ActRoot::MergerData& data, ROOT::Math::XYZPointF& sp)
             {
+                hSP.GetAtSlot(slot)->Fill(sp.X(), sp.Z());
                 auto idx {data.fSilNs.front()};
                 if(pxs.count(idx))
                 {
-                    pxs[idx].Get()->Fill(sp.X());
-                    pzs[idx].Get()->Fill(sp.Z());
+                    pxs[idx].GetAtSlot(slot)->Fill(sp.X());
+                    pzs[idx].GetAtSlot(slot)->Fill(sp.Z());
                 }
             },
             {"MergerData", "NewSP"});
@@ -100,10 +104,10 @@ void DistRun()
         auto path {TString::Format("d_%.1f_mm/", dist)};
         auto* dir {f->mkdir(path)};
         dir->cd();
-        hSP->Write();
+        hSP.Merge()->Write();
         for(auto m : {&pxs, &pzs})
             for(auto& [_, h] : *m)
-                h->Write();
+                h.Merge()->Write();
         f->cd();
     }
 }
