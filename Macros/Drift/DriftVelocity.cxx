@@ -9,9 +9,11 @@
 #include "TCanvas.h"
 #include "TGraphErrors.h"
 #include "TH2.h"
+#include "TMath.h"
 #include "TROOT.h"
 #include "TString.h"
 
+#include <iostream>
 #include <string>
 
 #include "../../PostAnalysis/HistConfig.h"
@@ -33,17 +35,17 @@ void DriftVelocity()
     for(const auto& i : {1, 2, 4, 5, 7})
         hs.emplace(i, *hModel);
     // Process
-    df.Foreach(
-        [&](ActRoot::MergerData& d)
+    df.ForeachSlot(
+        [&](unsigned int slot, ActRoot::MergerData& d)
         {
             if(d.fSilLayers.size() == 1)
             {
                 if(d.fSilLayers.front() == "l0")
                 {
-                    hSP.Get()->Fill(d.fSP.X(), d.fSP.Z());
+                    hSP.GetAtSlot(slot)->Fill(d.fSP.X(), d.fSP.Z());
                     auto n {d.fSilNs.front()};
                     if(hs.count(n))
-                        hs[n].Get()->Fill(d.fSP.X(), d.fSP.Z());
+                        hs[n].GetAtSlot(slot)->Fill(d.fSP.X(), d.fSP.Z());
                 }
             }
         },
@@ -89,6 +91,12 @@ void DriftVelocity()
         sm->AddSil(idx, pair, mapz[idx]);
         gh->AddPoint(idx, 50. / sm->GetHeight(idx));
     }
+    // Get mean and median
+    auto mean {TMath::Mean(gh->GetN(), gh->GetY())};
+    auto median {TMath::Median(gh->GetN(), gh->GetY())};
+    std::cout << "-> Drift velocity from raw SPs : " << '\n';
+    std::cout << "   Mean   : " << mean << " btb / mm" << '\n';
+    std::cout << "   Median : " << median << " btb / mm" << '\n';
 
 
     // Plot

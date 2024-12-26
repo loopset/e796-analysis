@@ -54,6 +54,15 @@ void test()
     auto [ge, gr] {Init("./Calibrations/SRIMData/transformed/1H_silicon.dat")};
 
     srim.Draw();
+    // ola que tal estamos
+    // ola aslladk double double double ol what is this ola
+    // ola
+    /*
+ola que tal disabked here
+    */
+
+    std::string a = "abc"
+                    "cde";
 
     // Set thickness of must2 dssd
     double thick {300 * 1.e-3}; // mm
@@ -72,7 +81,7 @@ void test()
             // auto eres {srim.Slow(name, e, thick)};
             auto eres {Slow(e, thick, ge, gr)};
             auto deltae {e - eres};
-            std::cout<<"Delta E : "<<deltae<<'\n';
+            std::cout << "Delta E : " << deltae << '\n';
             if(eres <= 0)
                 continue;
             g->SetPoint(g->GetN(), eres, deltae);
