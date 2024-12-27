@@ -137,7 +137,7 @@ TF1* FindBestFit(TH1D* h, double width, double step, TString func = "expo")
 {
     // Find guesses
     auto max {h->GetMaximum()};
-    auto thresh {0.2 * max};
+    auto thresh {0.1 * max};
     auto bmin {h->FindFirstBinAbove(thresh)};
     auto bmax {h->FindLastBinAbove(thresh)};
     double minguess {h->GetBinCenter(bmin)};

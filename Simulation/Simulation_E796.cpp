@@ -1,6 +1,5 @@
 #include "ActColors.h"
 #include "ActCutsManager.h"
-#include "ActGeometry.h"
 #include "ActKinematicGenerator.h"
 #include "ActKinematics.h"
 #include "ActParticle.h"
@@ -353,7 +352,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // Angle with normal
         auto angleNormal0 {AngleWithNormal(dirWorldFrame, {(isEl ? 0. : 1.), (isEl ? 1. : 0.), 0})};
         auto T3AfterSil0 {srim->SlowWithStraggling("lightInSil", T3EnteringSil,
-                                                   specs->GetLayer(firstLayer).GetUnit().GetWidth(), angleNormal0)};
+                                                   specs->GetLayer(firstLayer).GetUnit().GetThickness(), angleNormal0)};
         auto eLoss0 {T3EnteringSil - T3AfterSil0};
         // Apply resolution
         if(T3AfterSil0 != 0)
@@ -394,7 +393,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
                 // For e796 angleNormal0 = angleNormal1 but this is not general
                 auto angleNormal1 {angleNormal0};
                 auto T3AfterSil1 {srim->SlowWithStraggling(
-                    "lightInSil", T3AfterInterGas, specs->GetLayer(secondLayer).GetUnit().GetWidth(), angleNormal1)};
+                    "lightInSil", T3AfterInterGas, specs->GetLayer(secondLayer).GetUnit().GetThickness(), angleNormal1)};
                 auto eLoss1 {T3AfterInterGas - T3AfterSil1};
                 ApplySilRes(eLoss1, sigmaSil);
                 T3AfterSil1 = T3AfterInterGas - eLoss1;

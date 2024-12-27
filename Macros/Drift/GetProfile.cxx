@@ -23,8 +23,9 @@ void GetProfile(double driftfactor)
     auto hEx {df.Histo1D(HistConfig::Ex, "Ex")};
     auto hExZ {df.Histo2D(HistConfig::ExZ, "fSP.fCoordinates.fZ", "Ex")};
     // Fit g.s
+    auto guess {hEx->GetBinCenter(hEx->GetMaximumBin())};
     double gswidth {3};
-    hEx->Fit("gaus", "0Q+", "", -gswidth / 2, +gswidth / 2);
+    hEx->Fit("gaus", "0Q+", "", guess - gswidth / 2, guess + gswidth / 2);
     auto* gaus {hEx->GetFunction("gaus")};
     gaus->ResetBit(TF1::kNotDraw);
     // Profile

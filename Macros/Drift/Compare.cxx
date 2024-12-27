@@ -56,7 +56,7 @@ void Compare()
         drifts.push_back(d);
         std::cout << "vdrift : " << d * conv << '\n';
     }
-    drifts.push_back(2.344); // to leave everything where we started
+    drifts.push_back(2.384); // to leave everything where we started
     // Sort values
     std::sort(drifts.begin(), drifts.end());
     std::map<std::string, std::string> names {{"pd", "1H_2H"}, {"dt", "2H_3H"}};
@@ -76,7 +76,7 @@ void Compare()
             auto fullname {"./Outputs/hs_20O_" + name + "_" + gSelector->GetFlag().c_str() + "_drift_" +
                            TString::Format("%.3f", drift).Data() + ".root"};
             auto file {std::make_unique<TFile>(fullname.c_str())};
-            auto* h2d {file->Get<TH2D>("hExRPZ")};
+            auto* h2d {file->Get<TH2D>("hExZ")};
             auto* hp {file->Get<TProfile>("hProfX")};
             auto* hex {file->Get<TH1D>("hEx")};
             auto* func {hp->GetFunction("pol2")};
@@ -240,19 +240,19 @@ void Compare()
             pad++;
         }
     }
-    // auto* c3 {new TCanvas {"c3", "Ex canvas"}};
-    // pad = 1;
-    // c3->DivideSquare(hsex["pd"].size() + hsex["dt"].size());
-    // for(const auto& [key, vec] : hsex)
-    // {
-    //     for(const auto& h : vec)
-    //     {
-    //         c3->cd(pad);
-    //         if(h)
-    //             h->Draw();
-    //         pad++;
-    //     }
-    // }
+    auto* c3 {new TCanvas {"c3", "Ex canvas"}};
+    pad = 1;
+    c3->DivideSquare(hsex["pd"].size() + hsex["dt"].size());
+    for(const auto& [key, vec] : hsex)
+    {
+        for(const auto& h : vec)
+        {
+            c3->cd(pad);
+            if(h)
+                h->Draw();
+            pad++;
+        }
+    }
     auto* c4 {new TCanvas {"c4", "Coefficient canvas"}};
     c4->DivideSquare(2);
     c4->cd(1);
