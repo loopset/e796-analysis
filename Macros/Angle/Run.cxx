@@ -183,7 +183,7 @@ void Run()
 
     // Save on file
     auto file {
-        std::make_unique<TFile>(TString::Format("./Outputs/angle_corr_%s_v0.root", isEl ? "side" : "front"), "recreate")};
+        std::make_unique<TFile>(TString::Format("./Outputs/angle_corr_%s_v1.root", isEl ? "side" : "front"), "recreate")};
     func1->Write("func1");
     func2->Write("func2");
 }

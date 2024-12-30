@@ -58,7 +58,7 @@ void CheckEl()
             e = k;
     }
     // Read correction functions
-    auto file {std::make_unique<TFile>("./Outputs/angle_corr_side_v0.root")};
+    auto file {std::make_unique<TFile>("./Outputs/angle_corr_side_v1.root")};
     auto* func1 {file->Get<TF1>("func1")};
     auto* func2 {file->Get<TF1>("func2")};
     file->Close();

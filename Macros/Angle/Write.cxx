@@ -18,7 +18,7 @@ void Write()
 {
     // Adapts corrections for ActRoot
     std::vector<std::string> names {"f0", "l0"};
-    std::vector<std::string> in {"./Outputs/angle_corr_front_v0.root", "./Outputs/angle_corr_side_v0.root"};
+    std::vector<std::string> in {"./Outputs/angle_corr_front_v1.root", "./Outputs/angle_corr_side_v1.root"};
     std::vector<std::string> out {"./Outputs/angle_front.root", "./Outputs/angle_side.root"};
 
     for(int i = 0; i < names.size(); i++)

@@ -57,7 +57,7 @@ void Check()
             e = k;
     }
     // Read correction functions
-    auto file {std::make_unique<TFile>("./Outputs/angle_corr_front_v0.root")};
+    auto file {std::make_unique<TFile>("./Outputs/angle_corr_front_v1.root")};
     auto* func1 {file->Get<TF1>("func1")};
     auto* func2 {file->Get<TF1>("func2")};
     file->Close();
@@ -99,7 +99,8 @@ void Check()
                             [&, i](unsigned int slot, double EBeam, double EVertex, double thetaOK)
                             {
                                 vks[i][slot].SetBeamEnergy(EBeam);
-                                return vks[i][slot].ReconstructTheta3CMFromLab(EVertex, thetaOK * TMath::DegToRad()) * TMath::RadToDeg();
+                                return vks[i][slot].ReconstructTheta3CMFromLab(EVertex, thetaOK * TMath::DegToRad()) *
+                                       TMath::RadToDeg();
                             },
                             {"EBeam", "EVertex", "ThetaLightOK"});
 
@@ -142,8 +143,10 @@ void Check()
         gsj.push_back(new TGraphErrors);
         gsj[idx]->SetTitle(labels[idx].c_str());
         p = 0;
+        double offset {-0.75};
         for(auto ex : {0., 3.15})
         {
+            ex += offset;
             auto name {TString::Format("fitJ%d", p)};
             auto* func {new TF1 {name, "gaus", ex - w / 2, ex + w / 2}};
             func->SetLineColor(colors[idx]);
@@ -156,7 +159,7 @@ void Check()
 
         sExLeg->Add((TH1D*)hExLeg->Clone(), "hist");
         sExJuan->Add((TH1D*)hExJuan->Clone(), "hist");
-        
+
         // Ex vs RPx
         auto hExRPx {node.Histo2D(HistConfig::ExThetaCM, "ThetaCMOK", "ExOK")};
         hExRPx->SetTitle(labels[idx].c_str());
