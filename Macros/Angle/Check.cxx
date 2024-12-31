@@ -57,7 +57,7 @@ void Check()
             e = k;
     }
     // Read correction functions
-    auto file {std::make_unique<TFile>("./Outputs/angle_corr_front_v1.root")};
+    auto file {std::make_unique<TFile>("./Outputs/angle_corr_front_v2.root")};
     auto* func1 {file->Get<TF1>("func1")};
     auto* func2 {file->Get<TF1>("func2")};
     file->Close();
@@ -143,7 +143,7 @@ void Check()
         gsj.push_back(new TGraphErrors);
         gsj[idx]->SetTitle(labels[idx].c_str());
         p = 0;
-        double offset {-0.75};
+        double offset {0};
         for(auto ex : {0., 3.15})
         {
             ex += offset;

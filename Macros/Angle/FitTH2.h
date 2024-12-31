@@ -44,7 +44,7 @@ inline double FitTH2::operator()(const double* p)
             for(int i = 0; i < fNPar; i++)
                 fx += p[i] * TMath::Power(x, i);
             auto num {TMath::Power(y - fx, 2)};
-            auto denom {TMath::Power(1. / c, 2)};
+            auto denom {TMath::Power(1. / TMath::Power(c, 1), 2)};
             // INFO: weighting by the bin contents
             // rather that sqrt(counts) seems to improve the fit
             // and make it more robust against outliers

@@ -20,7 +20,7 @@
 void DebugSide()
 {
     ActRoot::DataManager datman {"../../configs/data.conf", ActRoot::ModeType::EReadSilMod};
-    datman.SetRuns(155, 275);
+    datman.SetRuns(155, 175);
     auto chain {datman.GetChain()};
     auto chain2 {datman.GetChain(ActRoot::ModeType::EMerge)};
     auto chain3 {datman.GetChain(ActRoot::ModeType::EFilter)};
@@ -42,6 +42,7 @@ void DebugSide()
     // Success of reconstruction
     ROOT::TThreadedObject<TH1D> hCount {"hCount", "Mult == 1;Pad;Counts", 10, 0, 10};
     ROOT::TThreadedObject<TH1D> hOk {"hOk", "Mult == 1 ok rec;Pad;Counts", 10, 0, 10};
+    ROOT::TThreadedObject<TH1D> hMatch {"hMatch", "Match not ok;Pad;Counts", 10, 0, 10};
 
     df.ForeachSlot(
         [&](unsigned int slot, ActRoot::SilData& sil, ActRoot::MergerData& m, ActRoot::ModularData& mod,
@@ -74,6 +75,8 @@ void DebugSide()
                         hCount.GetAtSlot(slot)->Fill(n);
                         if(m.fLightIdx != -1)
                             hOk.GetAtSlot(slot)->Fill(n);
+                        if(m.fFlag == "SP not matched")
+                            hMatch.GetAtSlot(slot)->Fill(n);
                     }
                 }
             }
@@ -99,5 +102,6 @@ void DebugSide()
     c0->cd(5);
     hEff->DrawClone();
     c0->cd(6);
-    specs->GetLayer("l0").GetSilMatrix()->DrawClone(false);
+    hMatch.Merge()->DrawClone();
+    // specs->GetLayer("l0").GetSilMatrix()->DrawClone(false);
 }
