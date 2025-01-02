@@ -20,7 +20,7 @@
 void DebugSide()
 {
     ActRoot::DataManager datman {"../../configs/data.conf", ActRoot::ModeType::EReadSilMod};
-    datman.SetRuns(155, 175);
+    datman.SetRuns(155, 225);
     auto chain {datman.GetChain()};
     auto chain2 {datman.GetChain(ActRoot::ModeType::EMerge)};
     auto chain3 {datman.GetChain(ActRoot::ModeType::EFilter)};

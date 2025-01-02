@@ -19,7 +19,7 @@ void Plot()
     ROOT::RDataFrame df {"Emittance_Tree", "./Outputs/emittance.root"};
     // Compute angles
     auto def {df.Define("thetaXY",
-                        [](ActPhysics::Line& l)
+                        [](ActRoot::Line& l)
                         {
                             ROOT::Math::XYZVector p {l.GetDirection().X(), l.GetDirection().Y(), 0};
                             auto dot {p.Dot(ROOT::Math::XYZVector {1, 0, 0}) / p.R()};
@@ -27,7 +27,7 @@ void Plot()
                         },
                         {"Line"})
                   .Define("thetaXZ",
-                          [](ActPhysics::Line& l)
+                          [](ActRoot::Line& l)
                           {
                               ROOT::Math::XYZVector p {l.GetDirection().X(), 0, l.GetDirection().Z()};
                               auto dot {p.Dot(ROOT::Math::XYZVector {1, 0, 0}) / p.R()};
@@ -51,7 +51,7 @@ void Plot()
     ROOT::TThreadedObject<TH2D> hxz {"hxz", "XZ trajectories;X [mm];Z [mm]", nbinsxy, 0, maxxy, nbinsz, 0, maxz};
     ROOT::TThreadedObject<TH2D> hyz {"hyz", "YZ trajectories;Y [mm];Z [mm]", nbinsxy, 0, maxxy, nbinsz, 0, maxz};
     def.Foreach(
-        [&](ActPhysics::Line& line)
+        [&](ActRoot::Line& line)
         {
             for(int b = 1; b <= nbinsxy; b++)
             {
@@ -65,11 +65,11 @@ void Plot()
 
     // Print statistics
     std::cout << "-> Beginning : " << '\n';
-    std::cout << "   sigmaY : " << hBegin->GetStdDev(1) * 2.35 << '\n';
-    std::cout << "   sigmaZ : " << hBegin->GetStdDev(2) * 2.35 << '\n';
+    std::cout << "   FWHM Y : " << hBegin->GetStdDev(1) * 2.35 << '\n';
+    std::cout << "   FWHM Z : " << hBegin->GetStdDev(2) * 2.35 << '\n';
     std::cout << "-> End       : " << '\n';
-    std::cout << "   sigmaY : " << hEnd->GetStdDev(1) * 2.35 << '\n';
-    std::cout << "   sigmaZ : " << hEnd->GetStdDev(2) * 2.35 << '\n';
+    std::cout << "   FWHM Y : " << hEnd->GetStdDev(1) * 2.35 << '\n';
+    std::cout << "   FWHM Z : " << hEnd->GetStdDev(2) * 2.35 << '\n';
 
 
     // Plot

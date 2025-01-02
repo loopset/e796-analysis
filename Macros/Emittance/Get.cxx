@@ -37,7 +37,7 @@ void Get()
     float driftFactor {static_cast<float>(merger->GetDouble("DriftFactor"))};
     std::cout << "-> DriftFactor : " << driftFactor << '\n';
 
-    // Filter by only one BL cluster in event
+    // Filter by GATCONF and only one BL in cluster vector
     auto def {df.Filter([](ActRoot::ModularData& m) { return m.Get("GATCONF") == 1; }, {"ModularData"})
                   .Filter("fClusters.fIsBeamLike.size() == 1")
                   .Filter("fClusters.fIsBeamLike.front() == true")
@@ -53,14 +53,14 @@ void Get()
                           [&](ActRoot::TPCData& data)
                           {
                               auto& voxels {data.fClusters.front().GetVoxels()};
-                              ActPhysics::Line line;
+                              ActRoot::Line line;
                               line.FitVoxels(voxels, true, true, true);
                               line.Scale(padSide, driftFactor);
                               return line;
                           },
                           {"TPCData"})
-                  .Define("AtBegin", [](const ActPhysics::Line& l) { return l.MoveToX(0); }, {"Line"})
-                  .Define("AtEnd", [](const ActPhysics::Line& l) { return l.MoveToX(256); }, {"Line"})};
+                  .Define("AtBegin", [](const ActRoot::Line& l) { return l.MoveToX(0); }, {"Line"})
+                  .Define("AtEnd", [](const ActRoot::Line& l) { return l.MoveToX(256); }, {"Line"})};
     auto count {def.Count()};
     ROOT::RDF::Experimental::AddProgressBar(def);
     def.Snapshot("Emittance_Tree", "./Outputs/emittance.root", {"AtBegin", "AtEnd", "Line", "fRun", "fEntry"});
