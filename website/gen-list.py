@@ -1,10 +1,8 @@
 import os
 import json
 
-# Define the root directory where you have your subfolders with images
-root_dir = "../Fits"  # Adjust to your specific root folder
+root_dir = "../Fits"
 
-# Define the subfolders and their corresponding labels manually (as an example)
 subfolders = [
     {"folder": "dd", "label": "20O(d,d)"},
     {"folder": "pp", "label": "20O(p,p)"},
@@ -21,11 +19,13 @@ for subfolder in subfolders:
     # Check if the subfolder exists
     if os.path.exists(folder_path):
         # Find all .png files in the folder
-        images = [
-            f"/Fits/{subfolder['folder']}/Outputs/{f}"
-            for f in os.listdir(folder_path)
-            if f.endswith(".png")
-        ]
+        files = [f for f in os.listdir(folder_path) if f.endswith(".png")]
+        # Sort from oldest to newest
+        files = sorted(
+            files, key=lambda f: os.path.getmtime(os.path.join(folder_path, f))
+        )
+        # Append directory data, relative to github's root dir
+        images = [f"/Fits/{subfolder['folder']}/Outputs/{f}" for f in files]
 
         if images:
             image_groups[label] = images
