@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>e796-analysis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            margin: 20px;
+        }
+        .folder {
+            margin-bottom: 50px; /* Add more space between folders */
+        }
+        .folder h2 {
+            margin: 20px 0;
+            text-transform: none;
+            font-size: 36px; /* Large font size for section headers */
+            color: #333;
+            background-color: #e0e0e0; /* Slight background color */
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px; /* Larger gap between images */
+        }
+        .gallery img {
+            max-width: 400px; /* Larger max-width for images */
+            height: auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out;
+        }
+        .gallery img:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>E796 preliminary cross-sections</h1>
+    <div id="content"></div>
+
+    <script>
+        // Fetch the JSON data dynamically
+        fetch('./list.json')  // Adjust path to JSON file
+            .then(response => response.json())  // Parse JSON from the response
+            .then(imageGroups => {
+                // Get reference to the content div
+                const contentDiv = document.getElementById("content");
+
+                // Loop through each group and create sections
+                for (const [folderName, images] of Object.entries(imageGroups)) {
+                    const folderDiv = document.createElement("div");
+                    folderDiv.className = "folder";
+
+                    // Add a folder title as a header for the section
+                    const folderTitle = document.createElement("h2");
+                    folderTitle.textContent = folderName; // Display group name (e.g., "20O(d,d)")
+                    folderDiv.appendChild(folderTitle);
+
+                    // Create a gallery for this folder
+                    const galleryDiv = document.createElement("div");
+                    galleryDiv.className = "gallery";
+
+                    // Add images to the gallery
+                    images.forEach(imagePath => {
+                        const img = document.createElement("img");
+                        img.src = imagePath;
+                        img.alt = folderName;
+                        // Create a link around the image
+                        const imgLink = document.createElement("a");
+                        imgLink.href = imagePath;  // Open full image in new tab
+                        imgLink.target = "_blank"; // Ensures it opens in a new tab
+                        imgLink.appendChild(img);
+                        galleryDiv.appendChild(imgLink);
+                    });
+
+                    // Append gallery to folder
+                    folderDiv.appendChild(galleryDiv);
+
+                    // Append folder to the content div
+                    contentDiv.appendChild(folderDiv);
+                }
+            })
+            .catch(error => console.error('Error loading the JSON data:', error));
+    </script>
+</body>
+</html>

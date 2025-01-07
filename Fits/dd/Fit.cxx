@@ -1,4 +1,3 @@
-#include "ROOT/RDF/InterfaceUtils.hxx"
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
@@ -22,25 +21,23 @@ void Fit()
 {
     ROOT::EnableImplicitMT();
 
+    // Analysis
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "2H")};
+    // Ex
+    auto hEx {df.Histo1D(E796Fit::Exdd, "Ex")};
+    // Phase space 19O
+    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, 1, 0)};
+    auto hPS {phase.Histo1D(E796Fit::Exdd, "Eex", "weight")};
+    Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr(), 2);
 
-    // Nodes at which compute global fit
-    std::vector<ROOT::RDF::RNode> nodes {df};
-    std::vector<std::string> labels {gSelector->GetFlag()};
-    std::vector<TH1D*> hExs;
-    for(int i = 0; i < nodes.size(); i++)
-    {
-        auto h {nodes[i].Histo1D(E796Fit::Exdd, "Ex")};
-        hExs.push_back((TH1D*)h->Clone());
-    }
     // Fitting range
     double exmin {-5};
-    double exmax {10};
+    double exmax {25};
 
     // Model
-    int ngauss {4};
+    int ngauss {6};
     int nvoigt {0};
-    Fitters::Model model {ngauss, nvoigt, {}};
+    Fitters::Model model {ngauss, nvoigt, {*hPS}};
 
     // Sigmas
     Interpolators::Sigmas sigmas;
@@ -48,11 +45,13 @@ void Fit()
 
     // Set init parameters
     double sigma {0.3};
-    Fitters::Runner::Init initPars {
-        {"g0", {400, 0, sigma}}, {"g1", {100, 1.5, sigma}}, {"g2", {50, 4, sigma}}, {"g3", {50, 5.5, sigma}}
-        // {"g2", {110, 3.2, sigma}}, {"g3", {60, 4.5, sigma}},
-        // {"g4", {60, 6.7, sigma}}, {"g5", {65, 7.9, sigma}}, {"g6", {20, 8.9, sigma}},
-    };
+    Fitters::Runner::Init initPars {{"g0", {400, 0, sigma}},
+                                    {"g1", {100, 1.5, sigma}},
+                                    {"g2", {50, 4, sigma}},
+                                    {"g3", {50, 5.5, sigma}},
+                                    {"g4", {50, 7.7, sigma}},
+                                    {"g5", {50, 8.5, sigma}},
+                                    {"ps0", {1.5}}};
     // Reread in case file exists
     auto outfile {TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().data())};
     if(!gSystem->AccessPathName(outfile))
@@ -92,13 +91,14 @@ void Fit()
             }
             else if(par == 1) // Mean
             {
+                std::cout<<"Par : "<<key<<" mean : "<<init[par]<<'\n';
                 pair = {init[par] - minmean, init[par] + maxmean};
                 boo = false;
             }
             else if(par == 2) // Sigma
             {
-                pair = {-11, -11};
-                boo = false; // fix it
+                pair = {0, 0.5};
+                boo = true; // fix it
             }
             else
                 throw std::runtime_error("No automatic config for this parameter index (only gaussians so far)!");
@@ -109,9 +109,7 @@ void Fit()
     }
 
     // Run for all the nodes
-    for(int i = 0; i < hExs.size(); i++)
-    {
-        Fitters::RunFit(hExs[i], exmin, exmax, model, initPars, initBounds, fixedPars,
-                        ("./Outputs/fit_" + labels[i] + ".root"), labels[i], {{"g0", "g.s"}, {"g1", "1st ex"}});
-    }
+    Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, initPars, initBounds, fixedPars,
+                    ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,d) fit",
+                    {{"g0", "g.s"}, {"g1", "1st ex"}});
 }

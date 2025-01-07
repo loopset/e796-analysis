@@ -26,7 +26,7 @@ void Runner(TString what = "plot", bool standalone = true)
     gSelector->Print();
     // Phase space reactions: when the heavy decays by proton or neutron emission
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
-    int neutronPS {0}; // number of neutrons in final state
+    int neutronPS {1}; // number of neutrons in final state
     int protonPS {0};  // number of protons in final state
     double T1 {35};    // Beam energy: 35 MeV / u
 

@@ -27,14 +27,20 @@ void Ang()
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
     auto hEx {df.Histo1D(E796Fit::Exdd, "Ex")};
+    // Phase space 19O
+    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, 1, 0)};
+    auto hPS {phase.Histo1D(E796Fit::Exdd, "Eex", "weight")};
 
     // Init intervals
     double thetaCMMin {15};
     double thetaCMMax {22};
     double thetaCMStep {1};
-    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdd, thetaCMStep};
+    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdd, thetaCMStep, 1};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
+    phase.Foreach([&](double thetacm, double ex, double w) { ivs.FillPS(0, thetacm, ex, w); },
+                  {"theta3CM", "Eex", "weight"});
+    ivs.TreatPS(2);
 
     // Init fitter
     Angular::Fitter fitter {&ivs};
