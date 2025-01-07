@@ -22,7 +22,7 @@ for subfolder in subfolders:
     if os.path.exists(folder_path):
         # Find all .png files in the folder
         images = [
-            f"./Fits/{subfolder['folder']}/Outputs/{f}"
+            f"/Fits/{subfolder['folder']}/Outputs/{f}"
             for f in os.listdir(folder_path)
             if f.endswith(".png")
         ]
