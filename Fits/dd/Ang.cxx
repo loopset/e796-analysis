@@ -75,25 +75,25 @@ void Ang()
     comp.Add("Haixia", "./Inputs/g0_Haixia/fort.201");
     // comp.Add("Fit", "./Inputs/s0/fort.201");
     comp.Fit();
-    comp.Draw("", true);
+    comp.Draw("", true)->SaveAs("./Outputs/dd_0.png");
 
     // For g1
     Angular::Comparator comp1 {"g1 = 2^{+} @ 1.67 MeV", xs.Get("g1")};
     comp1.Add("B(E2) = 28.1 E. Khan", "./Inputs/g1_Haixia/fort.202");
     comp1.Fit();
-    comp1.Draw();
+    comp1.Draw()->SaveAs("./Outputs/dd_1.png");
 
     // For g2
     Angular::Comparator comp2 {"g2 = 2^{+} @ 4 MeV", xs.Get("g2")};
     comp2.Add("B(E2) = 28.1 E.Khan", "./Inputs/g2_Haixia/fort.202");
     comp2.Fit();
-    comp2.Draw();
-    
+    comp2.Draw()->SaveAs("./Outputs/dd_2.png");
+
     // For g3
     Angular::Comparator comp3 {"g3 = 3^{-} @ 5.6 MeV", xs.Get("g2")};
     comp3.Add("B(E3) = 882 E. Khan", "./Inputs/g3_Haixia/fort.202");
     comp3.Fit();
-    comp3.Draw();
+    comp3.Draw()->SaveAs("./Outputs/dd_3.png");
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Photo Collection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        h1 {
+            margin: 20px;
+        }
+        .folder {
+            margin-bottom: 30px;
+        }
+        .folder h2 {
+            margin: 10px 0;
+            text-transform: capitalize;
+        }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .gallery img {
+            max-width: 200px;
+            height: auto;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>My Photo Collection</h1>
+    <div id="content"></div>
+
+    <script>
+        // Image paths for the vacation group
+        const imageGroups = {
+            xs: [
+                "./Fits/dd/Outputs/dd_0.png",
+                "./Fits/dd/Outputs/dd_1.png",
+                "./Fits/dd/Outputs/dd_2.png",
+                "./Fits/dd/Outputs/dd_3.png",
+            ]
+        };
+
+        // Placeholder for another group to be added later
+        // const imageGroups = {
+        //     vacation: [
+        //         "images/vacation/beach.jpg",
+        //         "images/vacation/mountains.jpg"
+        //     ],
+        //     nature: [
+        //         "images/nature/forest.jpg",
+        //         "images/nature/sunset.jpg"
+        //     ]
+        // };
+
+        // Get reference to the content div
+        const contentDiv = document.getElementById("content");
+
+        // Loop through each group and create sections
+        for (const [folderName, images] of Object.entries(imageGroups)) {
+            const folderDiv = document.createElement("div");
+            folderDiv.className = "folder";
+
+            // Add a folder title
+            const folderTitle = document.createElement("h2");
+            folderTitle.textContent = folderName;
+            folderDiv.appendChild(folderTitle);
+
+            // Create a gallery for this folder
+            const galleryDiv = document.createElement("div");
+            galleryDiv.className = "gallery";
+
+            // Add images to the gallery
+            images.forEach(imagePath => {
+                const img = document.createElement("img");
+                img.src = imagePath;
+                img.alt = folderName;
+                galleryDiv.appendChild(img);
+            });
+
+            // Append gallery to folder
+            folderDiv.appendChild(galleryDiv);
+
+            // Append folder to the content div
+            contentDiv.appendChild(folderDiv);
+        }
+    </script>
+</body>
+</html>

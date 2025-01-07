@@ -4,13 +4,11 @@
 #include "ActModularData.h"
 #include "ActTPCData.h"
 #include "ActTypes.h"
-#include "ActVoxel.h"
 
 #include "ROOT/RDF/InterfaceUtils.hxx"
 #include "ROOT/RDFHelpers.hxx"
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RVec.hxx"
-#include "Rtypes.h"
 
 #include <iostream>
 #include <vector>

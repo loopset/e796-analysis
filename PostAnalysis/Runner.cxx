@@ -1,5 +1,6 @@
 #include "ActColors.h"
 
+#include "TInterpreter.h"
 #include "TROOT.h"
 #include "TString.h"
 
@@ -8,6 +9,14 @@
 
 #include "../Selector/Selector.h"
 
+bool IsAlreadyLoaded(const TString& f)
+{
+    // Get factory
+    auto ci {gInterpreter->ClassInfo_Factory()};
+    bool isFound {gInterpreter->ClassInfo_HasMethod(ci, f)};
+    gInterpreter->ClassInfo_Delete(ci);
+    return isFound;
+}
 void Print(const std::string& beam, const std::string& target, const std::string& light, bool isSide,
            const std::string& what = "")
 {
@@ -41,37 +50,43 @@ void Runner(TString what = "plot")
     if(what.Contains("0"))
     {
         func = "Pipe0_Beam";
-        gROOT->LoadMacro(path + func + ext);
+        if(!IsAlreadyLoaded(func))
+            gROOT->LoadMacro(path + func + ext);
         gROOT->ProcessLine(func + "()");
     }
     if(what.Contains("1"))
     {
         func = "Pipe1_PID";
-        gROOT->LoadMacro(path + func + ext);
+        if(!IsAlreadyLoaded(func))
+            gROOT->LoadMacro(path + func + ext);
         gROOT->ProcessLine(func + args);
     }
     if(what.Contains("2"))
     {
         func = "Pipe2_Ex";
-        gROOT->LoadMacro(path + func + ext);
+        if(!IsAlreadyLoaded(func))
+            gROOT->LoadMacro(path + func + ext);
         gROOT->ProcessLine(func + args);
     }
     if(what.Contains("3"))
     {
         func = "Pipe3_Selector";
-        gROOT->LoadMacro(path + func + ext);
+        if(!IsAlreadyLoaded(func))
+            gROOT->LoadMacro(path + func + ext);
         gROOT->ProcessLine(func + args);
     }
     if(what.Contains("plot"))
     {
         func = "Plotter";
-        gROOT->LoadMacro("./" + func + ext);
+        if(!IsAlreadyLoaded(func))
+            gROOT->LoadMacro("./" + func + ext);
         gROOT->ProcessLine(func + args);
     }
     if(what.Contains("write"))
     {
         func = "WriteEntries";
-        gROOT->LoadMacro("./" + func + ext);
+        if(!IsAlreadyLoaded(func))
+            gROOT->LoadMacro("./" + func + ext);
         gROOT->ProcessLine(func + args);
     }
 }

@@ -40,6 +40,11 @@
 #include "/media/Data/E796v2/PostAnalysis/Utils.cxx"
 #include "/media/Data/E796v2/Selector/Selector.h"
 
+using XYZPoint = ROOT::Math::XYZPoint;
+using XYZPointF = ROOT::Math::XYZPointF;
+using XYZVector = ROOT::Math::XYZVector;
+using XYZVectorF = ROOT::Math::XYZVectorF;
+
 void ApplyNaN(double& val, double thresh = 0, const std::string& comment = "stopped")
 {
     if(val <= thresh)
@@ -62,6 +67,31 @@ double SampleXFromRPXProj(TH1D* px)
     return px->GetRandom();
 }
 
+std::pair<XYZPoint, XYZPoint> SampleVertex(double meanZ, double sigmaZ, TH3D* h, double lengthX)
+{
+
+    // X is always common for both manners
+    double Xstart {0};
+    double Xrp {gRandom->Uniform() * lengthX};
+    // Y depends completely on the method of calculation
+    double Ystart {-1};
+    double Yrp {-1};
+    // Z of beam at entrance
+    double Zstart {gRandom->Gaus(meanZ, sigmaZ)};
+    double Zrp {-1};
+    // Ystart in this case is sampled from the histogram itself!
+    double thetaXY {};
+    double thetaXZ {};
+    h->GetRandom3(Ystart, thetaXY, thetaXZ);
+    // Mind that Y is not centred in the histogram value!
+    // Rp values are computed as follows:
+    Yrp = Ystart - Xrp * TMath::Tan(thetaXY * TMath::DegToRad());
+    Zrp = Zstart - Xrp * TMath::Tan(thetaXZ * TMath::DegToRad());
+    XYZPoint start {Xstart, Ystart, Zstart};
+    XYZPoint vertex {Xrp, Yrp, Zrp};
+    return {std::move(start), std::move(vertex)};
+}
+
 void ApplySilRes(double& e, double sigma)
 {
     e = gRandom->Gaus(e, sigma * TMath::Sqrt(e / 5.5));
@@ -82,31 +112,27 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // Set whether is elastic or not
     const bool isEl {target == light};
-    // Set assembly indexes as in the BuilGeometry file
-    const int idxAssembly0 {(isEl) ? 2 : 0};
-    const int idxAssembly1 {(isEl) ? -1 : 1};
 
-    // SIGMAS
+    // Resolutions
     const double sigmaSil {0.060 / 2.355};
     const double sigmaPercentBeam {0.008};
     const double sigmaAngleLight {0.95 / 2.355};
     // Parameters of beam in mm
     // Center in Z
-    const double zVertexSigma {3.8};
+    // Mean is defined from silicon matrices
+    const double zVertexSigma {3.73};
     // Center in Y
     const double yVertexMean {126.5}; // according to juan's emittance
     const double yVertexSigma {2.1};
-    // const double zVertexMean {83.59};
-    // const double zVertexSigma {3.79};
 
-    // THRESHOLDS FOR SILICONS
+    // Silicon thresholds
     const double thresholdSi0 {1.};
     const double thresholdSi1 {1.};
 
     // number of iterations
     const int iterations {static_cast<int>((isEl) ? 5e7 : 3e7)};
 
-    // ACTIVATE STRAGGLING OR NOT
+    // Which parameters will be activated
     bool stragglingInGas {true};
     bool stragglingInSil {true};
     bool silResolution {true};
@@ -137,7 +163,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     specs->ReadFile("../configs/detailedSilicons.conf");
     // Silicon EFFECTIVE matrix
     auto* sm {E796Utils::GetEffSilMatrix(target, light)};
-    // Set reference position and offset!
+    // Set reference position and offset along Z!
     double silCentre {};
     double beamOffset {}; // determined from emittance calculations
     // Set layers
@@ -145,10 +171,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     std::string secondLayer {};
     if(isEl)
     {
+        specs->GetLayer("l0").ReplaceWithMatrix(sm);
         silCentre = specs->GetLayer("l0").MeanZ({3, 4, 5});
-        beamOffset = 8.10; // mm
+        beamOffset = 7.52; // mm
         sm->MoveZTo(silCentre, {3, 4, 5});
-        // specs->GetLayer("l0").ReplaceWithMatrix(sm);
         specs->EraseLayer("f0");
         specs->EraseLayer("f1");
         firstLayer = "l0";
@@ -156,7 +182,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     else
     {
         silCentre = specs->GetLayer("f0").MeanZ({3, 4});
-        beamOffset = 9.54; // mm
+        beamOffset = 9.01; // mm
         sm->MoveZTo(silCentre, {3, 4});
         specs->EraseLayer("l0");
         firstLayer = "f0";
@@ -164,17 +190,16 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
     double zVertexMean {silCentre + beamOffset};
 
+    // TPC basic parameters
+    ActRoot::TPCParameters tpc {"Actar"};
+
     // Histogram to sample vertex
-    auto* histfile {new TFile("./Inputs/BeamY_ThetaXY_and_XZ_space_3Dhisto.root")};
-    auto* hBeam {histfile->Get<TH3F>("h_Y_thetaXY_thetaXZ")};
+    auto beamfile {std::make_unique<TFile>("/media/Data/E796v2/Macros/Emittance/Outputs/histos.root")};
+    auto* hBeam {beamfile->Get<TH3D>("h3d")};
     if(!hBeam)
         throw std::runtime_error("Simulation_E796(): Could not load beam emittance histogram");
-    // closing hBeam file and coming back to main ROOT directory
-    gROOT->cd();
     hBeam->SetDirectory(nullptr);
-    histfile->Close();
-    delete histfile;
-    histfile = nullptr;
+    beamfile.reset();
 
     //---- SIMULATION STARTS HERE
     ROOT::EnableImplicitMT();
@@ -212,9 +237,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     auto hRP {HistConfig::RP.GetHistogram()};
 
-    auto hRPz {std::make_unique<TH2D>("hRPz", "SP;Y [mm];Z [mm]", 550, 0, 256, 550, 0, 256)};
-
-    auto* hRPxSimu {HistConfig::RP.GetHistogram()->ProjectionX("hRPxSimu")};
+    auto hRPz {std::make_unique<TH2D>("hRPz", "RP;Y [mm];Z [mm]", 550, 0, 256, 550, 0, 256)};
 
     // Debug histograms
     auto hDeltaE {
@@ -234,15 +257,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         "lightInSil",
         TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_silicon.txt", light.c_str()).Data());
 
-    // Geometry class
-    ActRoot::TPCParameters tpc {"Actar"};
 
     // Random generator
-    auto* rand {new TRandom3()};
-    rand->SetSeed(); // random path in each execution of macro
-
+    gRandom->SetSeed();
     // Runner: contains utility functions to execute multiple actions
-    ActSim::Runner runner(srim, nullptr, rand, sigmaSil);
+    ActSim::Runner runner(nullptr, nullptr, gRandom, 0);
 
     // Output from simulation!
     // We only store a few things in the TTree
@@ -287,8 +306,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             nextPrint += step;
         }
         // 1-> Sample vertex
-        auto [start,
-              vertex] {runner.SampleVertex(tpc.X(), yVertexMean, yVertexSigma, zVertexMean, zVertexSigma, hBeam)};
+        auto [start, vertex] {SampleVertex(zVertexMean, zVertexSigma, hBeam, tpc.X())};
 
         // 2-> Beam energy according to its sigma
         auto TBeam {runner.RandomizeBeamEnergy(
@@ -312,7 +330,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
         // 4-> Include thetaLab resolution to compute thetaCM and Ex afterwards
         if(thetaResolution) // resolution in
-            theta3Lab = runner.GetRand()->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
+            theta3Lab = gRandom->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
 
         // 4.1 -> Apply cut on vertex position
         if(!E796Gates::rp(vertex.X()))
@@ -392,8 +410,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             {
                 // For e796 angleNormal0 = angleNormal1 but this is not general
                 auto angleNormal1 {angleNormal0};
-                auto T3AfterSil1 {srim->SlowWithStraggling(
-                    "lightInSil", T3AfterInterGas, specs->GetLayer(secondLayer).GetUnit().GetThickness(), angleNormal1)};
+                auto T3AfterSil1 {srim->SlowWithStraggling("lightInSil", T3AfterInterGas,
+                                                           specs->GetLayer(secondLayer).GetUnit().GetThickness(),
+                                                           angleNormal1)};
                 auto eLoss1 {T3AfterInterGas - T3AfterSil1};
                 ApplySilRes(eLoss1, sigmaSil);
                 T3AfterSil1 = T3AfterInterGas - eLoss1;
@@ -446,7 +465,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             EVertex_tree = T3Recon;
             theta3Lab_tree = theta3Lab * TMath::RadToDeg();
             rpx_tree = vertex.X();
-            hRPxSimu->Fill(vertex.X());
             outTree->Fill();
         }
     }
@@ -462,6 +480,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     outFile->cd();
     outTree->Write();
     eff->Write();
+    hSP->Write("hSP");
+    hRP->Write("hRP");
     outFile->Close();
     delete outFile;
     outFile = nullptr;
@@ -518,7 +538,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // deleting news
     delete srim;
-    delete rand;
 
     timer.Stop();
     timer.Print();

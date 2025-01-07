@@ -53,6 +53,21 @@ public:
 
     // Setters
     void SetFlag(const std::string& flag);
+    void SetBeam(const std::string& beam)
+    {
+        fBeam = beam;
+        ReassignNames();
+    }
+    void SetTarget(const std::string& target)
+    {
+        fTarget = target;
+        ReassignNames();
+    }
+    void SetLight(const std::string& light)
+    {
+        fLight = light;
+        ReassignNames();
+    }
 
     // Getters
     const std::string& GetFlag() const { return fFlag; }

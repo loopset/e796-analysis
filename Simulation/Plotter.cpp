@@ -10,6 +10,7 @@
 #include "TF1.h"
 #include "TFile.h"
 #include "TGraphErrors.h"
+#include "THStack.h"
 #include "TLine.h"
 #include "TROOT.h"
 #include "TString.h"
@@ -36,8 +37,8 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
         std::cout << BOLDCYAN << "Plotting a phase space" << RESET << '\n';
 
     // Save histograms
-    std::vector<TH1D*> hsEx;
-    std::vector<TH2D*> hsKin, hsSP;
+    std::vector<TH1D*> hsEx, hsRPx;
+    std::vector<TH2D*> hsKin, hsSP, hsRP;
     std::vector<TEfficiency*> effs;
     // Iterate
     int idx {1};
@@ -56,18 +57,28 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
             HistConfig::ChangeTitle(HistConfig::KinSimu, TString::Format("%s(%s, %s) Ex = %.2f", beam.c_str(),
                                                                          target.c_str(), light.c_str(), Ex)),
             "theta3Lab", "EVertex", "weight")};
+        auto hRPx {df.Histo1D(HistConfig::RPx, "RPx")};
+        hRPx->Scale(1. / hRPx->Integral());
+        hRPx->SetTitle(TString::Format("%.2f MeV;RP_{x} [mm];Normalized counts", Ex));
 
-        // Read efficiency
+        // Read directly from file
         auto* f {new TFile(file)};
         auto* eff {f->Get<TEfficiency>("eff")};
         if(!eff)
             throw std::runtime_error("Could not read TEfficiency named eff in file " + file);
+        auto* hRP {f->Get<TH2D>("hRP")};
+        hRP->SetDirectory(nullptr);
+        auto* hSP {f->Get<TH2D>("hSP")};
+        hSP->SetDirectory(nullptr);
         f->Close();
 
         // clone in order to save
         hsEx.push_back((TH1D*)hEx->Clone());
         hsKin.push_back((TH2D*)hKin->Clone());
+        hsRPx.push_back((TH1D*)hRPx->Clone());
         effs.push_back(eff);
+        hsRP.push_back(hRP);
+        hsSP.push_back(hSP);
         idx++;
     }
     // Fit to gaussians!
@@ -85,12 +96,19 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
         gsigmas->SetPointError(gsigmas->GetN() - 1, 0, f->GetParError(2));
     }
 
-    // plot!
+    // Read experimental RPx distribution
+    ROOT::RDataFrame exp {"Sel_Tree", gSelector->GetAnaFile(3, beam, target, light, true)};
+    auto haux {exp.Histo1D(HistConfig::RPx, "fRP.fCoordinates.fX")};
+    auto* hRPxExp {(TH1D*)haux->Clone()};
+    hRPxExp->Scale(1. / hRPxExp->Integral());
+    hRPxExp->SetLineColor(8);
+
+    // Plot!
     std::vector<TCanvas*> cs;
     for(int i = 0; i < Exs.size(); i++)
     {
         cs.push_back(new TCanvas {TString::Format("c%d", i), TString::Format("Ex = %.2f MeV", Exs[i])});
-        cs[i]->DivideSquare(4);
+        cs[i]->DivideSquare(6);
         // Get theoretical kinematics
         ActPhysics::Particle p1 {beam};
         double T1Total {T1 * p1.GetAMU()};
@@ -116,17 +134,32 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
         // Efficiency
         cs[i]->cd(3);
         effs[i]->Draw("apl");
+        // RPx distribution
+        cs[i]->cd(4);
+        hsRPx[i]->Draw("hist");
+        if(i == 0) // only reliable for g.s!
+            hRPxExp->Draw("hist same");
+        cs[i]->cd(5);
+        hsSP[i]->Draw();
     }
 
     if(isPS)
         return;
 
     auto* csigma {new TCanvas("csigma", "Sigmas from fits")};
+    csigma->DivideSquare(1 + hsRPx.size());
+    csigma->cd(1);
     gsigmas->SetTitle(";E_{x} [MeV];#sigma in E_{x} [MeV]");
     gsigmas->SetMarkerStyle(24);
     gsigmas->SetLineColor(kViolet);
     gsigmas->SetLineWidth(2);
     gsigmas->Draw("apl0");
+    for(int i = 0; i < hsRPx.size(); i++)
+    {
+        csigma->cd(2 + i);
+        hsRPx[i]->Draw("hist");
+        hRPxExp->Draw("hist same");
+    }
 
     auto* file {new TFile {TString::Format("/media/Data/E796v2/Simulation/Outputs/%s/sigmas_%s_%s_%s.root",
                                            gSelector->GetFlag().c_str(), beam.c_str(), target.c_str(), light.c_str()),
