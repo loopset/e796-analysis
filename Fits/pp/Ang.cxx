@@ -67,13 +67,13 @@ void Ang()
     Angular::Comparator comp {"g0 = 0^{+} g.s", xs.Get("g0")};
     comp.Add("KD", "./Inputs/g0_KD/fort.201");
     comp.Fit();
-    comp.Draw("g.s", true, true);
+    comp.Draw("g.s", true, true)->SaveAs("./Outputs/pp_0.png");
 
     // For g1
     Angular::Comparator comp1 {"g1 = 2^{+} @ 1.67 MeV", xs.Get("g1")};
     comp1.Add("B(E2) E.Khan", "./Inputs/g1_KD/fort.202");
     comp1.Fit();
-    comp1.Draw();
+    comp1.Draw()->SaveAs("./Outputs/pp_1.png");
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

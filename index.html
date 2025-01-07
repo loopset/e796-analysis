@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Photo Collection</title>
+    <title>e796-analysis</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -16,53 +16,55 @@
             margin: 20px;
         }
         .folder {
-            margin-bottom: 30px;
+            margin-bottom: 50px; /* Add more space between folders */
         }
         .folder h2 {
-            margin: 10px 0;
+            margin: 20px 0;
             text-transform: capitalize;
+            font-size: 36px; /* Large font size for section headers */
+            color: #333;
+            background-color: #e0e0e0; /* Slight background color */
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
         }
         .gallery {
             display: flex;
             flex-wrap: wrap;
             justify-content: center;
-            gap: 10px;
+            gap: 20px; /* Larger gap between images */
         }
         .gallery img {
-            max-width: 200px;
+            max-width: 400px; /* Larger max-width for images */
             height: auto;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out;
+        }
+        .gallery img:hover {
+            transform: scale(1.05); /* Slight zoom effect */
         }
     </style>
 </head>
 <body>
-    <h1>My Photo Collection</h1>
+    <h1>E796 preliminary cross-sections</h1>
     <div id="content"></div>
 
     <script>
-        // Image paths for the vacation group
+        // Image paths for each group (e.g., vacation, nature)
         const imageGroups = {
-            xs: [
+            "20O(d,d)": [
                 "./Fits/dd/Outputs/dd_0.png",
                 "./Fits/dd/Outputs/dd_1.png",
                 "./Fits/dd/Outputs/dd_2.png",
                 "./Fits/dd/Outputs/dd_3.png",
+            ],
+            "20O(p,p)": [
+                "images/nature/forest.jpg",
+                "images/nature/sunset.jpg"
             ]
         };
-
-        // Placeholder for another group to be added later
-        // const imageGroups = {
-        //     vacation: [
-        //         "images/vacation/beach.jpg",
-        //         "images/vacation/mountains.jpg"
-        //     ],
-        //     nature: [
-        //         "images/nature/forest.jpg",
-        //         "images/nature/sunset.jpg"
-        //     ]
-        // };
 
         // Get reference to the content div
         const contentDiv = document.getElementById("content");
@@ -72,9 +74,9 @@
             const folderDiv = document.createElement("div");
             folderDiv.className = "folder";
 
-            // Add a folder title
+            // Add a folder title as a header for the section
             const folderTitle = document.createElement("h2");
-            folderTitle.textContent = folderName;
+            folderTitle.textContent = folderName; // Display "20O(d,d)" as header
             folderDiv.appendChild(folderTitle);
 
             // Create a gallery for this folder
