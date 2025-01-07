@@ -20,7 +20,7 @@
         }
         .folder h2 {
             margin: 20px 0;
-            text-transform: capitalize;
+            text-transform: none;
             font-size: 36px; /* Large font size for section headers */
             color: #333;
             background-color: #e0e0e0; /* Slight background color */
@@ -43,7 +43,7 @@
             transition: transform 0.3s ease-in-out;
         }
         .gallery img:hover {
-            transform: scale(1.05); /* Slight zoom effect */
+            transform: scale(1.1);
         }
     </style>
 </head>
@@ -88,7 +88,12 @@
                 const img = document.createElement("img");
                 img.src = imagePath;
                 img.alt = folderName;
-                galleryDiv.appendChild(img);
+                // Create a link around the image
+                const imgLink = document.createElement("a");
+                imgLink.href = imagePath;  // Open full image in new tab
+                imgLink.target = "_blank"; // Ensures it opens in a new tab
+                imgLink.appendChild(img);
+                galleryDiv.appendChild(imgLink);
             });
 
             // Append gallery to folder
