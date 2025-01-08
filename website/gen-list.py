@@ -25,7 +25,7 @@ for subfolder in subfolders:
             files, key=lambda f: os.path.getmtime(os.path.join(folder_path, f))
         )
         # Append directory data, relative to github's root dir
-        images = [f"/Fits/{subfolder['folder']}/Outputs/{f}" for f in files]
+        images = [f"Fits/{subfolder['folder']}/Outputs/{f}" for f in files]
 
         if images:
             image_groups[label] = images
