@@ -1,4 +1,3 @@
-#include "ROOT/RDF/InterfaceUtils.hxx"
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
@@ -23,16 +22,13 @@ void Fit()
     ROOT::EnableImplicitMT();
 
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "1H", "1H")};
+    // Ex
+    auto hEx {df.Histo1D(E796Fit::Expp, "Ex")};
+    // Phase space deuton breakup
+    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
+    auto hPS {phase.Histo1D(E796Fit::Expp, "Eex", "weight")};
+    Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr(), 2);
 
-    // Nodes at which compute global fit
-    std::vector<ROOT::RDF::RNode> nodes {df};
-    std::vector<std::string> labels {gSelector->GetFlag()};
-    std::vector<TH1D*> hExs;
-    for(int i = 0; i < nodes.size(); i++)
-    {
-        auto h {nodes[i].Histo1D(E796Fit::Expp, "Ex")};
-        hExs.push_back((TH1D*)h->Clone());
-    }
     // Fitting range
     double exmin {-5};
     double exmax {10};
@@ -44,20 +40,23 @@ void Fit()
     // Model
     int ngauss {2};
     int nvoigt {0};
-    bool cte {true};
-    Fitters::Model model {ngauss, nvoigt, {}, cte};
+    bool cte {false};
+    Fitters::Model model {ngauss, nvoigt, {*hPS}, cte};
 
     // Set init parameters
     double sigma {0.3};
     Fitters::Runner::Init initPars {
-        {"g0", {400, 0, sigma}}, {"g1", {100, 1.67, sigma}}, {"cte0", {40}},
+        {"g0", {400, 0, sigma}},
+        {"g1", {100, 1.67, sigma}},
+        {"ps0", {1.5}},
+        // {"cte0", {40}},
     };
     // Eval correct sigma
     for(auto& [key, vals] : initPars)
         vals[2] = sigmas.Eval(vals[1]);
     // Set bounds and fix parameters
-    double minmean {0.1};
-    double maxmean {0.1};
+    double minmean {0.2};
+    double maxmean {0.2};
     Fitters::Runner::Bounds initBounds {};
     Fitters::Runner::Fixed fixedPars {};
     for(const auto& [key, init] : initPars)
@@ -100,10 +99,7 @@ void Fit()
         }
     }
 
-    // Run for all the nodes
-    for(int i = 0; i < hExs.size(); i++)
-    {
-        Fitters::RunFit(hExs[i], exmin, exmax, model, initPars, initBounds, fixedPars,
-                        ("./Outputs/fit_" + labels[i] + ".root"), labels[i], {{"g0", "g.s"}, {"g1", "1st ex"}});
-    }
+    Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, initPars, initBounds, fixedPars,
+                    ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(p,p) fit",
+                    {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "20O(d,d) breakup"}});
 }

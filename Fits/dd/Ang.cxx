@@ -54,9 +54,9 @@ void Ang()
     std::vector<std::string> peaks {"g0", "g1", "g2", "g3"};
     std::vector<std::string> effFiles {
         gSelector->GetSimuFile("20O", "2H", "2H", 0).Data(),
-        gSelector->GetSimuFile("20O", "2H", "2H", 1.67).Data(),
-        gSelector->GetSimuFile("20O", "2H", "2H", 4.1).Data(),
-        gSelector->GetSimuFile("20O", "2H", "2H", 5.52).Data(),
+        gSelector->GetSimuFile("20O", "2H", "2H", 1.6).Data(),
+        gSelector->GetSimuFile("20O", "2H", "2H", 4.0).Data(),
+        gSelector->GetSimuFile("20O", "2H", "2H", 5.5).Data(),
     };
     Interpolators::Efficiency eff;
     for(int p = 0; p < peaks.size(); p++)

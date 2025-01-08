@@ -26,9 +26,9 @@ void Runner(TString what = "plot", bool standalone = true)
     gSelector->Print();
     // Phase space reactions: when the heavy decays by proton or neutron emission
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
-    int neutronPS {1}; // number of neutrons in final state
-    int protonPS {0};  // number of protons in final state
-    double T1 {35};    // Beam energy: 35 MeV / u
+    int neutronPS {-1}; // number of neutrons in final state; if -1, break deuteron
+    int protonPS {0};   // number of protons in final state
+    double T1 {35};     // Beam energy: 35 MeV / u
 
     std::vector<double> Eexs;
     if(neutronPS == 0 && protonPS == 0)
@@ -45,7 +45,7 @@ void Runner(TString what = "plot", bool standalone = true)
         if(target == "2H")
         {
             if(light == "2H")
-                Eexs = {0, 1.67, 4.1, 5.52};
+                Eexs = {0, 1.6, 4.0, 5.5, 6.5, 7.6, 8.6, 9.6};
             if(light == "3H")
             {
                 Eexs = {0., 1.47, 3.24, 4.4, 5.2, 6.9, 10, 12.8, 14.9};
@@ -56,7 +56,7 @@ void Runner(TString what = "plot", bool standalone = true)
                 Eexs = {0};
         }
     }
-    else if(neutronPS > 0 && protonPS == 0)
+    else if(neutronPS != 0 && protonPS == 0)
         Eexs = {0}; // only gs for n phase space
     else if(neutronPS == 0 && protonPS > 0)
         Eexs = {0};

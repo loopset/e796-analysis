@@ -1,5 +1,6 @@
 #include "ActColors.h"
 #include "ActCutsManager.h"
+#include "ActDecayGenerator.h"
 #include "ActKinematicGenerator.h"
 #include "ActKinematics.h"
 #include "ActParticle.h"
@@ -103,7 +104,7 @@ double AngleWithNormal(const ROOT::Math::XYZVector& dir, const ROOT::Math::XYZVe
     return TMath::ACos(dot);
 }
 
-void Simulation_E796(const std::string& beam, const std::string& target, const std::string& light, int neutronPS,
+void Simulation_E796(const std::string& beam, const std::string& target, const std::string& arglight, int neutronPS,
                      int protonPS, double T1, double Ex, bool standalone)
 {
     // set batch mode if not an independent function
@@ -111,7 +112,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         gROOT->SetBatch(true);
 
     // Set whether is elastic or not
-    const bool isEl {target == light};
+    const bool isEl {target == arglight};
+
+    // Set deuteron breakup type and if enabled (deutonbreaup != 0)
+    int deutonbreakup {};
+    if(neutronPS < 0)
+        deutonbreakup = -1 * neutronPS;
 
     // Resolutions
     const double sigmaSil {0.060 / 2.355};
@@ -130,7 +136,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double thresholdSi1 {1.};
 
     // number of iterations
-    const int iterations {static_cast<int>((isEl) ? (neutronPS ? 1e8 : 5e7) : 3e7)};
+    // const int iterations {static_cast<int>((isEl) ? (neutronPS ? 1e8 : 5e7) : 3e7)};
+    const int iterations {static_cast<int>(standalone ? 1e7 : 1e8)};
 
     // Which parameters will be activated
     bool stragglingInGas {true};
@@ -138,31 +145,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     bool silResolution {true};
     bool thetaResolution {true};
 
-    // CUTS ON SILICON ENERGY, depending on particle
-    // from the graphical PID cut
-    ActRoot::CutsManager<std::string> cuts;
-    cuts.ReadCut(light, TString::Format("/media/Data/E796v2/PostAnalysis/Cuts/LightPID/pid_%s%s.root", light.c_str(),
-                                        (isEl) ? "_side" : "")
-                            .Data());
-    std::pair<double, double> eLoss0Cut;
-    if(cuts.GetCut(light))
-    {
-        eLoss0Cut = cuts.GetXRange(light);
-        std::cout << BOLDGREEN << "-> ESil range for " << light << ": [" << eLoss0Cut.first << ", " << eLoss0Cut.second
-                  << "] MeV" << RESET << '\n';
-    }
-    else
-    {
-        std::cout << BOLDRED << "Simulation_E796(): could not read PID cut for " << light
-                  << " -> using default eLoss0Cut" << RESET << '\n';
-        eLoss0Cut = {0, 1000};
-    }
-
     // Silicon specs
     auto* specs {new ActPhysics::SilSpecs};
     specs->ReadFile("../configs/detailedSilicons.conf");
     // Silicon EFFECTIVE matrix
-    auto* sm {E796Utils::GetEffSilMatrix(target, light)};
+    auto* sm {E796Utils::GetEffSilMatrix(target, arglight)};
     // Set reference position and offset along Z!
     double silCentre {};
     double beamOffset {}; // determined from emittance calculations
@@ -193,7 +180,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // TPC basic parameters
     ActRoot::TPCParameters tpc {"Actar"};
 
-    // Histogram to sample vertex
+    // Vertex sampling
     auto beamfile {std::make_unique<TFile>("/media/Data/E796v2/Macros/Emittance/Outputs/histos.root")};
     auto* hBeam {beamfile->Get<TH3D>("h3d")};
     if(!hBeam)
@@ -201,23 +188,67 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     hBeam->SetDirectory(nullptr);
     beamfile.reset();
 
+    // Kinematics
+    ActPhysics::Particle p1 {beam};
+    ActPhysics::Particle p2 {target};
+    ActPhysics::Particle p3 {arglight};
+    // Automatically compute 4th particle
+    ActPhysics::Kinematics kaux {p1, p2, p3};
+    ActPhysics::Particle p4 {kaux.GetParticle(4)};
+    // Binary kinematics generator
+    ActSim::KinematicGenerator kingen {p1, p2, p3, p4, protonPS, (neutronPS > 0 ? neutronPS : 0)};
+    kingen.Print();
+    // Allow breakup of deuteron!
+    ActSim::DecayGenerator decaygen;
+    ActPhysics::Kinematics breakkin;
+    // Set pointers to correct kinematics and define light particle to propagate in gas and sil
+    auto light {arglight};
+    ActPhysics::Kinematics* reckin {};
+    if(deutonbreakup)
+    {
+        if(deutonbreakup == 1) // reconstructed as 20O(p,p)
+        {
+            decaygen = ActSim::DecayGenerator {"d", "p", "n"};
+            breakkin = ActPhysics::Kinematics {beam, "p", "p"};
+            light = "1H";
+        }
+        else
+            throw std::invalid_argument("Simulation_E796(): only deutonbreakup == 1 is valid");
+        decaygen.Print();
+        reckin = &breakkin;
+        std::cout << BOLDYELLOW << "Overriding light from " << arglight << " to " << light << RESET << '\n';
+    }
+    else
+    {
+        reckin = kingen.GetBinaryKinematics();
+    }
+
+    // CUTS ON SILICON ENERGY, depending on particle
+    // from the graphical PID cut
+    ActRoot::CutsManager<std::string> cuts;
+    cuts.ReadCut(light, TString::Format("/media/Data/E796v2/PostAnalysis/Cuts/LightPID/pid_%s%s.root", light.c_str(),
+                                        (isEl) ? "_side" : "")
+                            .Data());
+    std::pair<double, double> eLoss0Cut;
+    if(cuts.GetCut(light))
+    {
+        eLoss0Cut = cuts.GetXRange(light);
+        std::cout << BOLDGREEN << "-> ESil range for " << light << ": [" << eLoss0Cut.first << ", " << eLoss0Cut.second
+                  << "] MeV" << RESET << '\n';
+    }
+    else
+    {
+        std::cout << BOLDRED << "Simulation_E796(): could not read PID cut for " << light
+                  << " -> using default eLoss0Cut" << RESET << '\n';
+        eLoss0Cut = {0, 1000};
+    }
+
     //---- SIMULATION STARTS HERE
     ROOT::EnableImplicitMT();
 
     // timer
     TStopwatch timer {};
     timer.Start();
-
-    // Init particles
-    ActPhysics::Particle p1 {beam};
-    ActPhysics::Particle p2 {target};
-    ActPhysics::Particle p3 {light};
-    // Automatically compute 4th particle
-    ActPhysics::Kinematics tkin {beam, target, light};
-    ActPhysics::Particle p4 {tkin.GetParticle(4)};
-    // Init kinematics generator
-    ActSim::KinematicGenerator kingen {p1, p2, p3, p4, protonPS, neutronPS};
-    kingen.Print();
 
     // Histograms
     // To compute a fine-grain efficiency, we require at least a binning width of 0.25 degrees!
@@ -271,12 +302,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // variables need to be weighted by this value. For binary reactions, weight = 1
     // 4-> Energy at vertex
     // 5-> Theta in Lab frame
-    auto* outFile {new TFile(gSelector->GetSimuFile(beam, target, light, Ex, neutronPS, protonPS), "recreate")};
+    auto* outFile {new TFile(gSelector->GetSimuFile(beam, target, arglight, Ex, neutronPS, protonPS), "recreate")};
     auto* outTree {new TTree("SimulationTTree", "A TTree containing only our Eex obtained by simulation")};
     double theta3CM_tree {};
     outTree->Branch("theta3CM", &theta3CM_tree);
-    double Eex_tree {};
-    outTree->Branch("Eex", &Eex_tree);
+    double Ex_tree {};
+    outTree->Branch("Eex", &Ex_tree);
     double weight_tree {};
     outTree->Branch("weight", &weight_tree);
     double EVertex_tree {};
@@ -324,9 +355,20 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         auto theta3Lab {PLight->Theta()};
         auto phi3Lab {PLight->Phi()};
         auto T3Lab {PLight->Energy() - p3.GetMass()};
-        // to compute geometric efficiency by CM interval and with our set reference direction
-        double theta3CMBefore {kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
-        hThetaCMAll->Fill(theta3CMBefore * TMath::RadToDeg());
+        // If breakup, override values
+        if(deutonbreakup)
+        {
+            decaygen.SetDecay(T3Lab, theta3Lab, phi3Lab);
+            auto bw {decaygen.Generate()};
+            auto* proton {decaygen.GetLorentzVector(0)};
+            theta3Lab = proton->Theta();
+            phi3Lab = proton->Phi();
+            T3Lab = (proton->E() - decaygen.GetFinalMass(0));
+            breakkin.SetBeamEnergy(TBeam);
+        }
+        // Simualated thetaCM
+        double thetaCMBefore {reckin->ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
+        hThetaCMAll->Fill(thetaCMBefore * TMath::RadToDeg());
 
         // 4-> Include thetaLab resolution to compute thetaCM and Ex afterwards
         if(thetaResolution) // resolution in
@@ -442,26 +484,26 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         if(cutEAfterSil0 && cutELoss0) // fill histograms
         {
             auto T3Recon {srim->EvalInitialEnergy("light", EBefSil0, distance0)};
-            auto EexAfter {kingen.GetBinaryKinematics().ReconstructExcitationEnergy(T3Recon, theta3Lab)};
-            auto theta3CM {kingen.GetBinaryKinematics().ReconstructTheta3CMFromLab(T3Recon, theta3Lab)};
+            auto ExAfter {reckin->ReconstructExcitationEnergy(T3Recon, theta3Lab)};
+            auto thetaCM {reckin->ReconstructTheta3CMFromLab(T3Recon, theta3Lab)};
 
             // fill histograms
-            hThetaCM->Fill(theta3CM * TMath::RadToDeg());
+            hThetaCM->Fill(thetaCM * TMath::RadToDeg());
             hDistF0->Fill(distance0);
             hKinVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
-            hEexAfter->Fill(EexAfter, weight);
+            hEexAfter->Fill(ExAfter, weight);
             hSP->Fill((isEl) ? silPoint0InMM.X() : silPoint0InMM.Y(), silPoint0InMM.Z());
             // Fill histogram of SP with thetaCM as weight
-            hSPTheta->Fill(silPoint0InMM.Y(), silPoint0InMM.Z(), theta3CM * TMath::RadToDeg());
+            hSPTheta->Fill(silPoint0InMM.Y(), silPoint0InMM.Z(), thetaCM * TMath::RadToDeg());
             // RP histogram
             hRP->Fill(vertex.X(), vertex.Y());
             hRPz->Fill(vertex.Y(), vertex.Z());
             hELoss0->Fill(T3EnteringSil, eLoss0);
 
             // write to TTree
-            Eex_tree = EexAfter;
+            Ex_tree = ExAfter;
             weight_tree = weight;
-            theta3CM_tree = theta3CM * TMath::RadToDeg();
+            theta3CM_tree = thetaCM * TMath::RadToDeg();
             EVertex_tree = T3Recon;
             theta3Lab_tree = theta3Lab * TMath::RadToDeg();
             rpx_tree = vertex.X();

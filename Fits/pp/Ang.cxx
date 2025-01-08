@@ -23,6 +23,8 @@ void Ang()
     ROOT::EnableImplicitMT();
 
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "1H", "1H")};
+    // Phase space deuton breakup
+    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
 
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
@@ -32,9 +34,12 @@ void Ang()
     double thetaCMMin {18};
     double thetaCMMax {25};
     double thetaCMStep {0.5};
-    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Expp, thetaCMStep};
+    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Expp, thetaCMStep, 1};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
+    phase.Foreach([&](double thetacm, double ex, double w) { ivs.FillPS(0, thetacm, ex, w); },
+                  {"theta3CM", "Eex", "weight"});
+    ivs.TreatPS(2);
 
     // Init fitter
     Angular::Fitter fitter {&ivs};

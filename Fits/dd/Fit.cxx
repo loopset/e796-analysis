@@ -35,7 +35,7 @@ void Fit()
     double exmax {25};
 
     // Model
-    int ngauss {6};
+    int ngauss {8};
     int nvoigt {0};
     Fitters::Model model {ngauss, nvoigt, {*hPS}};
 
@@ -45,19 +45,15 @@ void Fit()
 
     // Set init parameters
     double sigma {0.3};
-    Fitters::Runner::Init initPars {{"g0", {400, 0, sigma}},
-                                    {"g1", {100, 1.5, sigma}},
-                                    {"g2", {50, 4, sigma}},
-                                    {"g3", {50, 5.5, sigma}},
-                                    {"g4", {50, 7.7, sigma}},
-                                    {"g5", {50, 8.5, sigma}},
-                                    {"ps0", {1.5}}};
+    Fitters::Runner::Init initPars {{"g0", {400, 0, sigma}},  {"g1", {100, 1.6, sigma}}, {"g2", {50, 4, sigma}},
+                                    {"g3", {50, 5.5, sigma}}, {"g4", {50, 6.5, sigma}},  {"g5", {50, 7.6, sigma}},
+                                    {"g6", {50, 8.6, sigma}}, {"g7", {50, 9.6, sigma}},  {"ps0", {1.5}}};
     // Reread in case file exists
     auto outfile {TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().data())};
     if(!gSystem->AccessPathName(outfile))
     {
-        std::cout << "Setting parameters from previous fit" << '\n';
-        initPars = Fitters::ReadInit(outfile.Data());
+        // std::cout << "Setting parameters from previous fit" << '\n';
+        // initPars = Fitters::ReadInit(outfile.Data());
     }
     // Eval correct sigma
     for(auto& [key, vals] : initPars)
@@ -91,7 +87,7 @@ void Fit()
             }
             else if(par == 1) // Mean
             {
-                std::cout<<"Par : "<<key<<" mean : "<<init[par]<<'\n';
+                std::cout << "Par : " << key << " mean : " << init[par] << '\n';
                 pair = {init[par] - minmean, init[par] + maxmean};
                 boo = false;
             }
@@ -111,5 +107,5 @@ void Fit()
     // Run for all the nodes
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, initPars, initBounds, fixedPars,
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,d) fit",
-                    {{"g0", "g.s"}, {"g1", "1st ex"}});
+                    {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "1-n phase"}});
 }
