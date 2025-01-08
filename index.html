@@ -51,49 +51,76 @@
     <h1>E796 preliminary cross-sections</h1>
     <div id="content"></div>
 
-    <script>
-        // Fetch the JSON data dynamically
-        fetch('list.json')  // Adjust path to JSON file
-            .then(response => response.json())  // Parse JSON from the response
-            .then(imageGroups => {
-                // Get reference to the content div
-                const contentDiv = document.getElementById("content");
+<script>
+    // Declare function
+    function populateWeb(data) {
+        // Get reference to the content div
+        const contentDiv = document.getElementById("content");
 
-                // Loop through each group and create sections
-                for (const [folderName, images] of Object.entries(imageGroups)) {
-                    const folderDiv = document.createElement("div");
-                    folderDiv.className = "folder";
+        // Loop through each group and create sections
+        for (const [folderName, images] of Object.entries(data)) {
+            const folderDiv = document.createElement("div");
+            folderDiv.className = "folder";
 
-                    // Add a folder title as a header for the section
-                    const folderTitle = document.createElement("h2");
-                    folderTitle.textContent = folderName; // Display group name (e.g., "20O(d,d)")
-                    folderDiv.appendChild(folderTitle);
+            // Add a folder title as a header for the section
+            const folderTitle = document.createElement("h2");
+            folderTitle.textContent = folderName; // Display "20O(d,d)" as header
+            folderDiv.appendChild(folderTitle);
 
-                    // Create a gallery for this folder
-                    const galleryDiv = document.createElement("div");
-                    galleryDiv.className = "gallery";
+            // Create a gallery for this folder
+            const galleryDiv = document.createElement("div");
+            galleryDiv.className = "gallery";
 
-                    // Add images to the gallery
-                    images.forEach(imagePath => {
-                        const img = document.createElement("img");
-                        img.src = imagePath;
-                        img.alt = folderName;
-                        // Create a link around the image
-                        const imgLink = document.createElement("a");
-                        imgLink.href = imagePath;  // Open full image in new tab
-                        imgLink.target = "_blank"; // Ensures it opens in a new tab
-                        imgLink.appendChild(img);
-                        galleryDiv.appendChild(imgLink);
-                    });
+            // Add images to the gallery
+            images.forEach(imagePath => {
+                console.log(`Adding image: ${imagePath}`);
+                const img = document.createElement("img");
+                img.src = imagePath;
+                img.alt = folderName;
+                // Create a link around the image
+                const imgLink = document.createElement("a");
+                imgLink.href = imagePath;  // Open full image in new tab
+                imgLink.target = "_blank"; // Ensures it opens in a new tab
+                imgLink.appendChild(img);
+                galleryDiv.appendChild(imgLink);
+            });
 
-                    // Append gallery to folder
-                    folderDiv.appendChild(galleryDiv);
+            // Append gallery to folder
+            folderDiv.appendChild(galleryDiv);
 
-                    // Append folder to the content div
-                    contentDiv.appendChild(folderDiv);
-                }
-            })
-            .catch(error => console.error('Error loading the JSON data:', error));
-    </script>
+            // Append folder to the content div
+            contentDiv.appendChild(folderDiv);
+        }
+    }
+    // Fetch the JSON file and use its content
+    fetch('./list.json')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! Status: ${response.status}`);
+            }
+            return response.json(); // Parse JSON
+        })
+        .then(data => {
+            console.log("Fetched data:", data); // Debugging
+            populateWeb(data);
+        })
+        .catch(error => {
+            console.error("Fetch error:", error); // Error handling
+        });
+    // // Call to function with data
+    // const data = {
+    //     "20O(d,d)": [
+    //         "Fits/dd/Outputs/dd_0.png",
+    //         "Fits/dd/Outputs/dd_1.png",
+    //         "Fits/dd/Outputs/dd_2.png",
+    //         "Fits/dd/Outputs/dd_3.png"
+    //     ],
+    //     "20O(p,p)": [
+    //         "Fits/pp/Outputs/pp_0.png",
+    //         "Fits/pp/Outputs/pp_1.png"
+    //     ]
+    // };
+    // populateWeb(data);
+</script>
 </body>
 </html>
