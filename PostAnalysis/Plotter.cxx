@@ -89,7 +89,9 @@ void Plotter(const std::string& beam = "", const std::string& target = "", const
     std::vector<TCanvas*> cs {dfs.size()};
     for(int c = 0; c < cs.size(); c++)
     {
-        cs[c] = new TCanvas(TString::Format("c%d", c), TString::Format("Canvas %d", c));
+        const auto& sig {signatures[c]};
+        cs[c] = new TCanvas(TString::Format("c%d", c),
+                            TString::Format("%s(%s, %s)", sig.beam.c_str(), sig.target.c_str(), sig.light.c_str()));
         cs[c]->DivideSquare(4);
         cs[c]->cd(1);
         hsKin[c]->DrawClone("colz");

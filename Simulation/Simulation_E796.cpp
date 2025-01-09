@@ -137,7 +137,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // number of iterations
     // const int iterations {static_cast<int>((isEl) ? (neutronPS ? 1e8 : 5e7) : 3e7)};
-    const int iterations {static_cast<int>(standalone ? 1e7 : 1e8)};
+    const int iterations {static_cast<int>(standalone ? 1e7 : 2e8)};
 
     // Which parameters will be activated
     bool stragglingInGas {true};

@@ -51,12 +51,13 @@ void Ang()
     fitter.DrawCounts();
 
     // Read efficiency files
-    std::vector<std::string> peaks {"g0", "g1", "g2", "g3"};
+    std::vector<std::string> peaks {"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7"};
+    std::vector<std::string> ensdf {};
     std::vector<std::string> effFiles {
-        gSelector->GetSimuFile("20O", "2H", "2H", 0).Data(),
-        gSelector->GetSimuFile("20O", "2H", "2H", 1.6).Data(),
-        gSelector->GetSimuFile("20O", "2H", "2H", 4.0).Data(),
-        gSelector->GetSimuFile("20O", "2H", "2H", 5.5).Data(),
+        gSelector->GetSimuFile("20O", "2H", "2H", 0).Data(),   gSelector->GetSimuFile("20O", "2H", "2H", 1.6).Data(),
+        gSelector->GetSimuFile("20O", "2H", "2H", 4.0).Data(), gSelector->GetSimuFile("20O", "2H", "2H", 5.5).Data(),
+        gSelector->GetSimuFile("20O", "2H", "2H", 6.5).Data(), gSelector->GetSimuFile("20O", "2H", "2H", 7.6).Data(),
+        gSelector->GetSimuFile("20O", "2H", "2H", 8.6).Data(), gSelector->GetSimuFile("20O", "2H", "2H", 9.6).Data(),
     };
     Interpolators::Efficiency eff;
     for(int p = 0; p < peaks.size(); p++)
@@ -70,7 +71,7 @@ void Ang()
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
-    xs.TrimX("g1", 17);
+    xs.TrimX("g1", 21, false);
     xs.TrimX("g2", 16.2);
     xs.TrimX("g3", 16.2);
     xs.Write("./Outputs/");
