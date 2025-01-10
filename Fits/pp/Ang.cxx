@@ -67,10 +67,12 @@ void Ang()
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
+    xs.TrimX("g0", 24.5, false);
 
     // For gs
     Angular::Comparator comp {"g0 = 0^{+} g.s", xs.Get("g0")};
     comp.Add("KD", "./Inputs/g0_KD/fort.201");
+    comp.Add("CH89", "./Inputs/g0_CH89/fort.201");
     comp.Fit();
     comp.Draw("g.s", true, true)->SaveAs("./Outputs/pp_0.png");
 
