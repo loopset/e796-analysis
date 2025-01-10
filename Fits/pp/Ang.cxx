@@ -8,6 +8,7 @@
 #include "AngDifferentialXS.h"
 #include "AngFitter.h"
 #include "AngIntervals.h"
+#include "FitInterface.h"
 #include "Interpolators.h"
 #include "PhysExperiment.h"
 
@@ -49,6 +50,10 @@ void Ang()
     fitter.ComputeIntegrals(2);
     fitter.DrawCounts();
 
+    Fitters::Interface inter;
+    inter.Read("./Outputs/interface.root");
+    inter.Print();
+
     // Read efficiency files
     std::vector<std::string> peaks {"g0", "g1"};
     std::vector<std::string> effFiles {
@@ -66,8 +71,13 @@ void Ang()
     PhysUtils::Experiment exp {"../norms/p_target.dat"};
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
-    xs.DoFor(peaks);
+    xs.DoFor(inter.GetKeys());
     xs.TrimX("g0", 24.5, false);
+
+    for(const auto& key : inter.GetKeys())
+        inter.AddAngularDistribution(key, xs.Get(key));
+    inter.Do([](Angular::Comparator& comp) { comp.Draw(); });
+    return;
 
     // For gs
     Angular::Comparator comp {"g0 = 0^{+} g.s", xs.Get("g0")};

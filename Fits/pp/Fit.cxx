@@ -36,8 +36,8 @@ void Fit()
 
     // Init interface
     Fitters::Interface inter;
-    inter.AddState("g0", {400, 0, 0.3});
-    inter.AddState("g1", {100, 1.7, 0.3});
+    inter.AddState("g0", {400, 0, 0.3}, "0+");
+    inter.AddState("g1", {100, 1.7, 0.3}, "2+");
     inter.AddState("ps0", {1.5});
     inter.EndAddingStates();
     // Eval sigma from interpolator
@@ -46,6 +46,7 @@ void Fit()
     // And fix it!
     inter.SetFix("g1", 2, true);
     inter.Print();
+    inter.Write("./Outputs/interface.root");
 
     // Model
     Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS}, inter.GetCte()};
