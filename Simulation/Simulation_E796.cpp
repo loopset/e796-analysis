@@ -137,7 +137,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // number of iterations
     // const int iterations {static_cast<int>((isEl) ? (neutronPS ? 1e8 : 5e7) : 3e7)};
-    const int iterations {static_cast<int>(standalone ? 1e7 : 2e8)};
+    const int iterations {static_cast<int>(standalone ? 1e7 : 5e7)};
 
     // Which parameters will be activated
     bool stragglingInGas {true};
@@ -161,6 +161,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         specs->GetLayer("l0").ReplaceWithMatrix(sm);
         silCentre = specs->GetLayer("l0").MeanZ({3, 4, 5});
         beamOffset = 7.52; // mm
+        // specs->GetLayer("l0").SetPoint({0, 174.425, 0});
         sm->MoveZTo(silCentre, {3, 4, 5});
         specs->EraseLayer("f0");
         specs->EraseLayer("f1");

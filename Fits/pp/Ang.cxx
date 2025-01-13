@@ -59,7 +59,7 @@ void Ang()
     for(int p = 0; p < peaks.size(); p++)
         eff.Add(peaks[p], gSelector->GetSimuFile("20O", "1H", "1H", inter.GetGuess(peaks[p])).Data());
     // Draw to check is fine
-    eff.Draw(true);
+    eff.Draw(true)->SaveAs("./Outputs/effs.png");
 
     // Recompute normalzation
     gSelector->RecomputeNormalization();

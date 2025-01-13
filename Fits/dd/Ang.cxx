@@ -4,7 +4,6 @@
 #include "TROOT.h"
 #include "TString.h"
 
-#include "AngComparator.h"
 #include "AngDifferentialXS.h"
 #include "AngFitter.h"
 #include "AngIntervals.h"

@@ -7,14 +7,10 @@
 
 #include "FitInterface.h"
 #include "FitModel.h"
-#include "FitRunner.h"
 #include "FitUtils.h"
 #include "Interpolators.h"
 
-#include <algorithm>
-#include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "../../Selector/Selector.h"
