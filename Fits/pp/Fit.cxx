@@ -6,13 +6,10 @@
 
 #include "FitInterface.h"
 #include "FitModel.h"
-#include "FitRunner.h"
 #include "FitUtils.h"
 #include "Interpolators.h"
 
-#include <stdexcept>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "../../Selector/Selector.h"
@@ -37,7 +34,7 @@ void Fit()
     // Init interface
     Fitters::Interface inter;
     inter.AddState("g0", {400, 0, 0.3}, "0+");
-    inter.AddState("g1", {100, 1.7, 0.3}, "2+");
+    inter.AddState("g1", {100, 1.67, 0.3}, "2+");
     inter.AddState("ps0", {1.5});
     inter.EndAddingStates();
     // Eval sigma from interpolator

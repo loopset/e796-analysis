@@ -4,7 +4,6 @@
 #include "TROOT.h"
 #include "TString.h"
 
-#include "AngComparator.h"
 #include "AngDifferentialXS.h"
 #include "AngFitter.h"
 #include "AngIntervals.h"
@@ -53,16 +52,12 @@ void Ang()
     Fitters::Interface inter;
     inter.Read("./Outputs/interface.root");
     inter.Print();
+    auto peaks {inter.GetKeys()};
 
-    // Read efficiency files
-    std::vector<std::string> peaks {"g0", "g1"};
-    std::vector<std::string> effFiles {
-        gSelector->GetSimuFile("20O", "1H", "1H", 0).Data(),
-        gSelector->GetSimuFile("20O", "1H", "1H", 1.67).Data(),
-    };
+    // Efficiency
     Interpolators::Efficiency eff;
     for(int p = 0; p < peaks.size(); p++)
-        eff.Add(peaks[p], effFiles[p]);
+        eff.Add(peaks[p], gSelector->GetSimuFile("20O", "1H", "1H", inter.GetGuess(peaks[p])).Data());
     // Draw to check is fine
     eff.Draw(true);
 
@@ -71,26 +66,13 @@ void Ang()
     PhysUtils::Experiment exp {"../norms/p_target.dat"};
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
-    xs.DoFor(inter.GetKeys());
+    xs.DoFor(peaks);
     xs.TrimX("g0", 24.5, false);
 
-    for(const auto& key : inter.GetKeys())
-        inter.AddAngularDistribution(key, xs.Get(key));
-    inter.Do([](Angular::Comparator& comp) { comp.Draw(); });
-    return;
-
-    // For gs
-    Angular::Comparator comp {"g0 = 0^{+} g.s", xs.Get("g0")};
-    comp.Add("KD", "./Inputs/g0_KD/fort.201");
-    comp.Add("CH89", "./Inputs/g0_CH89/fort.201");
-    comp.Fit();
-    comp.Draw("g.s", true, true)->SaveAs("./Outputs/pp_0.png");
-
-    // For g1
-    Angular::Comparator comp1 {"g1 = 2^{+} @ 1.67 MeV", xs.Get("g1")};
-    comp1.Add("B(E2) E.Khan", "./Inputs/g1_KD/fort.202");
-    comp1.Fit();
-    comp1.Draw()->SaveAs("./Outputs/pp_1.png");
+    for(const auto& peak : peaks)
+        inter.AddAngularDistribution(peak, xs.Get(peak));
+    inter.ReadComparatorConfig("./comps.conf");
+    inter.DoComp();
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

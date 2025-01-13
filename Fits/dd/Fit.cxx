@@ -5,11 +5,13 @@
 #include "TString.h"
 #include "TSystem.h"
 
+#include "FitInterface.h"
 #include "FitModel.h"
 #include "FitRunner.h"
 #include "FitUtils.h"
 #include "Interpolators.h"
 
+#include <algorithm>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -30,24 +32,27 @@ void Fit()
     auto hPS {phase.Histo1D(E796Fit::Exdd, "Eex", "weight")};
     Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr(), 2);
 
-    // Fitting range
-    double exmin {-5};
-    double exmax {25};
-
-    // Model
-    int ngauss {8};
-    int nvoigt {0};
-    Fitters::Model model {ngauss, nvoigt, {*hPS}};
-
     // Sigmas
     Interpolators::Sigmas sigmas;
     sigmas.Read(gSelector->GetSigmasFile("2H", "2H").Data());
 
-    // Set init parameters
-    double sigma {0.3};
-    Fitters::Runner::Init initPars {{"g0", {400, 0, sigma}},  {"g1", {100, 1.6, sigma}}, {"g2", {50, 4, sigma}},
-                                    {"g3", {50, 5.5, sigma}}, {"g4", {50, 6.5, sigma}},  {"g5", {50, 7.6, sigma}},
-                                    {"g6", {50, 8.6, sigma}}, {"g7", {50, 9.6, sigma}},  {"ps0", {1.5}}};
+    // Interface to fit
+    Fitters::Interface inter;
+    double sigma {0.3}; // common init sigma for all
+    inter.AddState("g0", {400, 0, sigma}, "0+");
+    inter.AddState("g1", {100, 1.6, sigma}, "2+0");
+    inter.AddState("g2", {50, 4, sigma}, "2+0");
+    inter.AddState("g3", {50, 5.5, sigma}, "0+1");
+    inter.AddState("g4", {50, 6.5, sigma}, "0+");
+    inter.AddState("g5", {50, 7.6, sigma}, "3- and 4+");
+    inter.AddState("g6", {50, 8.6, sigma}, "4+0");
+    inter.AddState("g7", {50, 9.6, sigma}, "0+2");
+    inter.AddState("ps0", {1.5}, "ps0");
+    inter.EndAddingStates();
+    // Sigma from interpolator
+    for(const auto& key : inter.GetKeys())
+        inter.SetInitial(key, 2, sigmas.Eval(inter.GetGuess(key)));
+    inter.SetFixAll(2, true);
     // Reread in case file exists
     auto outfile {TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().data())};
     if(!gSystem->AccessPathName(outfile))
@@ -55,57 +60,18 @@ void Fit()
         // std::cout << "Setting parameters from previous fit" << '\n';
         // initPars = Fitters::ReadInit(outfile.Data());
     }
-    // Eval correct sigma
-    for(auto& [key, vals] : initPars)
-        vals[2] = sigmas.Eval(vals[1]);
-    // Set bounds and fix parameters
-    double minmean {0.3};
-    double maxmean {0.3};
-    Fitters::Runner::Bounds initBounds {};
-    Fitters::Runner::Fixed fixedPars {};
-    for(const auto& [key, init] : initPars)
-    {
-        // determine number of parameters
-        auto strkey {TString(key)};
-        int npars {};
-        if(strkey.Contains("g"))
-            npars = 3; // gaussian
-        else if(strkey.Contains("v"))
-            npars = 4; // voigt
-        else if(strkey.Contains("ps"))
-            npars = 1;
-        else
-            throw std::runtime_error("Wrong key received in initPars");
-        for(int par = 0; par < npars; par++)
-        {
-            std::pair<double, double> pair {}; // for bounds
-            bool boo {};                       // for fix parameters
-            if(par == 0)                       // Amplitude
-            {
-                pair = {0, 10000};
-                boo = false;
-            }
-            else if(par == 1) // Mean
-            {
-                std::cout << "Par : " << key << " mean : " << init[par] << '\n';
-                pair = {init[par] - minmean, init[par] + maxmean};
-                boo = false;
-            }
-            else if(par == 2) // Sigma
-            {
-                pair = {0, 0.5};
-                boo = true; // fix it
-            }
-            else
-                throw std::runtime_error("No automatic config for this parameter index (only gaussians so far)!");
-            // Fill
-            initBounds[key].push_back(pair);
-            fixedPars[key].push_back(boo);
-        }
-    }
+    // Save to be used later
+    inter.Write("./Outputs/interface.root");
 
-    // Run for all the nodes
-    Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, initPars, initBounds, fixedPars,
+    // Model
+    Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS}};
+
+    // Fitting range
+    double exmin {-5};
+    double exmax {25};
+
+    // Run!
+    Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,d) fit",
                     {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "1-n phase"}});
 }

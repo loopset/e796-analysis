@@ -8,6 +8,7 @@
 #include "AngDifferentialXS.h"
 #include "AngFitter.h"
 #include "AngIntervals.h"
+#include "FitInterface.h"
 #include "Interpolators.h"
 #include "PhysExperiment.h"
 
@@ -50,20 +51,20 @@ void Ang()
     fitter.ComputeIntegrals(2);
     fitter.DrawCounts();
 
-    // Read efficiency files
-    std::vector<std::string> peaks {"g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7"};
-    std::vector<std::string> ensdf {};
-    std::vector<std::string> effFiles {
-        gSelector->GetSimuFile("20O", "2H", "2H", 0).Data(),   gSelector->GetSimuFile("20O", "2H", "2H", 1.6).Data(),
-        gSelector->GetSimuFile("20O", "2H", "2H", 4.0).Data(), gSelector->GetSimuFile("20O", "2H", "2H", 5.5).Data(),
-        gSelector->GetSimuFile("20O", "2H", "2H", 6.5).Data(), gSelector->GetSimuFile("20O", "2H", "2H", 7.6).Data(),
-        gSelector->GetSimuFile("20O", "2H", "2H", 8.6).Data(), gSelector->GetSimuFile("20O", "2H", "2H", 9.6).Data(),
-    };
+    // Interface
+    Fitters::Interface inter;
+    inter.Read("./Outputs/interface.root");
+    auto peaks {inter.GetKeys()};
+
+    // Efficiency
     Interpolators::Efficiency eff;
     for(int p = 0; p < peaks.size(); p++)
-        eff.Add(peaks[p], effFiles[p]);
+    {
+        const auto& peak {peaks[p]};
+        eff.Add(peak, gSelector->GetSimuFile("20O", "2H", "2H", inter.GetGuess(peak)).Data());
+    }
     // Draw to check is fine
-    eff.Draw(true);
+    eff.Draw();
 
     // Set experiment info
     gSelector->RecomputeNormalization();
@@ -76,31 +77,11 @@ void Ang()
     xs.TrimX("g3", 16.2);
     xs.Write("./Outputs/");
 
-    // For gs
-    Angular::Comparator comp {"g0 = 0^{+} g.s", xs.Get("g0")};
-    comp.Add("Daeh", "./Inputs/g0_Daehnick/fort.201");
-    comp.Add("Haixia", "./Inputs/g0_Haixia/fort.201");
-    // comp.Add("Fit", "./Inputs/s0/fort.201");
-    comp.Fit();
-    comp.Draw("", true)->SaveAs("./Outputs/dd_0.png");
-
-    // For g1
-    Angular::Comparator comp1 {"g1 = 2^{+} @ 1.67 MeV", xs.Get("g1")};
-    comp1.Add("B(E2) = 28.1 E. Khan", "./Inputs/g1_Haixia/fort.202");
-    comp1.Fit();
-    comp1.Draw()->SaveAs("./Outputs/dd_1.png");
-
-    // For g2
-    Angular::Comparator comp2 {"g2 = 2^{+} @ 4 MeV", xs.Get("g2")};
-    comp2.Add("B(E2) = 28.1 E.Khan", "./Inputs/g2_Haixia/fort.202");
-    comp2.Fit();
-    comp2.Draw()->SaveAs("./Outputs/dd_2.png");
-
-    // For g3
-    Angular::Comparator comp3 {"g3 = 3^{-} @ 5.6 MeV", xs.Get("g2")};
-    comp3.Add("B(E3) = 882 E. Khan", "./Inputs/g3_Haixia/fort.202");
-    comp3.Fit();
-    comp3.Draw()->SaveAs("./Outputs/dd_3.png");
+    // Init comparators!
+    for(const auto& peak : peaks)
+        inter.AddAngularDistribution(peak, xs.Get(peak));
+    inter.ReadComparatorConfig("./comps.conf");
+    inter.DoComp();
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};
