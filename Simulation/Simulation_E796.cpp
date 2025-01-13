@@ -158,11 +158,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     std::string secondLayer {};
     if(isEl)
     {
+        silCentre = sm->GetMeanZ({3, 4, 5});
         specs->GetLayer("l0").ReplaceWithMatrix(sm);
-        silCentre = specs->GetLayer("l0").MeanZ({3, 4, 5});
         beamOffset = 7.52; // mm
         // specs->GetLayer("l0").SetPoint({0, 174.425, 0});
-        sm->MoveZTo(silCentre, {3, 4, 5});
         specs->EraseLayer("f0");
         specs->EraseLayer("f1");
         firstLayer = "l0";
@@ -255,22 +254,14 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // To compute a fine-grain efficiency, we require at least a binning width of 0.25 degrees!
     auto hThetaCM {HistConfig::ThetaCM.GetHistogram()};
     auto hThetaCMAll {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all", "All").GetHistogram()};
-
     auto hDistF0 {HistConfig::ChangeTitle(HistConfig::TL, "Distance to F0").GetHistogram()};
-
     auto hKinVertex {HistConfig::ChangeTitle(HistConfig::KinSimu, "Kinematics at vertex").GetHistogram()};
-
     auto hSP {HistConfig::SP.GetHistogram()};
-
     auto hEexAfter {HistConfig::ChangeTitle(HistConfig::Ex, "Ex after resolutions").GetHistogram()};
-
     auto hSPTheta {std::make_unique<TProfile2D>("hSPTheta", "SP vs #theta_{CM};Y [mm];Z [mm];#theta_{CM} [#circ]", 75,
                                                 0, 300, 75, 0, 300)};
-
     auto hRP {HistConfig::RP.GetHistogram()};
-
     auto hRPz {std::make_unique<TH2D>("hRPz", "RP;Y [mm];Z [mm]", 550, 0, 256, 550, 0, 256)};
-
     // Debug histograms
     auto hDeltaE {
         std::make_unique<TH2D>("hDeltaEE", "#Delta E - E;E_{in} [MeV];#Delta E_{0} [MeV]", 300, 0, 60, 300, 0, 60)};
@@ -498,7 +489,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             hSPTheta->Fill(silPoint0InMM.Y(), silPoint0InMM.Z(), thetaCM * TMath::RadToDeg());
             // RP histogram
             hRP->Fill(vertex.X(), vertex.Y());
-            hRPz->Fill(vertex.Y(), vertex.Z());
+            hRPz->Fill(isEl ? vertex.X() : vertex.Y(), vertex.Z());
             hELoss0->Fill(T3EnteringSil, eLoss0);
 
             // write to TTree
@@ -545,6 +536,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         hRP->DrawClone("colz");
         c0->cd(5);
         hRPz->DrawClone("colz");
+        sm->DrawClone();
         c0->cd(6);
         hELoss0->DrawClone("colz");
 
