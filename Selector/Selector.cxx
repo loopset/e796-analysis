@@ -5,6 +5,7 @@
 #include "ActColors.h"
 
 #include "TROOT.h"
+#include "TRegexp.h"
 #include "TString.h"
 #include "TSystem.h"
 
@@ -127,9 +128,32 @@ TString E796::Selector::GetSimuFile(const std::string& beam, const std::string& 
     return path + name;
 }
 
+std::vector<std::string> E796::Selector::GetSimuFiles(const std::string& beam, const std::string& target,
+                                                      const std::string& light, int nPS, int pPS)
+{
+    auto path {TString::Format("/media/Data/E796v2/Simulation/Outputs/%s/", fFlag.c_str())};
+    TRegexp regexp {TString::Format("tree_%s_%s_%s_[0-9]*\\.[0-9]*_nPS_%d_pPS_%d\\.root", beam.c_str(), target.c_str(),
+                                    light.c_str(), nPS, pPS)};
+    // Iterate over directory
+    std::vector<std::string> ret;
+    auto dirp {gSystem->OpenDirectory(path.Data())};
+    const char* file;
+    while((file = gSystem->GetDirEntry(dirp)))
+    {
+        if(TString(file).Contains(regexp))
+            ret.emplace_back(path + file);
+    }
+    gSystem->FreeDirectory(dirp);
+    return ret;
+}
 TString E796::Selector::GetSimuFile(double Ex, int nPS, int pPS)
 {
     return GetSimuFile(fBeam, fTarget, fLight, Ex, nPS, pPS);
+}
+
+std::vector<std::string> E796::Selector::GetSimuFiles(int nPS, int pPS)
+{
+    return GetSimuFiles(fBeam, fTarget, fLight, nPS, pPS);
 }
 
 TString E796::Selector::GetSigmasFile(const std::string& target, const std::string& light)

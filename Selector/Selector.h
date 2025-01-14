@@ -84,8 +84,11 @@ public:
     TString GetAnaFile(int pipe, const std::string& beam, const std::string& target, const std::string& light,
                        bool withFlag = true);
     TString GetSimuFile(double Ex, int nPS = 0, int pPS = 0);
+    std::vector<std::string> GetSimuFiles(int nPS = 0, int pPS = 0);
     TString GetSimuFile(const std::string& beam, const std::string& target, const std::string& light, double Ex,
                         int nPS = 0, int pPS = 0);
+    std::vector<std::string> GetSimuFiles(const std::string& beam, const std::string& target, const std::string& light,
+                                          int nPS = 0, int pPS = 0);
     TString GetSigmasFile(const std::string& target, const std::string& light);
 
     // Executing functions

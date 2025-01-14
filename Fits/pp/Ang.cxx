@@ -40,6 +40,7 @@ void Ang()
     phase.Foreach([&](double thetacm, double ex, double w) { ivs.FillPS(0, thetacm, ex, w); },
                   {"theta3CM", "Eex", "weight"});
     ivs.TreatPS(2);
+    ivs.Draw();
 
     // Init fitter
     Angular::Fitter fitter {&ivs};
@@ -67,12 +68,14 @@ void Ang()
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
+    xs.TrimX("g0", 18.5, true);
     xs.TrimX("g0", 24.5, false);
 
     for(const auto& peak : peaks)
         inter.AddAngularDistribution(peak, xs.Get(peak));
     inter.ReadComparatorConfig("./comps.conf");
     inter.DoComp();
+    inter.GetComp("g0")->ScaleToExp("CH89", &exp, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

@@ -1,4 +1,5 @@
 #include "ActColors.h"
+#include "ActCrossSection.h"
 #include "ActCutsManager.h"
 #include "ActDecayGenerator.h"
 #include "ActKinematicGenerator.h"
@@ -15,6 +16,7 @@
 #include "TCanvas.h"
 #include "TEfficiency.h"
 #include "TFile.h"
+#include "TGraphErrors.h"
 #include "TH2.h"
 #include "TMath.h"
 #include "TProfile2D.h"
@@ -23,10 +25,13 @@
 #include "TRandom3.h"
 #include "TStopwatch.h"
 #include "TString.h"
+#include "TSystem.h"
 #include "TTree.h"
 
 #include "Math/Point3Dfwd.h"
 #include "Math/Vector3Dfwd.h"
+
+#include "FitInterface.h"
 
 #include <cmath>
 #include <iostream>
@@ -113,6 +118,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // Set whether is elastic or not
     const bool isEl {target == arglight};
+    const bool isPS {neutronPS > 0 || protonPS > 0};
 
     // Set deuteron breakup type and if enabled (deutonbreaup != 0)
     int deutonbreakup {};
@@ -137,7 +143,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // number of iterations
     // const int iterations {static_cast<int>((isEl) ? (neutronPS ? 1e8 : 5e7) : 3e7)};
-    const int iterations {static_cast<int>(standalone ? 1e7 : 5e7)};
+    const int iterations {static_cast<int>(standalone ? 1e7 : 1e8)};
 
     // Which parameters will be activated
     bool stragglingInGas {true};
@@ -168,9 +174,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
     else
     {
-        silCentre = specs->GetLayer("f0").MeanZ({3, 4});
+        silCentre = sm->GetMeanZ({3, 4});
+        specs->GetLayer("f0").ReplaceWithMatrix(sm);
+        specs->GetLayer("f1").MoveZTo(silCentre, {3, 4});
         beamOffset = 9.01; // mm
-        sm->MoveZTo(silCentre, {3, 4});
         specs->EraseLayer("l0");
         firstLayer = "f0";
         secondLayer = "f1";
@@ -187,6 +194,38 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         throw std::runtime_error("Simulation_E796(): Could not load beam emittance histogram");
     hBeam->SetDirectory(nullptr);
     beamfile.reset();
+
+    // Cross-section sampler
+    ActSim::CrossSection* xs {};
+    // We use the Fitters interface to get the proper xs file
+    Fitters::Interface inter;
+    std::string interpath {"Outputs/interface.root"};
+    std::string xspath {};
+    if(target == "1H" && arglight == "1H")
+        xspath = "/media/Data/E796v2/Fits/pp/";
+    else if(target == "2H" && arglight == "2H")
+        xspath = "/media/Data/E796v2/Fits/dd/";
+    else if(target == "2H" && arglight == "3H")
+        xspath = "/media/Data/E796v2/Fits/dt/";
+    else if(target == "1H" && arglight == "2H")
+        xspath = "/media/Data/E796v2/Fits/pd/";
+    // If interface is available
+    if(gSystem->AccessPathName((xspath + interpath).c_str()))
+        std::cout << BOLDRED << "Simulation_E796(): no xs for this reaction channel!" << RESET << '\n';
+    else
+    {
+        inter.Read(xspath + interpath);
+        inter.ReadComparatorConfig(xspath + "comps.conf");
+        auto keyOfEx {inter.GetKeyOfGuess(Ex)};
+        auto file {inter.GetTheoCrossSection(keyOfEx)};
+        if(file.length())
+        {
+            std::cout << BOLDYELLOW << "Reading xs for state " << keyOfEx << " in " << file << RESET << '\n';
+            TGraphErrors aux {(xspath + file).c_str(), "%lg %lg"};
+            xs = new ActSim::CrossSection;
+            xs->ReadGraph(&aux);
+        }
+    }
 
     // Kinematics
     ActPhysics::Particle p1 {beam};
@@ -242,13 +281,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
                   << " -> using default eLoss0Cut" << RESET << '\n';
         eLoss0Cut = {0, 1000};
     }
-
-    //---- SIMULATION STARTS HERE
-    ROOT::EnableImplicitMT();
-
-    // timer
-    TStopwatch timer {};
-    timer.Start();
 
     // Histograms
     // To compute a fine-grain efficiency, we require at least a binning width of 0.25 degrees!
@@ -308,8 +340,15 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     outTree->Branch("theta3Lab", &theta3Lab_tree);
     double rpx_tree {};
     outTree->Branch("RPx", &rpx_tree);
+    int silIdx_tree {};
+    outTree->Branch("SilIdx", &silIdx_tree);
 
-    // RUN!
+    //---- SIMULATION STARTS HERE
+    ROOT::EnableImplicitMT();
+
+    // timer
+    TStopwatch timer {};
+    timer.Start();
     // print fancy info
     std::cout << BOLDMAGENTA << "Running for Ex = " << Ex << " MeV" << RESET << '\n';
     std::cout << BOLDGREEN;
@@ -341,12 +380,37 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
         // 3-> Run kinematics!
         kingen.SetBeamAndExEnergies(TBeam, Ex);
-        double weight {kingen.Generate()};
-        // focus on recoil 3 (light)
-        auto* PLight {kingen.GetLorentzVector(0)};
-        auto theta3Lab {PLight->Theta()};
-        auto phi3Lab {PLight->Phi()};
-        auto T3Lab {PLight->Energy() - p3.GetMass()};
+        double theta3Lab {};
+        double phi3Lab {};
+        double T3Lab {};
+        double weight {1};
+        if(isPS)
+        {
+            weight = kingen.Generate();
+            // focus on recoil 3 (light)
+            auto* PLight {kingen.GetLorentzVector(0)};
+            theta3Lab = PLight->Theta();
+            phi3Lab = PLight->Phi();
+            T3Lab = PLight->Energy() - p3.GetMass();
+        }
+        else
+        {
+            // Uniform phi always and it is the same for CM and Lab
+            auto phiCM {gRandom->Uniform(0, TMath::TwoPi())};
+            // thetaCM following xs or not
+            double thetaCM {};
+            if(xs)
+                thetaCM = xs->Sample() * TMath::DegToRad();
+            else
+                thetaCM = TMath::ACos(gRandom->Uniform(-1, 1));
+            // Ptr to current binary kinematics
+            auto* simkin {kingen.GetBinaryKinematics()};
+            simkin->ComputeRecoilKinematics(thetaCM, phiCM);
+            // Set info
+            theta3Lab = simkin->GetTheta3Lab();
+            phi3Lab = phiCM;
+            T3Lab = simkin->GetT3Lab();
+        }
         // If breakup, override values
         if(deutonbreakup)
         {
@@ -363,7 +427,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         hThetaCMAll->Fill(thetaCMBefore * TMath::RadToDeg());
 
         // 4-> Include thetaLab resolution to compute thetaCM and Ex afterwards
-        if(thetaResolution) // resolution in
+        if(thetaResolution)
             theta3Lab = gRandom->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
 
         // 4.1 -> Apply cut on vertex position
@@ -499,6 +563,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             EVertex_tree = T3Recon;
             theta3Lab_tree = theta3Lab * TMath::RadToDeg();
             rpx_tree = vertex.X();
+            silIdx_tree = silIndex0;
             outTree->Fill();
         }
     }
@@ -573,6 +638,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // deleting news
     delete srim;
+    if(xs)
+        delete xs;
 
     timer.Stop();
     timer.Print();
