@@ -117,13 +117,19 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         gROOT->SetBatch(true);
 
     // Set whether is elastic or not
-    const bool isEl {target == arglight};
-    const bool isPS {neutronPS > 0 || protonPS > 0};
+    bool isEl {target == arglight};
+    bool isPS {neutronPS > 0 || protonPS > 0 || neutronPS == -2};
 
-    // Set deuteron breakup type and if enabled (deutonbreaup != 0)
-    int deutonbreakup {};
-    if(neutronPS < 0)
-        deutonbreakup = -1 * neutronPS;
+    // Set different options
+    bool deutonbreakup {};
+    bool pdps {};
+    if(neutronPS == -1)
+        deutonbreakup = true;
+    if(neutronPS == -2)
+    {
+        pdps = true;
+        isEl = false;
+    }
 
     // Resolutions
     const double sigmaSil {0.060 / 2.355};
@@ -155,7 +161,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     auto* specs {new ActPhysics::SilSpecs};
     specs->ReadFile("../configs/detailedSilicons.conf");
     // Silicon EFFECTIVE matrix
-    auto* sm {E796Utils::GetEffSilMatrix(target, arglight)};
+    ActPhysics::SilMatrix* sm {};
     // Set reference position and offset along Z!
     double silCentre {};
     double beamOffset {}; // determined from emittance calculations
@@ -164,6 +170,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     std::string secondLayer {};
     if(isEl)
     {
+        sm = E796Utils::GetSideMatrix();
         silCentre = sm->GetMeanZ({3, 4, 5});
         specs->GetLayer("l0").ReplaceWithMatrix(sm);
         beamOffset = 7.52; // mm
@@ -174,6 +181,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
     else
     {
+        sm = E796Utils::GetFrontSilMatrix(arglight);
         silCentre = sm->GetMeanZ({3, 4});
         specs->GetLayer("f0").ReplaceWithMatrix(sm);
         specs->GetLayer("f1").MoveZTo(silCentre, {3, 4});
@@ -200,6 +208,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // We use the Fitters interface to get the proper xs file
     Fitters::Interface inter;
     std::string interpath {"Outputs/interface.root"};
+    std::string comppath {"comps.conf"};
     std::string xspath {};
     if(target == "1H" && arglight == "1H")
         xspath = "/media/Data/E796v2/Fits/pp/";
@@ -210,12 +219,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     else if(target == "1H" && arglight == "2H")
         xspath = "/media/Data/E796v2/Fits/pd/";
     // If interface is available
-    if(gSystem->AccessPathName((xspath + interpath).c_str()))
+    if(gSystem->AccessPathName((xspath + interpath).c_str()) || gSystem->AccessPathName((xspath + comppath).c_str()))
         std::cout << BOLDRED << "Simulation_E796(): no xs for this reaction channel!" << RESET << '\n';
     else
     {
         inter.Read(xspath + interpath);
-        inter.ReadComparatorConfig(xspath + "comps.conf");
+        inter.ReadCompConfig(xspath + "comps.conf");
         auto keyOfEx {inter.GetKeyOfGuess(Ex)};
         auto file {inter.GetTheoCrossSection(keyOfEx)};
         if(file.length())
@@ -235,27 +244,27 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     ActPhysics::Kinematics kaux {p1, p2, p3};
     ActPhysics::Particle p4 {kaux.GetParticle(4)};
     // Binary kinematics generator
-    ActSim::KinematicGenerator kingen {p1, p2, p3, p4, protonPS, (neutronPS > 0 ? neutronPS : 0)};
+    ActSim::KinematicGenerator kingen {p1, p2, p3, p4, protonPS, (neutronPS > 0 ? neutronPS : (pdps ? 1 : 0))};
     kingen.Print();
     // Allow breakup of deuteron!
     ActSim::DecayGenerator decaygen;
-    ActPhysics::Kinematics breakkin;
     // Set pointers to correct kinematics and define light particle to propagate in gas and sil
     auto light {arglight};
     ActPhysics::Kinematics* reckin {};
     if(deutonbreakup)
     {
-        if(deutonbreakup == 1) // reconstructed as 20O(p,p)
-        {
-            decaygen = ActSim::DecayGenerator {"d", "p", "n"};
-            breakkin = ActPhysics::Kinematics {beam, "p", "p"};
-            light = "1H";
-        }
-        else
-            throw std::invalid_argument("Simulation_E796(): only deutonbreakup == 1 is valid");
+        decaygen = ActSim::DecayGenerator {"d", "p", "n"};
+        light = "1H";
         decaygen.Print();
-        reckin = &breakkin;
+        reckin = new ActPhysics::Kinematics {beam, "p", "p"};
         std::cout << BOLDYELLOW << "Overriding light from " << arglight << " to " << light << RESET << '\n';
+    }
+    else if(pdps)
+    {
+        // No modification of light particle but
+        // 20O(d,d) 1n phase space reconstructed as 20O(p,d)
+        reckin = new ActPhysics::Kinematics {"20O(p,d)@700"};
+        std::cout << BOLDYELLOW << "Simulation_E796(): 20O(d,d) 1n PS as 20O(p,d)" << RESET << '\n';
     }
     else
     {
@@ -380,6 +389,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
         // 3-> Run kinematics!
         kingen.SetBeamAndExEnergies(TBeam, Ex);
+        reckin->SetBeamEnergyAndEx(TBeam, Ex);
         double theta3Lab {};
         double phi3Lab {};
         double T3Lab {};
@@ -420,7 +430,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             theta3Lab = proton->Theta();
             phi3Lab = proton->Phi();
             T3Lab = (proton->E() - decaygen.GetFinalMass(0));
-            breakkin.SetBeamEnergy(TBeam);
         }
         // Simualated thetaCM
         double thetaCMBefore {reckin->ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
@@ -550,7 +559,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             hEexAfter->Fill(ExAfter, weight);
             hSP->Fill((isEl) ? silPoint0InMM.X() : silPoint0InMM.Y(), silPoint0InMM.Z());
             // Fill histogram of SP with thetaCM as weight
-            hSPTheta->Fill(silPoint0InMM.Y(), silPoint0InMM.Z(), thetaCM * TMath::RadToDeg());
+            hSPTheta->Fill((isEl) ? silPoint0InMM.X() : silPoint0InMM.Y(), silPoint0InMM.Z(),
+                           thetaCM * TMath::RadToDeg());
             // RP histogram
             hRP->Fill(vertex.X(), vertex.Y());
             hRPz->Fill(isEl ? vertex.X() : vertex.Y(), vertex.Z());

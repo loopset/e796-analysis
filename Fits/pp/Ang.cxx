@@ -73,7 +73,7 @@ void Ang()
 
     for(const auto& peak : peaks)
         inter.AddAngularDistribution(peak, xs.Get(peak));
-    inter.ReadComparatorConfig("./comps.conf");
+    inter.ReadCompConfig("./comps.conf");
     inter.DoComp();
     inter.GetComp("g0")->ScaleToExp("CH89", &exp, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
 

@@ -6,6 +6,8 @@ root_dir = "../Fits"
 subfolders = [
     {"folder": "dd", "label": "20O(d,d)"},
     {"folder": "pp", "label": "20O(p,p)"},
+    {"folder": "dt", "label": "20O(d,t)"},
+    {"folder": "pd", "label": "20O(p,d)"},
 ]
 
 # Dictionary to hold the image paths for each group

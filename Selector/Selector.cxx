@@ -4,6 +4,8 @@
 
 #include "ActColors.h"
 
+#include <regex>
+
 #include "TROOT.h"
 #include "TRegexp.h"
 #include "TString.h"
@@ -146,6 +148,30 @@ std::vector<std::string> E796::Selector::GetSimuFiles(const std::string& beam, c
     gSystem->FreeDirectory(dirp);
     return ret;
 }
+
+double E796::Selector::GetExFromFileName(const std::string& file)
+{
+    // Flexible regex to match numeric value anywhere in the filename/path
+    std::regex re(R"((\d+\.\d+))");
+    std::smatch match;
+    if(std::regex_search(file, match, re))
+        return std::stod(match[1].str());
+    return 0.;
+}
+
+std::string E796::Selector::GetApproxSimuFile(const std::string& beam, const std::string& target,
+                                              const std::string& light, double Ex, int nPS, int pPS)
+{
+    auto files {GetSimuFiles(beam, target, light, nPS, pPS)};
+    // And now locate Ex file
+    double width {0.15}; // Ex acceptance :)
+    for(const auto& file : files)
+        if(double energy {GetExFromFileName(file)}; std::abs(energy - Ex) <= width)
+            return file;
+    throw std::runtime_error("Selector::GetApproxSimuFile(): cannot find file for " + std::to_string(Ex) +
+                             " MeV state");
+}
+
 TString E796::Selector::GetSimuFile(double Ex, int nPS, int pPS)
 {
     return GetSimuFile(fBeam, fTarget, fLight, Ex, nPS, pPS);

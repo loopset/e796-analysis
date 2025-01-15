@@ -79,7 +79,7 @@ void Ang()
     // Init comparators!
     for(const auto& peak : peaks)
         inter.AddAngularDistribution(peak, xs.Get(peak));
-    inter.ReadComparatorConfig("./comps.conf");
+    inter.ReadCompConfig("./comps.conf");
     inter.DoComp();
 
     // plotting

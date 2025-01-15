@@ -89,6 +89,8 @@ public:
                         int nPS = 0, int pPS = 0);
     std::vector<std::string> GetSimuFiles(const std::string& beam, const std::string& target, const std::string& light,
                                           int nPS = 0, int pPS = 0);
+    std::string GetApproxSimuFile(const std::string& beam, const std::string& target, const std::string& light,
+                                  double Ex, int nPS = 0, int pPS = 0);
     TString GetSigmasFile(const std::string& target, const std::string& light);
 
     // Executing functions
@@ -102,6 +104,7 @@ public:
 
 private:
     void ReassignNames();
+    double GetExFromFileName(const std::string& file);
 };
 } // namespace E796
 

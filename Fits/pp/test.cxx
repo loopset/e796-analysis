@@ -6,7 +6,7 @@ void test()
 {
     Fitters::Interface inter;
     inter.Read("./Outputs/interface.root");
-    inter.ReadComparatorConfig("./comps.conf");
+    inter.ReadCompConfig("./comps.conf");
     inter.DoComp();
     // TEnv env {"./comps.conf"};
     // env.Print();
