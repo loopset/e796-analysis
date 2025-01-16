@@ -63,7 +63,7 @@ void Ang()
     Interpolators::Efficiency eff;
     for(const auto& peak : peaks)
         eff.Add(peak, gSelector->GetApproxSimuFile("20O", "2H", "3H", inter.GetGuess(peak)));
-    eff.Draw();
+    eff.Draw()->SaveAs("./Outputs/effs.png");
 
     // Set experiment info
     gSelector->RecomputeNormalization();

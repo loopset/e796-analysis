@@ -122,13 +122,13 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // Set different options
     bool deutonbreakup {};
-    bool pdps {};
+    bool pdphase {};
     if(neutronPS == -1)
         deutonbreakup = true;
     if(neutronPS == -2)
     {
-        pdps = true;
-        isEl = false;
+        pdphase = true;
+        isEl = false; // deuterons that go to front layer
     }
 
     // Resolutions
@@ -139,16 +139,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Center in Z
     // Mean is defined from silicon matrices
     const double zVertexSigma {3.73};
-    // Center in Y
-    const double yVertexMean {126.5}; // according to juan's emittance
-    const double yVertexSigma {2.1};
 
     // Silicon thresholds
     const double thresholdSi0 {1.};
     const double thresholdSi1 {1.};
 
     // number of iterations
-    // const int iterations {static_cast<int>((isEl) ? (neutronPS ? 1e8 : 5e7) : 3e7)};
     const int iterations {static_cast<int>(standalone ? 1e7 : 1e8)};
 
     // Which parameters will be activated
@@ -218,6 +214,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         xspath = "/media/Data/E796v2/Fits/dt/";
     else if(target == "1H" && arglight == "2H")
         xspath = "/media/Data/E796v2/Fits/pd/";
+    else
+        throw std::runtime_error("Simulation_E796(): no known xs config");
     // If interface is available
     if(gSystem->AccessPathName((xspath + interpath).c_str()) || gSystem->AccessPathName((xspath + comppath).c_str()))
         std::cout << BOLDRED << "Simulation_E796(): no xs for this reaction channel!" << RESET << '\n';
@@ -244,7 +242,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     ActPhysics::Kinematics kaux {p1, p2, p3};
     ActPhysics::Particle p4 {kaux.GetParticle(4)};
     // Binary kinematics generator
-    ActSim::KinematicGenerator kingen {p1, p2, p3, p4, protonPS, (neutronPS > 0 ? neutronPS : (pdps ? 1 : 0))};
+    ActSim::KinematicGenerator kingen {p1, p2, p3, p4, protonPS, (neutronPS > 0 ? neutronPS : (pdphase ? 1 : 0))};
     kingen.Print();
     // Allow breakup of deuteron!
     ActSim::DecayGenerator decaygen;
@@ -254,12 +252,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     if(deutonbreakup)
     {
         decaygen = ActSim::DecayGenerator {"d", "p", "n"};
-        light = "1H";
+        light = "1H";// originally is 20O(d,d) but d decays to p + n so we propagate a proton
         decaygen.Print();
         reckin = new ActPhysics::Kinematics {beam, "p", "p"};
         std::cout << BOLDYELLOW << "Overriding light from " << arglight << " to " << light << RESET << '\n';
     }
-    else if(pdps)
+    else if(pdphase)
     {
         // No modification of light particle but
         // 20O(d,d) 1n phase space reconstructed as 20O(p,d)

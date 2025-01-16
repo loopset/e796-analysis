@@ -26,7 +26,7 @@ void Runner(TString what = "plot", bool standalone = true)
     gSelector->Print();
     // Phase space reactions: when the heavy decays by proton or neutron emission
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
-    int neutronPS {-2}; // number of neutrons in final state:
+    int neutronPS {0}; // number of neutrons in final state:
     // if -1, break deuteron; if -2, 20O(d,d) 1n PS but rec as 20O(p,d)
     int protonPS {0}; // number of protons in final state
     double T1 {35};   // Beam energy: 35 MeV / u
@@ -40,7 +40,7 @@ void Runner(TString what = "plot", bool standalone = true)
             if(light == "1H")
                 Eexs = {0, 1.67};
             if(light == "2H")
-                Eexs = {0, 1.47, 3.24};
+                Eexs = {0, 1.4, 3.2};
         }
         // d reactions
         if(target == "2H")

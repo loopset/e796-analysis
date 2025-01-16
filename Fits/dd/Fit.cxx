@@ -46,9 +46,8 @@ void Fit()
     inter.AddState("ps0", {1.5}, "ps0");
     inter.EndAddingStates();
     // Sigma from interpolator
-    for(const auto& key : inter.GetKeys())
-        inter.SetInitial(key, 2, sigmas.Eval(inter.GetGuess(key)));
-    inter.SetFixAll(2, true);
+    inter.EvalSigma(sigmas.GetGraph());
+    // inter.SetFixAll(2, true);
     // Reread in case file exists
     auto outfile {TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().data())};
     if(!gSystem->AccessPathName(outfile))

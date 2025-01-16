@@ -38,10 +38,9 @@ void Fit()
     inter.AddState("ps0", {1.5});
     inter.EndAddingStates();
     // Eval sigma from interpolator
-    for(const auto& key : inter.GetKeys())
-        inter.SetInitial(key, 2, sigmas.Eval(inter.GetGuess(key)));
+    inter.EvalSigma(sigmas.GetGraph());
     // And fix it!
-    inter.SetFix("g1", 2, true);
+    // inter.SetFix("g1", 2, true);
     inter.Print();
     inter.Write("./Outputs/interface.root");
 

@@ -24,11 +24,11 @@ void Fit()
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "3H")};
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
     // Phase spaces
-    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile(0, 1, 0)};
+    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
     auto hPS {phase.Histo1D(E796Fit::Exdt, "Eex", "weight")};
     hPS->SetNameTitle("hPS", "1n PS");
     Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr());
-    ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile(0, 2, 0)};
+    ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
     auto hPS2 {phase2.Histo1D(E796Fit::Exdt, "Eex", "weight")};
     hPS2->SetNameTitle("hPS", "2n PS");
     Fitters::TreatPS(hEx.GetPtr(), hPS2.GetPtr());
@@ -56,11 +56,11 @@ void Fit()
     inter.EndAddingStates();
     // Wider mean margin
     inter.SetOffsetMeanBounds(0.5);
-    // inter.ReadPreviousFit("./Outputs/fit_juan_RPx.root");
+    inter.ReadPreviousFit("./Outputs/fit_juan_RPx.root");
     // Eval correct sigma
     inter.EvalSigma(sigmas.GetGraph());
     // Fix all sigmas (3rd parameter, 2nd index of vector)
-    inter.SetFixAll(2, true);
+    // inter.SetFixAll(2, true);
     inter.SetBounds("v2", 3, {0, 0.1});
     inter.SetBounds("v3", 3, {0, 0.1});
     inter.Write("./Outputs/interface.root");
