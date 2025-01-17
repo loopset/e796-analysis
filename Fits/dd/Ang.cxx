@@ -11,7 +11,6 @@
 #include "Interpolators.h"
 #include "PhysExperiment.h"
 
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -75,7 +74,7 @@ void Ang()
     xs.TrimX("g1", 16.75);
     xs.TrimX("g1", 21, false);
     xs.TrimX("g2", 16.2);
-    xs.TrimX("g3", 16.2);
+    xs.TrimX("g3", 17.8);
     xs.Write("./Outputs/");
 
     // Init comparators!
@@ -92,9 +91,5 @@ void Ang()
     c0->cd(2);
     hEx->DrawClone();
 
-    // // List of canvas
-    // auto f {std::make_unique<TFile>("../../website/RootFiles/ang_dd.root", "recreate")};
-    // for(auto* c : *gROOT->GetListOfCanvases())
-    //     c->Write();
-    // f->Close();
+    gSelector->SendToWebsite("dd.root", gROOT->GetListOfCanvases());
 }

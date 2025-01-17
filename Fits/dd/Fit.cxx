@@ -3,7 +3,7 @@
 
 #include "TROOT.h"
 #include "TString.h"
-#include "TSystem.h"
+#include "TVirtualPad.h"
 
 #include "FitInterface.h"
 #include "FitModel.h"
@@ -45,16 +45,11 @@ void Fit()
     inter.AddState("g7", {50, 9.6, sigma}, "0+2");
     inter.AddState("ps0", {1.5}, "ps0");
     inter.EndAddingStates();
+    // Read from previous fit
+    inter.ReadPreviousFit("./Outputs/fit_" + gSelector->GetFlag() + ".root");
     // Sigma from interpolator
     inter.EvalSigma(sigmas.GetGraph());
     inter.SetFixAll(2, true);
-    // Reread in case file exists
-    auto outfile {TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().data())};
-    if(!gSystem->AccessPathName(outfile))
-    {
-        // std::cout << "Setting parameters from previous fit" << '\n';
-        // initPars = Fitters::ReadInit(outfile.Data());
-    }
     // Save to be used later
     inter.Write("./Outputs/interface.root");
 
@@ -69,4 +64,6 @@ void Fit()
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,d) fit",
                     {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "1-n phase"}});
+
+    gSelector->SendToWebsite("dd.root", gPad);
 }

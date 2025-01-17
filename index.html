@@ -75,7 +75,6 @@
 
             // Add images to the gallery
             images.forEach(imagePath => {
-                console.log(`Adding image: ${imagePath}`);
                 const img = document.createElement("img");
                 img.src = imagePath;
                 img.alt = folderName;
@@ -111,8 +110,8 @@
         }
     }
 
-    // Fetch the JSON file and use its content
-    fetch('./website/list.json')
+    // Fetch the proper JSON file
+    fetch("./website/list.json")
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);

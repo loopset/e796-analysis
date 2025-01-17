@@ -3,6 +3,7 @@
 
 #include "TROOT.h"
 #include "TString.h"
+#include "TVirtualPad.h"
 
 #include "FitInterface.h"
 #include "FitModel.h"
@@ -40,7 +41,7 @@ void Fit()
     // Eval sigma from interpolator
     inter.EvalSigma(sigmas.GetGraph());
     // And fix it!
-    // inter.SetFix("g1", 2, true);
+    inter.SetFix("g1", 2, true);
     inter.Print();
     inter.Write("./Outputs/interface.root");
 
@@ -55,4 +56,6 @@ void Fit()
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(p,p) fit",
                     {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "20O(d,d) breakup"}});
+
+    gSelector->SendToWebsite("pp.root", gPad);
 }

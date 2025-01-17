@@ -71,6 +71,7 @@ void Ang()
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
+    xs.TrimX("v0", 13, false);
     xs.Write("./Outputs/", gSelector->GetFlag());
 
     // Comparators!
@@ -86,4 +87,6 @@ void Ang()
     hCM->DrawClone("colz");
     c0->cd(2);
     hEx->DrawClone();
+
+    gSelector->SendToWebsite("dt.root", gROOT->GetListOfCanvases());
 }

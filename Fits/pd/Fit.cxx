@@ -31,10 +31,11 @@ void Fit()
     inter.AddState("g2", {110, 3.1, sigma}, "5/2+");
     inter.AddState("ps0", {1});
     inter.EndAddingStates();
-    // // Set simulated sigmas
-    // inter.EvalSigma(Interpolators::Sigmas(gSelector->GetSigmasFile("1H", "2H").Data()).GetGraph());
-    // // Fix sigmas
-    // inter.SetFixAll(2, true);
+    inter.ReadPreviousFit("./Outputs/fit_" + gSelector->GetFlag() + ".root");
+    // Set simulated sigmas
+    inter.EvalSigma(Interpolators::Sigmas(gSelector->GetSigmasFile("1H", "2H").Data()).GetGraph());
+    // Fix sigmas
+    inter.SetFixAll(2, true);
     inter.Write("./Outputs/interface.root");
 
     // Fitting range

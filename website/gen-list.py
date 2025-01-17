@@ -8,11 +8,13 @@ jsroot = "https://root.cern/js/latest/"
 github = "https://loopset.github.io/e796-analysis/"
 
 
-def attachUrl(url: str | list, title: str = "") -> str:
+def attachUrl(url: str | list, path: str, title: str = "") -> str:
+    if len(url) == 0:  # empty: return jsroot default web
+        return jsroot
     if isinstance(url, str):  # single url
-        base = jsroot + "?file=" + github + url
+        base = jsroot + "?file=" + path + url
     else:  # a list of urls
-        files = f"[{', '.join([repr(github + item) for item in url])}]"
+        files = f"[{', '.join([repr(path + item) for item in url])}]"
         base = jsroot + "?files=" + files
     # Append options
     options = "&status=size&layout=tabs&title=e796 " + title
@@ -25,36 +27,56 @@ subfolders = [
         "folder": "dd",
         "label": "20O(d,d)",
         "links": [
-            {"url": jsroot, "text": "Go to JSRoot"},
             {
-                "url": [
-                    "website/RootFiles/ang_dd.root",
-                    "website/RootFiles/sigmas.root",
-                ],
-                "text": "Angular distribution",
+                "url": "website/RootFiles/dd.root",
+                "text": "Global fit and angular distributions",
             },
         ],
     },
     {
         "folder": "pp",
         "label": "20O(p,p)",
-        "links": [],
+        "links": [
+            {
+                "url": "website/RootFiles/pp.root",
+                "text": "Global fit and angular distributions",
+            },
+        ],
     },
     {
         "folder": "dt",
         "label": "20O(d,t)",
-        "links": [],
+        "links": [
+            {
+                "url": "website/RootFiles/dt.root",
+                "text": "Global fit and angular distributions",
+            },
+        ],
     },
-    {"folder": "pd", "label": "20O(p,d)", "links": []},
+    {
+        "folder": "pd",
+        "label": "20O(p,d)",
+        "links": [
+            {
+                "url": "website/RootFiles/pd.root",
+                "text": "Global fit and angular distributions",
+            },
+        ],
+    },
     {
         "folder": "Miscellanea",
         "label": "Miscellanea",
-        "links": [{"url": "website/RootFiles/sigmas.root", "text": "Sigma study"}],
+        "links": [
+            {"url": "", "text": "Go to JSRoot"},
+            {"url": "website/RootFiles/sigmas.root", "text": "Sigma study with"},
+        ],
     },
 ]
 
-# Dictionary to hold the image paths and links for each group
-folder_data = {}
+# Dict to hold structure for web
+structure = {}
+# Same but holding local paths to files!
+localhost = {}
 
 # Loop through each subfolder and fetch .png files
 for subfolder in subfolders:
@@ -77,17 +99,15 @@ for subfolder in subfolders:
     else:  # Withouth pictures
         images = []
 
-    # Modify links
+    # Modify online
     for link in links:
         for key in link:
             if key == "url":
-                link[key] = attachUrl(link[key], label)
+                link[key] = attachUrl(link[key], github, label)
+
     # Write to table!
-    folder_data[label] = {"images": images, "links": links}
+    structure[label] = {"images": images, "links": links}
 
-# Write the folder data to a JSON file
-output_json_path = "./list.json"  # Ensure to save this outside the current folder
-with open(output_json_path, "w") as json_file:
-    json.dump(folder_data, json_file, indent=4)
-
-print(f"JSON file generated at: {output_json_path}")
+# Write to two JSON files
+with open("./list.json", "w") as json_file:
+    json.dump(structure, json_file, indent=4)

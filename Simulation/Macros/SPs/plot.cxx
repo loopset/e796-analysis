@@ -1,13 +1,15 @@
 #include "ROOT/RDataFrame.hxx"
 
 #include "TCanvas.h"
+#include "TString.h"
+#include "TVirtualPad.h"
 
 #include <initializer_list>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <vector>
 
-#include "../../../PostAnalysis/Utils.cxx"
 #include "../../../Selector/Selector.h"
 
 void plot()
@@ -15,10 +17,12 @@ void plot()
     double Ex {};
 
     ROOT::EnableImplicitMT();
-    std::vector<std::string> labels {"20O(p,p)", "20O(d,d)", "20O(d,d) break"};
-    std::vector<std::vector<std::string>> reaction {gSelector->GetSimuFiles("20O", "1H", "1H"),
-                                                    gSelector->GetSimuFiles("20O", "2H", "2H"),
-                                                    gSelector->GetSimuFiles("20O", "2H", "2H", -1)};
+    std::vector<std::string> labels {"20O(p,p)", "20O(d,d)", "20O(d,d) break", "20O(d,t)", "20O(p,d)"};
+    std::vector<std::vector<std::string>> reaction {
+        gSelector->GetSimuFiles("20O", "1H", "1H"),     gSelector->GetSimuFiles("20O", "2H", "2H"),
+        gSelector->GetSimuFiles("20O", "2H", "2H", -1), gSelector->GetSimuFiles("20O", "2H", "3H"),
+        gSelector->GetSimuFiles("20O", "1H", "2H"),
+    };
 
     // Run!
     std::vector<TH2D*> hsSP;
@@ -54,34 +58,42 @@ void plot()
         idx++;
     }
 
-    // Get silicon matrix
-    auto* sm {E796Utils::GetSideMatrix()};
-
-    // draw
-    auto* c0 {new TCanvas {"c0", "Simulation SPs"}};
-    c0->DivideSquare(hsIdx.size() * 2);
-    for(int i = 0; i < hsIdx.size(); i++)
+    // Drawing structure
+    int np {6};
+    int nc {static_cast<int>(labels.size() / np)};
+    int ip {0};
+    int ic {0};
+    TCanvas* c {};
+    for(int i = 0; i < labels.size(); i++)
     {
-        c0->cd(i + 1);
+        std::cout << "i : " << i << " ip : " << ip << '\n';
+        if(ip == 0)
+        {
+            c = new TCanvas {TString::Format("c%d", ic), "Canvas for count distrib"};
+            c->DivideSquare(np);
+        }
+        c->cd(2 * ip + 1);
         gPad->SetLogy();
         hsIdx[i]->Draw("histe");
-    }
-    for(int i = 0; i < hsSP.size(); i++)
-    {
-        c0->cd(hsIdx.size() + 1 + i);
+        c->cd(2 * ip + 2);
         hsSP[i]->Draw();
-        sm->DrawClone();
+        ip++;
+        if(ip * 2 >= np)
+        {
+            ip = 0;
+            ic++;
+        }
     }
 
-    // Superimpose pp and d breakup
-    auto* hIdxSum {(TH1D*)hsIdx.front()->Clone()};
-    hIdxSum->Add(hsIdx.back(), 1);
-    auto* hSPSum {(TH2D*)hsSP.front()->Clone()};
-    hSPSum->Add(hsSP.back(), 1);
-    auto* c1 {new TCanvas {"c1", "Superimposed histos"}};
-    c1->DivideSquare(4);
-    c1->cd(1);
-    hIdxSum->Draw();
-    c1->cd(2);
-    hSPSum->DrawClone("colz");
+    // // Superimpose pp and d breakup
+    // auto* hIdxSum {(TH1D*)hsIdx.front()->Clone()};
+    // hIdxSum->Add(hsIdx.back(), 1);
+    // auto* hSPSum {(TH2D*)hsSP.front()->Clone()};
+    // hSPSum->Add(hsSP.back(), 1);
+    // auto* c1 {new TCanvas {"c1", "Superimposed histos"}};
+    // c1->DivideSquare(4);
+    // c1->cd(1);
+    // hIdxSum->Draw();
+    // c1->cd(2);
+    // hSPSum->DrawClone("colz");
 }

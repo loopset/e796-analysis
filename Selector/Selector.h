@@ -10,6 +10,11 @@
 #include <unordered_map>
 #include <utility>
 #include <vector>
+
+// forward declaration
+class TObject;
+class TList;
+
 namespace E796
 {
 class Config
@@ -95,6 +100,10 @@ public:
 
     // Executing functions
     void RecomputeNormalization() const;
+
+    // Other functions
+    void SendToWebsite(const std::string& file, TObject* o);
+    void SendToWebsite(const std::string& file, TList* list);
 
     // Particle names
     const std::string GetBeam() const { return fBeam; }

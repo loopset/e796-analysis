@@ -84,4 +84,6 @@ void Ang()
     hCM->DrawClone("colz");
     c0->cd(2);
     hEx->DrawClone();
+
+    gSelector->SendToWebsite("pp.root", gROOT->GetListOfCanvases());
 }

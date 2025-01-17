@@ -6,6 +6,9 @@
 
 #include <regex>
 
+#include "TFile.h"
+#include "TList.h"
+#include "TObject.h"
 #include "TROOT.h"
 #include "TRegexp.h"
 #include "TString.h"
@@ -221,4 +224,17 @@ void E796::Selector::ReassignNames()
     }
 }
 
+void E796::Selector::SendToWebsite(const std::string& file, TObject* o)
+{
+    std::string path {"/media/Data/E796v2/website/RootFiles/"};
+    auto f {std::make_unique<TFile>((path + file).c_str(), "update")};
+    o->Write(nullptr, TObject::kOverwrite);
+    f->Close();
+}
+
+void E796::Selector::SendToWebsite(const std::string& file, TList* list)
+{
+    for(auto* o : *list)
+        SendToWebsite(file, o);
+}
 #endif
