@@ -4,30 +4,35 @@ import json
 root_dir = "../Fits"
 
 # JSROOT latest
-jsroot = "https://root.cern/js/"
-github = "https://raw.githubusercontent.com/loopset/e796-analysis/main/"
-src = "website/RootFiles/"
+jsroot = "https://root.cern/js/latest/"
+github = "https://loopset.github.io/e796-analysis/"
 
 
-def attachUrl(url: str) -> str:
-    return jsroot + "file?url=" + github + url
+def attachUrl(url: str | list, title: str = "") -> str:
+    if isinstance(url, str):  # single url
+        base = jsroot + "?file=" + github + url
+    else:  # a list of urls
+        files = f"[{', '.join([repr(github + item) for item in url])}]"
+        base = jsroot + "?files=" + files
+    # Append options
+    options = "&status=size&layout=tabs&title=e796 " + title
+    return base + options
 
 
 # List of subfolders, their labels, and manually specified links
 subfolders = [
     {
-        "folder": "Miscellanea",
-        "label": "Miscellanea",
-        "links": [
-            {"url": "website/RootFiles/sigmas.root", "text": "Sigma study"},
-        ],
-    },
-    {
         "folder": "dd",
         "label": "20O(d,d)",
         "links": [
             {"url": jsroot, "text": "Go to JSRoot"},
-            {"url": src + "ang_dd.root", "text": "Angular distributions"},
+            {
+                "url": [
+                    "website/RootFiles/ang_dd.root",
+                    "website/RootFiles/sigmas.root",
+                ],
+                "text": "Angular distribution",
+            },
         ],
     },
     {
@@ -41,6 +46,11 @@ subfolders = [
         "links": [],
     },
     {"folder": "pd", "label": "20O(p,d)", "links": []},
+    {
+        "folder": "Miscellanea",
+        "label": "Miscellanea",
+        "links": [{"url": "website/RootFiles/sigmas.root", "text": "Sigma study"}],
+    },
 ]
 
 # Dictionary to hold the image paths and links for each group
@@ -71,7 +81,7 @@ for subfolder in subfolders:
     for link in links:
         for key in link:
             if key == "url":
-                link[key] = attachUrl(link[key])
+                link[key] = attachUrl(link[key], label)
     # Write to table!
     folder_data[label] = {"images": images, "links": links}
 

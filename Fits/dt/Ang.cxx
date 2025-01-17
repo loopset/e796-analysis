@@ -31,7 +31,7 @@ void Ang()
     ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
 
     // Init intervals
-    double thetaCMMin {6};
+    double thetaCMMin {5.5};
     double thetaCMMax {14};
     double thetaCMStep {1.5};
     int nps {2};

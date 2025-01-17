@@ -60,7 +60,7 @@ void Fit()
     // Eval correct sigma
     inter.EvalSigma(sigmas.GetGraph());
     // Fix all sigmas (3rd parameter, 2nd index of vector)
-    // inter.SetFixAll(2, true);
+    inter.SetFixAll(2, true);
     inter.SetBounds("v2", 3, {0, 0.1});
     inter.SetBounds("v3", 3, {0, 0.1});
     inter.Write("./Outputs/interface.root");

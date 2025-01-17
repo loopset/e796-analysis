@@ -92,9 +92,9 @@ void Ang()
     c0->cd(2);
     hEx->DrawClone();
 
-    // List of canvas
-    auto f {std::make_unique<TFile>("../../website/RootFiles/ang_dd.root", "recreate")};
-    for(auto* c : *gROOT->GetListOfCanvases())
-        c->Write();
-    f->Close();
+    // // List of canvas
+    // auto f {std::make_unique<TFile>("../../website/RootFiles/ang_dd.root", "recreate")};
+    // for(auto* c : *gROOT->GetListOfCanvases())
+    //     c->Write();
+    // f->Close();
 }
