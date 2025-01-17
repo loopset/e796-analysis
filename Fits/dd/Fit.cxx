@@ -39,7 +39,7 @@ void Fit()
     inter.AddState("g1", {100, 1.6, sigma}, "2+0");
     inter.AddState("g2", {50, 4, sigma}, "2+0");
     inter.AddState("g3", {50, 5.5, sigma}, "0+1");
-    inter.AddState("g4", {50, 6.5, sigma}, "0+");
+    inter.AddState("g4", {50, 6.5, sigma}, "2+");
     inter.AddState("g5", {50, 7.6, sigma}, "3- and 4+");
     inter.AddState("g6", {50, 8.6, sigma}, "4+0");
     inter.AddState("g7", {50, 9.6, sigma}, "0+2");
@@ -47,7 +47,7 @@ void Fit()
     inter.EndAddingStates();
     // Sigma from interpolator
     inter.EvalSigma(sigmas.GetGraph());
-    // inter.SetFixAll(2, true);
+    inter.SetFixAll(2, true);
     // Reread in case file exists
     auto outfile {TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().data())};
     if(!gSystem->AccessPathName(outfile))

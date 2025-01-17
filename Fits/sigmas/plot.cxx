@@ -1,4 +1,5 @@
 #include "TCanvas.h"
+#include "TFile.h"
 #include "TGraphErrors.h"
 #include "TMultiGraph.h"
 #include "TString.h"
@@ -8,6 +9,7 @@
 #include "Interpolators.h"
 
 #include <iostream>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -63,6 +65,13 @@ void plot()
         Interpolators::Sigmas sigmas {gSelector->GetSigmasFile(pairs[idx].first, pairs[idx].second).Data()};
         mg->Add(sigmas.GetGraph());
 
+        // Simulation with cross-sections off
+        auto legacy {TString::Format("../../Simulation/Outputs/juan_RPx/sigmas_noxs/sigmas_20O_%s_%s.root",
+                                     pairs[idx].first.c_str(), pairs[idx].second.c_str())};
+        auto* gleg {Interpolators::Sigmas(legacy.Data()).GetGraph()};
+        gleg->SetLineStyle(2);
+        mg->Add(gleg);
+
         // Draw!
         cs[ic]->cd(ip + 1);
         Fitters::ReadDrawGlobalFit(fitfile);
@@ -80,12 +89,8 @@ void plot()
             ip = 0;
     }
 
-    // Draw
-    // auto* c0 {new TCanvas {"c0", "Sigma plot"}};
-    // c0->DivideSquare(mgs.size());
-    // for(int i = 0; i < mgs.size(); i++)
-    // {
-    //     c0->cd(i + 1);
-    //     mgs[i]->Draw("apl");
-    // }
+    // Save canvas to website!
+    auto f {std::make_unique<TFile>("../../website/RootFiles/sigmas.root", "recreate")};
+    for(auto c : cs)
+        c->Write();
 }

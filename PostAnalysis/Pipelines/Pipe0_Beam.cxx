@@ -16,10 +16,10 @@ void Pipe0_Beam()
     ActRoot::DataManager datman {"/media/Data/E796v2/configs/data.conf", ActRoot::ModeType::EReadSilMod};
     auto chain {datman.GetJoinedData()};
     ROOT::RDataFrame df {*chain};
-    // df.Describe().Print();
 
     // Get GATCONF values
-    auto def {df.Define("GATCONF", [](ActRoot::ModularData& mod) { return mod.fLeaves["GATCONF"]; }, {"ModularData"})};
+    auto def {df.Define("GATCONF", [](ActRoot::ModularData& mod) { return static_cast<int>(mod.fLeaves["GATCONF"]); },
+                        {"ModularData"})};
 
     // Book histograms
     auto hGATCONF {def.Histo1D("GATCONF")};
@@ -27,13 +27,12 @@ void Pipe0_Beam()
     // And cound CFA triggers
     std::atomic<unsigned long int> cfa {};
     def.Foreach(
-        [&](ActRoot::ModularData& mod)
+        [&](const int& gatconf)
         {
-            auto gatconf {static_cast<int>(mod.fLeaves["GATCONF"])};
             if(gatconf == 1)
                 cfa++;
         },
-        {"ModularData"});
+        {"GATCONF"});
 
     // Draw
     auto* c0 {new TCanvas {"c00", "Pipe 0 canvas 0"}};

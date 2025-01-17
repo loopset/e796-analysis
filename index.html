@@ -58,13 +58,15 @@
         const contentDiv = document.getElementById("content");
 
         // Loop through each group and create sections
-        for (const [folderName, images] of Object.entries(data)) {
+        for (const [folderName, folderData] of Object.entries(data)) {
+            const { images, links } = folderData; // Expecting "images" and "links"
+
             const folderDiv = document.createElement("div");
             folderDiv.className = "folder";
 
             // Add a folder title as a header for the section
             const folderTitle = document.createElement("h2");
-            folderTitle.textContent = folderName; // Display "20O(d,d)" as header
+            folderTitle.textContent = folderName;
             folderDiv.appendChild(folderTitle);
 
             // Create a gallery for this folder
@@ -88,10 +90,27 @@
             // Append gallery to folder
             folderDiv.appendChild(galleryDiv);
 
+            // Add a bullet list of links
+            if (links && links.length > 0) {
+                const listDiv = document.createElement("ul");
+                listDiv.style.textAlign = "left"; // Align left for bullet lists
+                links.forEach(link => {
+                    const listItem = document.createElement("li");
+                    const linkAnchor = document.createElement("a");
+                    linkAnchor.href = link.url;
+                    linkAnchor.textContent = link.text;
+                    linkAnchor.target = "_blank"; // Open in a new tab
+                    listItem.appendChild(linkAnchor);
+                    listDiv.appendChild(listItem);
+                });
+                folderDiv.appendChild(listDiv);
+            }
+
             // Append folder to the content div
             contentDiv.appendChild(folderDiv);
         }
     }
+
     // Fetch the JSON file and use its content
     fetch('./website/list.json')
         .then(response => {
@@ -107,20 +126,6 @@
         .catch(error => {
             console.error("Fetch error:", error); // Error handling
         });
-    // // Call to function with data
-    // const data = {
-    //     "20O(d,d)": [
-    //         "Fits/dd/Outputs/dd_0.png",
-    //         "Fits/dd/Outputs/dd_1.png",
-    //         "Fits/dd/Outputs/dd_2.png",
-    //         "Fits/dd/Outputs/dd_3.png"
-    //     ],
-    //     "20O(p,p)": [
-    //         "Fits/pp/Outputs/pp_0.png",
-    //         "Fits/pp/Outputs/pp_1.png"
-    //     ]
-    // };
-    // populateWeb(data);
 </script>
 </body>
 </html>
