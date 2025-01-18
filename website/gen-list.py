@@ -6,6 +6,7 @@ root_dir = "../Fits"
 # JSROOT latest
 jsroot = "https://root.cern/js/latest/"
 github = "https://loopset.github.io/e796-analysis/"
+localhost = "http://localhost:8080/currentdir/"
 
 
 def attachUrl(url: str | list, path: str, title: str = "") -> str:
@@ -17,7 +18,10 @@ def attachUrl(url: str | list, path: str, title: str = "") -> str:
         files = f"[{', '.join([repr(path + item) for item in url])}]"
         base = jsroot + "?files=" + files
     # Append options
-    options = "&status=size&layout=tabs&title=e796 " + title
+    options = "&status=size&layout=tabs&title=e796"
+    # And title
+    if(len(title)):
+       options += " " + title
     return base + options
 
 
@@ -68,46 +72,52 @@ subfolders = [
         "label": "Miscellanea",
         "links": [
             {"url": "", "text": "Go to JSRoot"},
-            {"url": "website/RootFiles/sigmas.root", "text": "Sigma study with"},
+            {"url": "website/RootFiles/sigmas.root", "text": "Sigma study"},
         ],
     },
 ]
 
-# Dict to hold structure for web
-structure = {}
+# Dict to hold website for web
+website = {}
 # Same but holding local paths to files!
-localhost = {}
+local = {}
 
-# Loop through each subfolder and fetch .png files
+# Populate JSON file
 for subfolder in subfolders:
     label = subfolder["label"]
     links = subfolder["links"]
+    aux = [item.copy() for item in links]  # deep copy to modify dict separately
+
     # Process subdirs
-    if label != "Miscellanea":
-        folder_path = os.path.join(root_dir, subfolder["folder"], "Outputs")
+    folder_path = os.path.join(root_dir, subfolder["folder"], "Outputs")
+    # Check if the subfolder exists
+    if os.path.exists(folder_path):
+        # Find all .png files in the folder
+        files = [f for f in os.listdir(folder_path) if f.endswith(".png")]
+        # Sort from oldest to newest based on modification time
+        files = sorted(
+            files, key=lambda f: os.path.getmtime(os.path.join(folder_path, f))
+        )
+        # Create image paths relative to the root directory
+        images = [f"Fits/{subfolder['folder']}/Outputs/{f}" for f in files]
 
-        # Check if the subfolder exists
-        if os.path.exists(folder_path):
-            # Find all .png files in the folder
-            files = [f for f in os.listdir(folder_path) if f.endswith(".png")]
-            # Sort from oldest to newest based on modification time
-            files = sorted(
-                files, key=lambda f: os.path.getmtime(os.path.join(folder_path, f))
-            )
-            # Create image paths relative to the root directory
-            images = [f"Fits/{subfolder['folder']}/Outputs/{f}" for f in files]
-    else:  # Withouth pictures
-        images = []
-
-    # Modify online
+    # Modify for web
     for link in links:
         for key in link:
             if key == "url":
                 link[key] = attachUrl(link[key], github, label)
+    # Modify for local
+    for link in aux:
+        for key in link:
+            if key == "url":
+                link[key] = attachUrl(link[key], localhost, label)
 
     # Write to table!
-    structure[label] = {"images": images, "links": links}
+    website[label] = {"images": images, "links": links}
+    local[label] = {"images": images, "links": aux}
 
 # Write to two JSON files
 with open("./list.json", "w") as json_file:
-    json.dump(structure, json_file, indent=4)
+    json.dump(website, json_file, indent=4)
+with open("./local.json", "w") as json_file:
+    json.dump(local, json_file, indent=4)

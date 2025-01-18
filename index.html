@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Disable page caching -->
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>e796-analysis</title>
     <style>
         body {
@@ -111,7 +115,10 @@
     }
 
     // Fetch the proper JSON file
-    fetch("./website/list.json")
+    const isLocalhost = window.location.hostname === 'localhost';
+    const jsonFile = isLocalhost ? './website/local.json' : './website/list.json';
+    console.log("Open JSON file : ", jsonFile);
+    fetch(jsonFile)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! Status: ${response.status}`);
