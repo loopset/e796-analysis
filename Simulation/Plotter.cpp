@@ -10,7 +10,6 @@
 #include "TF1.h"
 #include "TFile.h"
 #include "TGraphErrors.h"
-#include "THStack.h"
 #include "TLine.h"
 #include "TROOT.h"
 #include "TString.h"
@@ -37,8 +36,8 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
         std::cout << BOLDCYAN << "Plotting a phase space" << RESET << '\n';
 
     // Save histograms
-    std::vector<TH1D*> hsEx, hsRPx;
-    std::vector<TH2D*> hsKin, hsSP, hsRP;
+    std::vector<TH1D*> hsEx, hsRPx, hsCM;
+    std::vector<TH2D*> hsKin, hsSP, hsRP, hsRPCM;
     std::vector<TEfficiency*> effs;
     // Iterate
     int idx {1};
@@ -60,6 +59,10 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
         auto hRPx {df.Histo1D(HistConfig::RPx, "RPx")};
         hRPx->Scale(1. / hRPx->Integral());
         hRPx->SetTitle(TString::Format("%.2f MeV;RP_{x} [mm];Normalized counts", Ex));
+        auto hCM {df.Histo1D(HistConfig::ThetaCM, "theta3CM")};
+        hCM->Scale(1. / hCM->Integral());
+        hCM->SetTitle(TString::Format("%.2f MeV;#theta_{CM} [#circ];Normalized counts", Ex));
+        auto hRPCM {df.Histo2D(HistConfig::RPxThetaCM, "RPx", "theta3CM")};
 
         // Read directly from file
         auto* f {new TFile(file)};
@@ -76,9 +79,11 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
         hsEx.push_back((TH1D*)hEx->Clone());
         hsKin.push_back((TH2D*)hKin->Clone());
         hsRPx.push_back((TH1D*)hRPx->Clone());
+        hsCM.push_back((TH1D*)hCM->Clone());
         effs.push_back(eff);
         hsRP.push_back(hRP);
         hsSP.push_back(hSP);
+        hsRPCM.push_back((TH2D*)hRPCM->Clone());
         idx++;
     }
     // Fit to gaussians!
@@ -102,6 +107,10 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
     auto* hRPxExp {(TH1D*)haux->Clone()};
     hRPxExp->Scale(1. / hRPxExp->Integral());
     hRPxExp->SetLineColor(8);
+    auto hauxx {exp.Histo1D(HistConfig::ThetaCM, "ThetaCM")};
+    auto* hCMExp {(TH1D*)hauxx->Clone()};
+    hCMExp->Scale(1. / hCMExp->Integral());
+    hCMExp->SetLineColor(8);
 
     // Plot!
     std::vector<TCanvas*> cs;
@@ -141,6 +150,10 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
             hRPxExp->Draw("hist same");
         cs[i]->cd(5);
         hsSP[i]->Draw();
+        cs[i]->cd(6);
+        hsRPCM[i]->Draw("colz");
+        // hsCM[i]->Draw("hist");
+        // hCMExp->Draw("hist same");
     }
 
     if(isPS)

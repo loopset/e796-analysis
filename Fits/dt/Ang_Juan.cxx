@@ -3,15 +3,18 @@
 #include "TCanvas.h"
 #include "TROOT.h"
 
-#include "AngComparator.h"
 #include "AngDifferentialXS.h"
 #include "AngFitter.h"
 #include "AngIntervals.h"
+#include "FitInterface.h"
 #include "Interpolators.h"
 #include "PhysExperiment.h"
 
 #include <string>
 #include <vector>
+
+#include "../../Selector/Selector.h"
+#include "../FitHist.h"
 
 void Ang_Juan()
 {
@@ -46,86 +49,62 @@ void Ang_Juan()
     auto df {d.Filter(applyMassCuts, {"Amass_Hlike", "ThetaCM", "Ex"})};
 
     // Book histograms
-    int nbins {100};
-    double hmin {-5};
-    double hmax {25};
-    auto hEx {df.Histo1D(
-        {"hEx", TString::Format(";E_{x} [MeV];Counts / %.0f keV", (hmax - hmin) / nbins * 1E3), nbins, hmin, hmax},
-        "Ex")};
-    // Read PS
-    ROOT::RDataFrame phase {"simulated_tree", "/media/Data/E796v2/RootFiles/Old/FitJuan/"
-                                              "20O_and_2H_to_3H_NumN_1_NumP_0_Ex0_Date_2022_11_29_Time_16_35.root"};
-    auto hPS {phase.Histo1D({"hPS", "PS 1n;E_{x} [MeV]", nbins, hmin, hmax}, "Ex_cal", "Weight_sim")};
-    // Format phase space
-    hPS->Smooth(20);
-    // Scale it
-    auto intEx {hEx->Integral()};
-    auto intPS {hPS->Integral()};
-    double factor {0.15};
-    hPS->Scale(factor * intEx / intPS);
+    auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
+    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
+    ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
 
     // Init intervals
-    double thetaCMMin {8};
+    double thetaCMMin {5.5};
     double thetaCMMax {14};
-    double thetaCMStep {1};
-    Angular::Intervals ivs {thetaCMMin, thetaCMMax, {"hEx", "(d, t)", nbins, hmin, hmax}, thetaCMStep};
+    double thetaCMStep {1.5};
+    int nps {2};
+    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdt, thetaCMStep, nps};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
+    // FillPS
+    phase.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(0, thetacm, ex, weight); },
+                  {"theta3CM", "Eex", "weight"});
+    phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
+                   {"theta3CM", "Eex", "weight"});
+    ivs.TreatPS();
     // ivs.Draw();
 
-    // Init fitter
-    // Set range
-    double exMin {hmin};
-    double exMax {10};
+    // Fitter
     Angular::Fitter fitter {&ivs};
-    fitter.Configure("./Outputs/fit_juan.root", {*hPS});
+    fitter.Configure("./Outputs/fit_juan.root");
     fitter.Run();
     fitter.Draw();
     fitter.ComputeIntegrals(2);
-    fitter.DrawCounts();
+    fitter.DrawCounts(false);
 
-    // Read efficiency files
-    std::vector<std::string> peaks {"g0", "g2", "g3"};
-    std::vector<std::string> effFiles {
-        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_0.00_nPS_0_pPS_0.root",
-        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_3.24_nPS_0_pPS_0.root",
-        "/media/Data/E796v2/Simulation/Outputs/e796_beam_20O_target_2H_light_3H_Eex_4.40_nPS_0_pPS_0.root",
-    };
+    // Interface
+    Fitters::Interface inter;
+    inter.Read("./Outputs/interface_juan.root");
+    auto peaks {inter.GetPeaks()};
+
+    // Efficiency
     Interpolators::Efficiency eff;
-    for(int p = 0; p < peaks.size(); p++)
-        eff.Add(peaks[p], effFiles[p]);
-    // Draw to check is fine
+    for(const auto& peak : peaks)
+        eff.Add(peak, gSelector->GetApproxSimuFile("20O", "2H", "3H", inter.GetGuess(peak)));
+    // eff.Add("g0", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_2H_to_3H_NumN_0_NumP_0_Ex0_Date_2024_9_27_Time_9_34.root");
     eff.Draw();
+
     // Set experiment info
+    gSelector->RecomputeNormalization();
     PhysUtils::Experiment exp {"../norms/d_target.dat"};
-    // std::cout << "Nb : " << exp.GetNb() << '\n';
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
-    // xs.Draw();
+    xs.TrimX("v0", 13, false);
+    xs.Write("./Outputs/", gSelector->GetFlag());
 
-    // For gs
-    Angular::Comparator comp {"g.s", xs.Get("g0")};
-    comp.Add("l = 2 Franck", "./Inputs/gs/Franck/gs.xs");
-    comp.Fit(thetaCMMin, thetaCMMax);
-    comp.DrawTheo();
-    comp.Draw();
-    // comp.ScaleToExp("l = 2 Franck", 3.43, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
+    // Comparators!
+    for(const auto& peak : peaks)
+        inter.AddAngularDistribution(peak, xs.Get(peak));
+    inter.ReadCompConfig("./comps.conf");
+    inter.DoComp();
 
-    // For g2 @ 3.2 MeV
-    Angular::Comparator comp2 {"g2 = 1/2^{-} @ 3.2 MeV", xs.Get("g2")};
-    comp2.Add("l = 1", "./Inputs/g2/l_1/21.g2");
-    comp2.Add("l = 2", "./Inputs/g2/l_2/21.g2");
-    comp2.Fit(thetaCMMin, thetaCMMax);
-    comp2.Draw();
-    
-    // For g3 @ 4.7 MeV
-    Angular::Comparator comp3 {"g3 = 3/2^{-} @ 4.58 MeV", xs.Get("g3")};
-    comp3.Add("l = 1", "./Inputs/g3/21.g3");
-    comp3.Fit(thetaCMMin, thetaCMMax);
-    comp3.Draw();
-
-    // // plotting
-    // auto* c0 {new TCanvas {"c0", "Angular canvas"}};
-    // hEx->DrawClone();
+    // plotting
+    auto* c0 {new TCanvas {"c0", "Angular canvas"}};
+    hEx->DrawClone();
 }
