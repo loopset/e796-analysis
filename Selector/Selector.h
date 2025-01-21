@@ -84,7 +84,7 @@ public:
 
     std::vector<std::string> GetFlags() const;
 
-    // Formatting functions
+    // Browse directories
     TString GetAnaFile(int pipe, bool withFlag = true);
     TString GetAnaFile(int pipe, const std::string& beam, const std::string& target, const std::string& light,
                        bool withFlag = true);
@@ -110,6 +110,7 @@ public:
     const std::string GetTarget() const { return fTarget; }
     const std::string GetLight() const { return fLight; }
     const bool GetIsElastic() const { return fTarget == fLight; }
+    std::string GetShortStr() const;
 
 private:
     void ReassignNames();

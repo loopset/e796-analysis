@@ -237,4 +237,17 @@ void E796::Selector::SendToWebsite(const std::string& file, TList* list)
     for(auto* o : *list)
         SendToWebsite(file, o);
 }
+
+std::string E796::Selector::GetShortStr() const
+{
+    if(fTarget == "1H" && fLight == "1H")
+        return "pp";
+    else if(fTarget == "1H" && fLight == "2H")
+        return "pd";
+    else if(fTarget == "2H" && fLight == "2H")
+        return "dd";
+    else if(fTarget == "2H" && fLight == "3H")
+        return "dt";
+    return "";
+}
 #endif

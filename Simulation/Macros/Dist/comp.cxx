@@ -7,13 +7,14 @@
 #include "TF1.h"
 
 #include <cstdlib>
+#include <string>
 
 #include "../../../PostAnalysis/HistConfig.h"
 #include "../../../Selector/Selector.h"
 
-double FitGS(TH1D* h)
+double Fit(TH1D* h, double ex = 0, double w = 1.5)
 {
-    h->Fit("gaus", "0QR+", "", -1.5, 1.5);
+    h->Fit("gaus", "0QR+", "", ex - w, ex + w);
     auto* fit {h->GetFunction("gaus")};
     if(!fit)
         return 0;
@@ -70,11 +71,14 @@ void comp()
     auto hEx {exp.Histo1D(HistConfig::Ex, "Ex")};
     auto hExJuan {juan.Histo1D(HistConfig::Ex, "Ex")};
     // Get sigmas to gate
-    auto sigma {FitGS(hEx.GetPtr())};
-    auto sigmajuan {FitGS(hExJuan.GetPtr())};
+    double Ex {0};
+    double w {1.5};
+    std::string label {(Ex == 0) ? "gs" : ("Ex = " + std::to_string(Ex))};
+    auto sigma {Fit(hEx.GetPtr(), Ex, w)};
+    auto sigmajuan {Fit(hExJuan.GetPtr(), Ex, w)};
     // Gate on GS
-    auto gsana {exp.Filter([&](double ex) { return std::abs(ex - 0.) <= 3 * sigma; }, {"Ex"})};
-    auto gsjuan {juan.Filter([&](double ex) { return std::abs(ex - 0.) <= 3 * sigmajuan; }, {"Ex"})};
+    auto gsana {exp.Filter([&](double ex) { return std::abs(ex - Ex) <= 3 * sigma; }, {"Ex"})};
+    auto gsjuan {juan.Filter([&](double ex) { return std::abs(ex - Ex) <= 3 * sigmajuan; }, {"Ex"})};
     auto hExGS {gsana.Histo1D(HistConfig::Ex, "Ex")};
     hExGS->SetLineColor(8);
 
@@ -88,7 +92,7 @@ void comp()
         filesim.push_back(gSelector->GetSimuFile("20O", "2H", "3H", 0, 2).Data());
     }
     ROOT::RDataFrame simu {"SimulationTTree", filesim};
-    ROOT::RDataFrame gssimu {"SimulationTTree", gSelector->GetSimuFile(0)};
+    ROOT::RDataFrame gssimu {"SimulationTTree", gSelector->GetApproxSimuFile("20O", target, light, Ex)};
 
     // Book histograms!
     // RPx
@@ -125,7 +129,7 @@ void comp()
     hRPx->DrawClone("hist");
     hRPxSim->DrawClone("hist same");
     c0->cd(2);
-    hRPxGS->SetTitle("RP.X() only g.s");
+    hRPxGS->SetTitle(("RP.X() only " + label).c_str());
     hRPxGS->DrawClone("hist");
     hRPxGSSim->DrawClone("hist same");
     c0->cd(3);
@@ -134,11 +138,14 @@ void comp()
     hCMJuan->DrawClone("hist same");
     hCMSim->DrawClone("hist same");
     c0->cd(4);
-    hCMGS->SetTitle("#theta_{CM} only g.s");
+    hCMGS->SetTitle(("#theta_{CM} only " + label).c_str());
     hCMGS->DrawClone("hist");
     hCMGSJuan->DrawClone("hist same");
     hCMGSSim->DrawClone("hist same");
     c0->cd(5);
     hEx->DrawClone();
     hExGS->DrawClone("same");
+
+    gSelector->SendToWebsite("sim_to_ana.root", c0,
+                             ("c" + std::string(Ex == 0 ? "gs" : "ex") + gSelector->GetShortStr()).c_str());
 }

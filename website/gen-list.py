@@ -20,8 +20,8 @@ def attachUrl(url: str | list, path: str, title: str = "") -> str:
     # Append options
     options = "&status=size&layout=tabs&datex=0.5&optfile=1&title=e796"
     # And title
-    if(len(title)):
-       options += " " + title
+    if len(title):
+        options += " " + title
     return base + options
 
 
@@ -73,6 +73,10 @@ subfolders = [
         "links": [
             {"url": "", "text": "Go to JSRoot"},
             {"url": "website/RootFiles/sigmas.root", "text": "Sigma study"},
+            {
+                "url": "website/RootFiles/sim_to_ana.root",
+                "text": "RP.X() distribution comparison",
+            },
         ],
     },
 ]
