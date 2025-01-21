@@ -18,7 +18,7 @@ def attachUrl(url: str | list, path: str, title: str = "") -> str:
         files = f"[{', '.join([repr(path + item) for item in url])}]"
         base = jsroot + "?files=" + files
     # Append options
-    options = "&status=size&layout=tabs&title=e796"
+    options = "&status=size&layout=tabs&datex=0.5&optfile=1&title=e796"
     # And title
     if(len(title)):
        options += " " + title
@@ -85,6 +85,7 @@ local = {}
 # Populate JSON file
 for subfolder in subfolders:
     label = subfolder["label"]
+    images = []
     links = subfolder["links"]
     aux = [item.copy() for item in links]  # deep copy to modify dict separately
 

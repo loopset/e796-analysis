@@ -224,11 +224,11 @@ void E796::Selector::ReassignNames()
     }
 }
 
-void E796::Selector::SendToWebsite(const std::string& file, TObject* o)
+void E796::Selector::SendToWebsite(const std::string& file, TObject* o, TString name)
 {
     std::string path {"/media/Data/E796v2/website/RootFiles/"};
     auto f {std::make_unique<TFile>((path + file).c_str(), "update")};
-    o->Write(nullptr, TObject::kOverwrite);
+    o->Write((name.Length() ? name.Data() : nullptr), TObject::kOverwrite);
     f->Close();
 }
 

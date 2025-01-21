@@ -4,6 +4,7 @@
 #include "ActCutsManager.h"
 #include "ActDataManager.h"
 #include "ActMergerData.h"
+#include "ActModularData.h"
 #include "ActSilData.h"
 #include "ActSilSpecs.h"
 #include "ActTypes.h"
@@ -19,7 +20,7 @@
 void WriteEntries(const std::string& beam, const std::string& target, const std::string& light, bool isSide)
 {
     ActRoot::DataManager datman {"../configs/data.conf", ActRoot::ModeType::EReadSilMod};
-    datman.SetRuns(155, 165);
+    datman.SetRuns(155, 156);
     auto chain {datman.GetChain()};
     auto chain2 {datman.GetChain(ActRoot::ModeType::ECorrect)};
     chain->AddFriend(chain2.get());
@@ -29,16 +30,24 @@ void WriteEntries(const std::string& beam, const std::string& target, const std:
     specs->ReadFile("../configs/detailedSilicons.conf");
 
     // Write to file
-    std::ofstream streamer {"./Entries/sil2_side.dat"};
+    std::ofstream streamer {"./Entries/front_up.dat"};
     df.Foreach(
-        [&](ActRoot::SilData& sil, ActRoot::MergerData& data)
+        [&](ActRoot::SilData& sil, ActRoot::MergerData& data, ActRoot::ModularData& mod)
         {
-            sil.ApplyFinerThresholds(specs);
-            if(sil.fSiN.count("l0") && sil.fSiN.size() == 1)
-                if(sil.fSiN["l0"].size() == 1 && sil.fSiN["l0"].front() == 2)
-                    streamer << data.fRun << " " << data.fEntry << '\n';
+            if(mod.Get("GATCONF") == 4)
+            {
+                sil.ApplyFinerThresholds(specs);
+                if(sil.fSiN.count("f0") && sil.fSiN.size() == 1)
+                    if(sil.fSiN["f0"].size() == 1)
+                    {
+                        // Select indexes
+                        auto n {sil.fSiN["f0"].front()};
+                        if(n == 8 || n == 10)
+                            data.Stream(streamer);
+                    }
+            }
         },
-        {"SilData", "MergerData"});
+        {"SilData", "MergerData", "ModularData"});
     streamer.close();
     std::cout << "Written " << df.Count().GetValue() << " entries to file!" << '\n';
 }

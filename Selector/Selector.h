@@ -102,7 +102,7 @@ public:
     void RecomputeNormalization() const;
 
     // Other functions
-    void SendToWebsite(const std::string& file, TObject* o);
+    void SendToWebsite(const std::string& file, TObject* o, TString name = "");
     void SendToWebsite(const std::string& file, TList* list);
 
     // Particle names

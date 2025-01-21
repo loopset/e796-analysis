@@ -141,11 +141,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double zVertexSigma {3.73};
 
     // Silicon thresholds
-    const double thresholdSi0 {1.};
-    const double thresholdSi1 {1.};
+    const double thresholdSi0 {0.5};
+    const double thresholdSi1 {0.5};
 
     // number of iterations
-    const int iterations {static_cast<int>(standalone ? 5e7 : (deutonbreakup || pdphase ? 5e8 : 1e8))};
+    const int iterations {static_cast<int>(standalone ? 5e7 : (deutonbreakup || pdphase || isPS ? 4e8 : 1e8))};
 
     // Which parameters will be activated
     bool stragglingInGas {true};
@@ -177,10 +177,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
     else
     {
-        // sm = E796Utils::GetFrontSilMatrix(arglight);
-        sm = new ActPhysics::SilMatrix;
-        sm->Read("./Macros/juan_veto.root");
-        sm->Erase(7);
+        sm = E796Utils::GetFrontSilMatrix(arglight);
+        // Uncomment to reproduce Juan simu
+        // sm = new ActPhysics::SilMatrix;
+        // sm->Read("./Macros/juan_veto.root");
+        // sm->Erase(7);
         silCentre = sm->GetMeanZ({3, 4});
         specs->GetLayer("f0").ReplaceWithMatrix(sm);
         specs->GetLayer("f1").MoveZTo(silCentre, {3, 4});

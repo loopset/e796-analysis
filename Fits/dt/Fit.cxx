@@ -56,7 +56,7 @@ void Fit()
     inter.EndAddingStates();
     // Wider mean margin
     inter.SetOffsetMeanBounds(0.5);
-    // inter.ReadPreviousFit("./Outputs/fit_" + gSelector->GetFlag() + ".root");
+    inter.ReadPreviousFit("./Outputs/fit_" + gSelector->GetFlag() + ".root");
     // Eval correct sigma
     inter.EvalSigma(sigmas.GetGraph());
     // Fix all sigmas (3rd parameter, 2nd index of vector)
