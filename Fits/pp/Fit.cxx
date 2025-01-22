@@ -57,5 +57,5 @@ void Fit()
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(p,p) fit",
                     {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "20O(d,d) breakup"}});
 
-    gSelector->SendToWebsite("pp.root", gPad);
+    gSelector->SendToWebsite("pp.root", gPad, "cFit");
 }

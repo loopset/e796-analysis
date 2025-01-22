@@ -65,5 +65,5 @@ void Fit()
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,d) fit",
                     {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "1-n phase"}});
 
-    gSelector->SendToWebsite("dd.root", gPad);
+    gSelector->SendToWebsite("dd.root", gPad, "cFit");
 }

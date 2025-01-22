@@ -90,5 +90,5 @@ void Fit()
     line3->SetLineColor(kCyan);
     line3->Draw("same");
 
-    gSelector->SendToWebsite("dt.root", gPad);
+    gSelector->SendToWebsite("dt.root", gPad, "cFit");
 }
