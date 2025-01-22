@@ -17,6 +17,8 @@
 
 #include <iostream>
 #include <memory>
+
+#include "../../Selector/Selector.h"
 void Plot()
 {
     ROOT::EnableImplicitMT();
@@ -147,4 +149,7 @@ void Plot()
     hyz->Write("hTrajYZ");
     h3d->Write("h3d");
     hBeginZ->Write("hBeginZ");
+
+    gSelector->SendToWebsite("emittance.root", c0, "cEmitt0");
+    gSelector->SendToWebsite("emittance.root", c1, "cEmitt1");
 }

@@ -13,6 +13,7 @@
 #include "TLine.h"
 #include "TROOT.h"
 #include "TString.h"
+#include "TSystem.h"
 #include "TVirtualPad.h"
 
 #include <iostream>
@@ -44,6 +45,8 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
     for(const auto& Ex : Exs)
     {
         auto file {gSelector->GetSimuFile(beam, target, light, Ex, neutronPS, protonPS)};
+        if(gSystem->AccessPathName(file))
+            continue;
         // Get DF
         ROOT::RDataFrame df("SimulationTTree", file);
 
@@ -114,7 +117,7 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
 
     // Plot!
     std::vector<TCanvas*> cs;
-    for(int i = 0; i < Exs.size(); i++)
+    for(int i = 0; i < hsEx.size(); i++)
     {
         cs.push_back(new TCanvas {TString::Format("c%d", i), TString::Format("Ex = %.2f MeV", Exs[i])});
         cs[i]->DivideSquare(6);

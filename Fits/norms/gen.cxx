@@ -14,7 +14,7 @@ void gen()
     double Np {0.3125 * 1.93e21};
     double Nd {0.5625 * 1.93e21};
     // Set renormalizations
-    Nd *= 0.782;
+    Nd *= 0.782 * 1.021;
     // Exact targets depend on the actual length of ACTAR
     // considered in the analysis, accesible in the gSelector
     // Then Ntargets = actualLength / totalLength * Np or Nd

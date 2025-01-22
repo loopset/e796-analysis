@@ -88,8 +88,8 @@ void comp()
     if(target == "2H" && light == "3H")
     {
         // 1n and 2n PS
-        filesim.push_back(gSelector->GetSimuFile("20O", "2H", "3H", 0, 1).Data());
-        filesim.push_back(gSelector->GetSimuFile("20O", "2H", "3H", 0, 2).Data());
+        // filesim.push_back(gSelector->GetSimuFile("20O", "2H", "3H", 0, 1).Data());
+        // filesim.push_back(gSelector->GetSimuFile("20O", "2H", "3H", 0, 2).Data());
     }
     ROOT::RDataFrame simu {"SimulationTTree", filesim};
     ROOT::RDataFrame gssimu {"SimulationTTree", gSelector->GetApproxSimuFile("20O", target, light, Ex)};
@@ -146,6 +146,6 @@ void comp()
     hEx->DrawClone();
     hExGS->DrawClone("same");
 
-    gSelector->SendToWebsite("sim_to_ana.root", c0,
-                             ("c" + std::string(Ex == 0 ? "gs" : "ex") + gSelector->GetShortStr()).c_str());
+    // gSelector->SendToWebsite("sim_to_ana.root", c0,
+    //                          ("c" + std::string(Ex == 0 ? "gs" : "ex") + gSelector->GetShortStr()).c_str());
 }

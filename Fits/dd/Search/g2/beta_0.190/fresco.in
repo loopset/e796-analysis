@@ -1,0 +1,25 @@
+20O + d inelastic scattering;
+NAMELIST
+ &FRESCO hcm=0.03 rmatch=60 
+	 jtmin=0.0 jtmax=50 absend= 0.0010 
+	 thmin=3.00 thmax=-180.00 thinc=1.00 
+     iter=1
+ 	 chans=1 smats=2  xstabl=1 
+	 elab=70/
+
+ &PARTITION namep='d' massp=2.0135532 zp=1 namet='O20' masst=19.999687 zt=8 qval=-0.000 nex=2  /
+ &STATES jp=1 bandp=1 ep=0.0000 cpot=1 jt=0.0 bandt=1 et=0.0000  /
+ &STATES copyp=1  cpot=1 jt=2.0 bandt=1 et=3.57 /
+ &partition /
+ 
+ &POT kp=1 at=20.000 rc=1.303  /
+ &POT kp=1 type=11 p2=5.3 /
+ &POT kp=1 type=1 p1=76.880 p2=1.149 p3=0.752 p4=5.458 p5=1.342 p6=0.584  /
+ &POT kp=1 type=11 p2=0.670 /
+ &POT kp=1 type=2 p1=0 p2=0 p3=0 p4=8.688 p5=1.390 p6=0.699 / 
+ &POT kp=1 type=11 p2=0.670 /
+ &POT kp=1 type=3 p1= 1.778 p2=0.972 p3=1.011 p4=0 p5=0 p6=0 /
+ &pot / 
+ &overlap / 
+ &coupling / 
+

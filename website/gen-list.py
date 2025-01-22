@@ -77,6 +77,7 @@ subfolders = [
                 "url": "website/RootFiles/sim_to_ana.root",
                 "text": "RP.X() distribution comparison",
             },
+            {"url": "website/RootFiles/emittance.root", "text": "Emittance"},
         ],
     },
 ]
