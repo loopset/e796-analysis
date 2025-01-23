@@ -8,18 +8,18 @@ void test()
 {
     ActPhysics::SRIM srim;
     // srim.SetUseSpline();
-    srim.ReadTable("20Mg", "./Calibrations/SRIMData/raw/20Mg_butante_266mbar.txt");
+    srim.ReadTable("test", "./Calibrations/SRIMData/raw/1H_952mb_mixture.txt");
 
-    auto* hOff {new TH1D {"hOff", "Off", 800, 80, 180}};
+    auto* hOff {new TH1D {"hOff", "Off", 2200, 0, 180}};
     auto* hOn {(TH1D*)hOff->Clone("hOn")};
 
-    double Tini {140};
-    double thick {0.1}; // mm
+    double Tini {6};
+    double thick {256}; // mm
     gRandom->SetSeed();
-    for(int i = 0; i < 1000000; i++)
+    for(int i = 0; i < 100000; i++)
     {
-        hOff->Fill(srim.Slow("20Mg", Tini, thick));
-        hOn->Fill(srim.SlowWithStraggling("20Mg", Tini, thick));
+        hOff->Fill(srim.Slow("test", Tini, thick));
+        hOn->Fill(srim.SlowWithStraggling("test", Tini, thick));
     }
 
     gStyle->SetOptFit();

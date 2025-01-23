@@ -49,6 +49,9 @@ private:
     std::string fFlag {};
     Config* fCurrent {};
 
+    // Add a label to allow tagging simulation files
+    std::string fTag {};
+
 public:
     Selector(Selector&) = delete;
     void operator=(const Selector&) = delete;
@@ -57,6 +60,7 @@ public:
     void Print() const;
 
     // Setters
+    void SetTag(const std::string& tag);
     void SetFlag(const std::string& flag);
     void SetBeam(const std::string& beam)
     {
@@ -75,6 +79,7 @@ public:
     }
 
     // Getters
+    const std::string& GetTag() const { return fTag; }
     const std::string& GetFlag() const { return fFlag; }
     double GetRPxLow() const { return fCurrent->fRPx.first; }
     double GetRPxUp() const { return fCurrent->fRPx.second; }

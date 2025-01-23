@@ -77,6 +77,11 @@ E796::Selector::Selector(const std::string& file)
     SetFlag(flag);
 }
 
+void E796::Selector::SetTag(const std::string& tag)
+{
+    fTag = tag;
+}
+
 void E796::Selector::SetFlag(const std::string& flag)
 {
     if(!fConfigs.count(flag))
@@ -100,6 +105,8 @@ void E796::Selector::Print() const
     std::cout << "->Light    : " << fTarget << '\n';
     std::cout << "->Target   : " << fLight << '\n';
     std::cout << "->Flag     : " << fFlag << '\n';
+    if(fTag.length())
+        std::cout << "->Tag      : " << fTag << '\n';
     fCurrent->Print();
     std::cout << "::::::::::::::::::::::::::::::" << RESET << '\n';
 }
@@ -127,8 +134,8 @@ TString E796::Selector::GetSimuFile(const std::string& beam, const std::string& 
     // Make dir in case it doesnt exist
     if(gSystem->AccessPathName(path))
         gSystem->mkdir(path);
-    auto name {TString::Format("tree_%s_%s_%s_%.2f_nPS_%d_pPS_%d.root", beam.c_str(), target.c_str(), light.c_str(), Ex,
-                               nPS, pPS)};
+    auto name {TString::Format("tree_%s_%s_%s_%.2f_nPS_%d_pPS_%d%s.root", beam.c_str(), target.c_str(), light.c_str(),
+                               Ex, nPS, pPS, fTag.length() ? ("_" + fTag).c_str() : "")};
     std::cout << BOLDMAGENTA << "Opening simu file : " << name << RESET << '\n';
     return path + name;
 }
@@ -137,8 +144,9 @@ std::vector<std::string> E796::Selector::GetSimuFiles(const std::string& beam, c
                                                       const std::string& light, int nPS, int pPS)
 {
     auto path {TString::Format("/media/Data/E796v2/Simulation/Outputs/%s/", fFlag.c_str())};
-    TRegexp regexp {TString::Format("tree_%s_%s_%s_[0-9]*\\.[0-9]*_nPS_%d_pPS_%d\\.root", beam.c_str(), target.c_str(),
-                                    light.c_str(), nPS, pPS)};
+    TRegexp regexp {TString::Format("tree_%s_%s_%s_[0-9]*\\.[0-9]*_nPS_%d_pPS_%d%s\\.root", beam.c_str(),
+                                    target.c_str(), light.c_str(), nPS, pPS,
+                                    fTag.length() ? ("_" + fTag).c_str() : "")};
     // Iterate over directory
     std::vector<std::string> ret;
     auto dirp {gSystem->OpenDirectory(path.Data())};
@@ -188,7 +196,8 @@ std::vector<std::string> E796::Selector::GetSimuFiles(int nPS, int pPS)
 TString E796::Selector::GetSigmasFile(const std::string& target, const std::string& light)
 {
     auto path {TString::Format("/media/Data/E796v2/Simulation/Outputs/%s/", fFlag.c_str())};
-    auto name {TString::Format("sigmas_%s_%s_%s.root", "20O", target.c_str(), light.c_str())};
+    auto name {TString::Format("sigmas_%s_%s_%s%s.root", "20O", target.c_str(), light.c_str(),
+                               fTag.length() ? ("_" + fTag).c_str() : "")};
     std::cout << BOLDCYAN << "Opening sigmas file : " << name << RESET << '\n';
     return path + name;
 }

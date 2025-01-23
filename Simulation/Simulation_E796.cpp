@@ -155,7 +155,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // Silicon specs
     auto* specs {new ActPhysics::SilSpecs};
-    specs->ReadFile("../configs/detailedSilicons.conf");
+    specs->ReadFile("/media/Data/E796v2/configs/simu_silicons.conf");
+    if(TString(gSelector->GetFlag()).Contains("iter"))
+        std::cout << "Iter f0 point: " << specs->GetLayer("f0").GetPoint() << '\n';
     // Silicon EFFECTIVE matrix
     ActPhysics::SilMatrix* sm {};
     // Set reference position and offset along Z!
@@ -294,6 +296,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
 
     // Histograms
+    TH1::AddDirectory(false);
     // To compute a fine-grain efficiency, we require at least a binning width of 0.25 degrees!
     auto hThetaCM {HistConfig::ThetaCM.GetHistogram()};
     auto hThetaCMAll {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all", "All").GetHistogram()};
