@@ -156,7 +156,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Silicon specs
     auto* specs {new ActPhysics::SilSpecs};
     specs->ReadFile("/media/Data/E796v2/configs/simu_silicons.conf");
-    if(TString(gSelector->GetFlag()).Contains("iter"))
+    bool isIter {TString(gSelector->GetFlag()).Contains("iter")};
+    if(isIter)
         std::cout << "Iter f0 point: " << specs->GetLayer("f0").GetPoint() << '\n';
     // Silicon EFFECTIVE matrix
     ActPhysics::SilMatrix* sm {};
@@ -185,9 +186,22 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // sm->Read("./Macros/juan_veto.root");
         // sm->Erase(7);
         silCentre = sm->GetMeanZ({3, 4});
+        beamOffset = 9.01; // mm
+        // If in iter mode
+        if(isIter)
+        {
+            std::cout << "Iter: scaling sil matrix" << '\n';
+            // Scale sm matrix now!
+            double xyRef {181};                                   // pad units, value which it has been obtained
+            auto xyTarget {specs->GetLayer("f0").GetPoint().X()}; // pad units
+            // Refence point: middle Y coordinate plus beam centering
+            sm->MoveXYTo(xyRef, {126, silCentre + beamOffset}, xyTarget);
+            // Scale also beamOffset after scaling matrix haha
+            beamOffset *= xyTarget / xyRef;
+        }
+
         specs->GetLayer("f0").ReplaceWithMatrix(sm);
         specs->GetLayer("f1").MoveZTo(silCentre, {3, 4});
-        beamOffset = 9.01; // mm
         specs->EraseLayer("l0");
         firstLayer = "f0";
         secondLayer = "f1";

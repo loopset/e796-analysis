@@ -24,13 +24,13 @@ void frontDist()
     gSelector->SetFlag("iter_front");
 
     // Set vector of energies
-    std::vector<double> Exs {0}; // we can compare only gs and excited state at 3 MeV
+    std::vector<double> Exs {0.}; // we can compare only gs and excited state at 3 MeV
 
     // And now distances
     std::vector<double> dists;
     double padSize {2}; // mm
     double pad {256};   // mm
-    for(double d = 90; d <= 165; d += 5)
+    for(double d = 90; d <= 190; d += 10)
     {
         auto dist {pad + d};
         dists.push_back(dist / padSize);

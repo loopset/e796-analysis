@@ -84,7 +84,7 @@ void plot()
     std::vector<double> dists;
     double padSize {2}; // mm
     double pad {256};   // mm
-    for(double d = 90; d <= 165; d += 5)
+    for(double d = 90; d <= 190; d += 10)
     {
         auto dist {pad + d};
         dists.push_back(dist / padSize);
