@@ -2,11 +2,13 @@
 #include "ROOT/RDataFrame.hxx"
 
 #include "TCanvas.h"
+#include "TEfficiency.h"
 #include "TF1.h"
 #include "TGraphErrors.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "THStack.h"
+#include "TMultiGraph.h"
 #include "TPaveText.h"
 #include "TROOT.h"
 #include "TSpline.h"
@@ -52,12 +54,14 @@ double GetOverlap(TH1* ana, TH1* simu)
 
 void plot()
 {
-    std::string target {"2H"};
-    std::string light {"3H"};
+    std::string target {"1H"};
+    std::string light {"2H"};
+    gSelector->SetTarget(target);
+    gSelector->SetLight(light);
 
     // Read analysis
     ROOT::EnableImplicitMT();
-    ROOT::RDataFrame ana {"Sel_Tree", gSelector->GetAnaFile(3, "20O", target, light)};
+    ROOT::RDataFrame ana {"Sel_Tree", gSelector->GetAnaFile(3)};
     auto hEx {ana.Histo1D(HistConfig::Ex, "Ex")};
     auto sgs {Fit(hEx.GetPtr(), 0, 1.5)};
     auto sex {Fit(hEx.GetPtr(), 3.16, 0.75)};
@@ -78,7 +82,7 @@ void plot()
     // Read simulation
     gSelector->SetFlag("iter_front");
     // Set vector of energies
-    std::vector<double> Exs {0, 3.24}; // we can compare only gs and excited state at 3 MeV
+    std::vector<double> Exs {0}; // we can compare only gs and excited state at 3 MeV
 
     // And now distances
     std::vector<double> dists;
@@ -93,12 +97,14 @@ void plot()
     // Get histograms
     std::vector<std::vector<TH1D*>> hsRPx;
     std::vector<std::vector<TH2D*>> hsSP;
+    std::vector<std::vector<TEfficiency*>> effs;
     for(const auto& dist : dists)
     {
         auto tag {TString::Format("dist_%.2f", dist)};
         gSelector->SetTag(tag.Data());
         hsRPx.push_back({});
         hsSP.push_back({});
+        effs.push_back({});
         for(const auto& ex : Exs)
         {
             auto file {gSelector->GetApproxSimuFile("20O", target, light, ex)};
@@ -111,6 +117,8 @@ void plot()
             auto* hSP {f->Get<TH2D>("hSP")};
             hSP->SetDirectory(nullptr);
             hsSP.back().push_back(hSP);
+            auto* eff {f->Get<TEfficiency>("eff")};
+            effs.back().push_back(eff);
             f->Close();
         }
     }
@@ -148,8 +156,9 @@ void plot()
                   dists.back(), 0};
         auto min {func.GetMinimumX()};
         min = min * 2 - 256;
-        auto* text {new TPaveText {0.65, 0.7, 0.85, 0.85, "NDC"}};
+        auto* text {new TPaveText {0.5, 0.65, 0.85, 0.85, "NDC"}};
         text->SetBorderSize(0);
+        text->AddText("Dist to pad plane:");
         text->AddText(TString::Format("%.2f mm", min));
         g->GetListOfFunctions()->Add(text);
     }
@@ -158,7 +167,7 @@ void plot()
     for(int ic = 0; ic < Exs.size(); ic++)
     {
         auto* c {new TCanvas {TString::Format("c%d", ic), TString::Format("Ex = %.2f MeV", Exs[ic])}};
-        c->DivideSquare(dists.size() * 1);
+        c->DivideSquare(dists.size() * 2);
         int ip {1};
         for(int id = 0; id < dists.size(); id++)
         {
@@ -170,11 +179,20 @@ void plot()
             stack->Draw("nostack histe");
             // hsRPx[id][ic]->DrawNormalized("hist");
             // hsAnaRPx[ic]->DrawNormalized("histe same");
-            // ip++;
-            // c->cd(ip);
-            // hsSP[id][ic]->Draw("colz");
+            ip++;
+            c->cd(ip);
+            effs[id][ic]->Draw();
             ip++;
         }
+    }
+
+    // Multigraph
+    auto* mg {new TMultiGraph};
+    mg->SetTitle(";#theta_{CM} [#circ];#epsilon");
+    for(auto& v : effs)
+    {
+        auto* g {v[0]->CreateGraph()};
+        mg->Add(g, "lp");
     }
 
     auto* c0 {new TCanvas {"c-1", "Ex canvas"}};
@@ -190,10 +208,17 @@ void plot()
     c0->cd(4);
     gs[0]->Draw("apl");
     c0->cd(5);
-    gs[1]->Draw("apl");
+    if(gs[1])
+        gs[1]->Draw("apl");
+    c0->cd(6);
+    mg->Draw("apl plc pmc");
+
+    // Bugfix for jsroot
+    for(auto& g : gs)
+        g->GetYaxis()->UnZoom();
 
     auto* list {gROOT->GetListOfCanvases()};
-    gSelector->SendToWebsite("sim_to_ana.root", list->FindObject("c0"), "cIterdt0");
-    gSelector->SendToWebsite("sim_to_ana.root", list->FindObject("c1"), "cIterdt1");
-    gSelector->SendToWebsite("sim_to_ana.root", list->FindObject("c-1"), "cIterdt2");
+    gSelector->SendToWebsite("sim_to_ana.root", list->FindObject("c0"), "cIter0_" + gSelector->GetShortStr());
+    gSelector->SendToWebsite("sim_to_ana.root", list->FindObject("c1"), "cIter1_" + gSelector->GetShortStr());
+    gSelector->SendToWebsite("sim_to_ana.root", list->FindObject("c-1"), "cIter2_" + gSelector->GetShortStr());
 }

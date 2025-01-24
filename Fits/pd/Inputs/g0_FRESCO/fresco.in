@@ -1,7 +1,8 @@
 20O(p,d) @ 30AMeV CH89 (p) + ADWA (d)
 NAMELIST
+! rmatch= 60 but now 30 fm to mimic 2fnr
 &FRESCO
-hcm=0.10 rmatch=60.0 rintp=0.10
+hcm=0.10 rmatch=30.0 rintp=0.10
 hnl=0.10 rnl=4.50 centre=0.0
 jtmin=0.0 jtmax=40.0 absend=-0.1000
 thmin=0.00 thmax=-180.00 thinc=1.00
@@ -10,10 +11,10 @@ chans=1 listcc=0 treneg=0 cdetr=0 smats=2 xstabl=1
 elab(1)=35 /
 
 &PARTITION namep='PROTON' massp=1.0073 zp=1 nex=1 namet='O20' masst=19.999687 zt=8 qval=0/
-&STATES jp=0.5 bandp=1 ep=0.0000  cpot=1 jt=0.0 bandt=1 et=0.0000/
+&STATES jp=0.5 bandp=1 kkp=0 ep=0.0000 cpot=1 jt=0.0 bandt=1 kkt=0 et=0.0000/
 
 &PARTITION namep='DEUTERON' massp=2.0136 zp=1 nex=1 namet='O19' masst=18.999189 zt=8 qval=-5.3835/
-&STATES jp=1 bandp=1 ep=0.0000  cpot=4 jt=2.5 bandt=1 et=0/
+&STATES jp=1 bandp=1 ep=0.0000 kkp=0 cpot=4 jt=2.5 bandt=1 kkt=0 et=0/
 &partition /
 
 ! 20O + p elastic scattering: Chapell-Hill 89 OMP
@@ -25,15 +26,14 @@ elab(1)=35 /
 ! Reid soft core potential T = 0
 &pot kp=2 type=0 p(1:3)= 1.0   0.0000   1.2500 /
 &pot kp=2 type=1 shape=5 p(1:3)= 1.0  0.0000  1.0 /
-&pot kp=2 type=2 shape=5 p(1:3)= 1.0  0.0000  1.0 /
-&pot kp=2 type=3 shape=5 p(1:3)= 1.0  0.0000  1.0 /
-&pot kp=2 type=4 shape=5 p(1:3)= 1.0  0.0000  1.0 /
-&pot kp=2 type=7 shape=5 p(1:3)= 1.0  0.0000  1.0 /
+&pot kp=2 type=3 shape=5 p(1:3)= 1.0  0.0000  1.0 / ! SO projectile
+&pot kp=2 type=4 shape=5 p(1:3)= 1.0  0.0000  1.0 / ! SO target
+&pot kp=2 type=7 shape=5 p(1:3)= 1.0  0.0000  1.0 / ! n-p tensor force
 
-! 19O + n binding potential (standard WS presciption)
+! 19O + n binding potential (standard WS presciption but with rso = 1.25 also as in 2fnr)
 &pot kp=3 type=0 p(1:3)= 19.00    0.0000  1.2500 /
 &pot kp=3 type=1 p(1:3)= 50.000  1.2500  0.6500 /
-&pot kp=3 type=3 p(1:3)= 6.000  1.1000  0.6500 /
+&pot kp=3 type=3 p(1:3)= 6.000  1.2500  0.6500 /
 
 ! 19O + d external pot (2FNR)
 ! Coulomb
@@ -55,8 +55,8 @@ elab(1)=35 /
 &overlap /
 
 ! 0 range: kind = 5 and set p1 = D0 p2= LEA (0 by default 2FNR)
-! D0 constant = 122.5 fm default value 
-! Finitw range: kind = 7, p1,p2 not used
+! D0 constant = -122.5 fm default value 
+! Finite range: kind = 7 -> p1,p2 not used
 &COUPLING icto=-2 icfrom=1 kind=5 ip1=1 ip2=0 ip3=0 p1=-122.5 p2=0 /
 ! Projectile coupling
 &cfp  in=1 ib=1 ia=1 kn=1  a=1.0 /

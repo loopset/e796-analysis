@@ -70,6 +70,7 @@ void Ang()
         inter.AddAngularDistribution(peak, xs.Get(peak));
     inter.ReadCompConfig("./comps.conf");
     inter.DoComp();
+    inter.GetComp("g0")->QuotientPerPoint();
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

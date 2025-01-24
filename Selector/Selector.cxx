@@ -235,6 +235,8 @@ void E796::Selector::ReassignNames()
 
 void E796::Selector::SendToWebsite(const std::string& file, TObject* o, TString name)
 {
+    if(!o)
+        return;
     std::string path {"/media/Data/E796v2/website/RootFiles/"};
     auto f {std::make_unique<TFile>((path + file).c_str(), "update")};
     o->Write((name.Length() ? name.Data() : nullptr), TObject::kOverwrite);

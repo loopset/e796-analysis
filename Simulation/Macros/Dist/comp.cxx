@@ -146,6 +146,6 @@ void comp()
     hEx->DrawClone();
     hExGS->DrawClone("same");
 
-    // gSelector->SendToWebsite("sim_to_ana.root", c0,
-    //                          ("c" + std::string(Ex == 0 ? "gs" : "ex") + gSelector->GetShortStr()).c_str());
+    gSelector->SendToWebsite("sim_to_ana.root", c0,
+                             ("c" + std::string(Ex == 0 ? "gs" : "ex") + gSelector->GetShortStr()).c_str());
 }

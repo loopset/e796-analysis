@@ -52,7 +52,7 @@ void Ang()
     fitter.Run();
     fitter.Draw();
     fitter.ComputeIntegrals(2);
-    fitter.DrawCounts(false);
+    fitter.DrawCounts(true);
 
     // Interface
     Fitters::Interface inter;

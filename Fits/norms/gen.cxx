@@ -12,7 +12,7 @@ void gen()
     double Np {0.3125 * 1.93e21};
     double Nd {0.5625 * 1.93e21};
     // Set renormalizations
-    Nd *= 0.497;
+    Nd *= 0.7344;
     Np *= 0.7344;
     // Exact targets depend on the actual length of ACTAR
     // considered in the analysis, accesible in the gSelector
@@ -20,7 +20,7 @@ void gen()
     // INFO: this is actually wrong. (22/01/2025)
     // The simulated efficiency already gates on the RP.X(),
     // so the effect of narrowing the range is already considered in it
-    // No need to "overcorrect" the number of targeta
+    // No need to "overcorrect" the number of targets
 
     // Build
     PhysUtils::Experiment p {1 * Np, Ntrigger, Ndiv};
