@@ -45,6 +45,7 @@ void Ang()
                    {"theta3CM", "Eex", "weight"});
     ivs.TreatPS();
     // ivs.Draw();
+    ivs.Write("./Outputs/ivs.root");
 
     // Fitter
     Angular::Fitter fitter {&ivs};
@@ -53,6 +54,7 @@ void Ang()
     fitter.Draw();
     fitter.ComputeIntegrals(2);
     fitter.DrawCounts(true);
+    fitter.Write("./Outputs/counts.root");
 
     // Interface
     Fitters::Interface inter;

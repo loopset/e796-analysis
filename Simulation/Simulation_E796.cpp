@@ -155,10 +155,14 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // Silicon specs
     auto* specs {new ActPhysics::SilSpecs};
-    specs->ReadFile("/media/Data/E796v2/configs/simu_silicons.conf");
     bool isIter {TString(gSelector->GetFlag()).Contains("iter")};
     if(isIter)
+    {
+        specs->ReadFile("/media/Data/E796v2/configs/simu_silicons.conf");
         std::cout << "Iter f0 point: " << specs->GetLayer("f0").GetPoint() << '\n';
+    }
+    else
+        specs->ReadFile("/media/Data/E796v2/configs/detailedSilicons.conf");
     // Silicon EFFECTIVE matrix
     ActPhysics::SilMatrix* sm {};
     // Set reference position and offset along Z!
@@ -314,6 +318,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // To compute a fine-grain efficiency, we require at least a binning width of 0.25 degrees!
     auto hThetaCM {HistConfig::ThetaCM.GetHistogram()};
     auto hThetaCMAll {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaCM all", "All").GetHistogram()};
+    // And also efficiency in LAB!
+    auto hThetaLabAll {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaLab all", "LabAll").GetHistogram()};
+    auto hThetaLab {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaLab", "Lab").GetHistogram()};
     auto hDistF0 {HistConfig::ChangeTitle(HistConfig::TL, "Distance to F0").GetHistogram()};
     auto hKinVertex {HistConfig::ChangeTitle(HistConfig::KinSimu, "Kinematics at vertex").GetHistogram()};
     auto hSP {HistConfig::SP.GetHistogram()};
@@ -453,6 +460,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // Simulated thetaCM, to be used for efficiency computation
         double thetaCMEff {reckin->ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
         hThetaCMAll->Fill(thetaCMEff * TMath::RadToDeg());
+        double theta3LabEff {theta3Lab}; // before implementing resolution in angle
+        hThetaLabAll->Fill(theta3LabEff * TMath::RadToDeg());
 
         // 4-> Include thetaLab resolution to compute thetaCM and Ex afterwards
         if(thetaResolution)
@@ -590,6 +599,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             // (which makes sense after implementing resolutions) and hence contributing to another bin!!!
             // Besides, this could cause errors when making the division: passed counts > 0 / all counts == 0!!
             hThetaCM->Fill(thetaCMEff * TMath::RadToDeg());
+            hThetaLab->Fill(theta3LabEff * TMath::RadToDeg());
 
             // write to TTree
             Ex_tree = ExAfter;
@@ -609,11 +619,14 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Efficiencies as quotient of histograms in TEfficiency class
     auto* eff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
     eff->SetNameTitle("eff", TString::Format("#theta_{CM} eff E_{x} = %.2f MeV", Ex));
+    auto* effLab {new TEfficiency(*hThetaLab, *hThetaLabAll)};
+    effLab->SetNameTitle("effLab", TString::Format("#theta_{Lab} eff E_{x} = %.2f MeV", Ex));
 
     // SAVING
     outFile->cd();
     outTree->Write();
     eff->Write();
+    effLab->Write();
     hSP->Write("hSP");
     hRP->Write("hRP");
     outFile->Close();
@@ -662,7 +675,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         c1->cd(4);
         eff->Draw("apl");
         c1->cd(5);
-        hSPTheta->DrawClone("colz");
+        // hSPTheta->DrawClone("colz");
+        effLab->Draw("apl");
         c1->cd(6);
         hDeltaE->DrawClone("colz");
 

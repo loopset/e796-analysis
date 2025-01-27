@@ -1,4 +1,3 @@
-#include "ROOT/RDF/InterfaceUtils.hxx"
 #include "ROOT/RDataFrame.hxx"
 
 #include "TCanvas.h"
@@ -14,8 +13,15 @@
 #include "TSpline.h"
 #include "TString.h"
 
+#include "AngComparator.h"
+#include "AngDifferentialXS.h"
+#include "AngIntervals.h"
+#include "Interpolators.h"
+#include "PhysExperiment.h"
+
 #include <cmath>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -52,6 +58,11 @@ double GetOverlap(TH1* ana, TH1* simu)
     return chi2;
 }
 
+double CorrDist(double d)
+{
+    return d * 2 - 256;
+}
+
 void plot()
 {
     std::string target {"1H"};
@@ -59,31 +70,64 @@ void plot()
     gSelector->SetTarget(target);
     gSelector->SetLight(light);
 
+    // And set excitation energies
+    std::vector<double> Exs;
+    std::vector<std::string> keys;
+    if(auto str {gSelector->GetShortStr()}; str == "pd")
+    {
+        Exs = {0};
+        keys = {"g0"};
+    }
+    else if(str == "dt")
+    {
+        Exs = {0, 3.24};
+        keys = {"g0", "g2"};
+    }
+    else
+        throw std::runtime_error("Channels other than pd or dt not implemented yet");
+
     // Read analysis
+    TH1::AddDirectory(false);
     ROOT::EnableImplicitMT();
     ROOT::RDataFrame ana {"Sel_Tree", gSelector->GetAnaFile(3)};
     auto hEx {ana.Histo1D(HistConfig::Ex, "Ex")};
-    auto sgs {Fit(hEx.GetPtr(), 0, 1.5)};
-    auto sex {Fit(hEx.GetPtr(), 3.16, 0.75)};
-    // Gate on states
-    ROOT::RDF::RNode anags {ana.Filter([&](double ex) { return std::abs(ex - 0) <= 3 * sgs; }, {"Ex"})};
-    ROOT::RDF::RNode anaex {ana.Filter([&](double ex) { return std::abs(ex - 3.16) <= 3 * sex; }, {"Ex"})};
     std::vector<TH1D*> hsAnaRPx, hsAnaEx;
-    for(auto node : {&anags, &anaex})
+    // Fit analysis
+    for(const auto& ex : Exs)
     {
-        auto hRPx {node->Histo1D(HistConfig::RPx, "fRP.fCoordinates.fX")};
-        auto hEx {node->Histo1D(HistConfig::Ex, "Ex")};
+        auto sigma {Fit(hEx.GetPtr(), ex, 1.5)};
+        auto node {ana.Filter([=](double e) { return std::abs(e - ex) <= 3 * sigma; }, {"Ex"})};
+        auto hRPx {node.Histo1D(HistConfig::RPx, "fRP.fCoordinates.fX")};
+        auto hEx {node.Histo1D(HistConfig::Ex, "Ex")};
         hRPx->SetLineColor(8);
         hEx->SetLineColor(8);
         hsAnaRPx.push_back((TH1D*)hRPx->Clone());
         hsAnaEx.push_back((TH1D*)hEx->Clone());
     }
 
+    // Compute cross-sections for g.s
+    auto path {TString::Format("/media/Data/E796v2/Fits/%s/", gSelector->GetShortStr().c_str())};
+    auto fxs {std::make_unique<TFile>(path + "Outputs/counts.root")};
+    std::vector<TGraphErrors*> gexps;
+    for(const auto& key : keys)
+    {
+        auto* gexp {fxs->Get<TGraphErrors>(("g" + key).c_str())};
+        if(!gexp)
+            throw std::runtime_error("Cannot read experimental count graph");
+        gexps.push_back(gexp);
+    }
+    // Experimental info
+    PhysUtils::Experiment exp {};
+    if(target == "1H")
+        exp.Read("/media/Data/E796v2/Fits/norms/p_target.dat");
+    else
+        exp.Read("/media/Data/E796v2/Fits/norms/d_target.dat");
+    // Intervals
+    Angular::Intervals ivs;
+    ivs.Read((path + "Outputs/ivs.root").Data());
+
     // Read simulation
     gSelector->SetFlag("iter_front");
-    // Set vector of energies
-    std::vector<double> Exs {0}; // we can compare only gs and excited state at 3 MeV
-
     // And now distances
     std::vector<double> dists;
     double padSize {2}; // mm
@@ -110,7 +154,7 @@ void plot()
             auto file {gSelector->GetApproxSimuFile("20O", target, light, ex)};
             ROOT::RDataFrame df {"SimulationTTree", file};
             auto hRPx {df.Histo1D(HistConfig::RPx, "RPx")};
-            hRPx->SetTitle(TString::Format("d = %.2f E_{x} = %.2f", dist, ex));
+            hRPx->SetTitle(TString::Format("d = %.2f E_{x} = %.2f", CorrDist(dist), ex));
             hsRPx.back().push_back((TH1D*)hRPx->Clone());
             // SP histogram
             auto f {std::make_unique<TFile>(file.c_str())};
@@ -118,6 +162,8 @@ void plot()
             hSP->SetDirectory(nullptr);
             hsSP.back().push_back(hSP);
             auto* eff {f->Get<TEfficiency>("eff")};
+            eff->SetDirectory(nullptr);
+            eff->SetTitle(TString::Format("%.2f", CorrDist(dist)));
             effs.back().push_back(eff);
             f->Close();
         }
@@ -125,10 +171,16 @@ void plot()
 
     // Important: normalize histograms
     for(auto& h : hsAnaRPx)
+    {
+        h->Rebin(2);
         h->Scale(1. / h->Integral());
+    }
     for(auto& vec : hsRPx)
         for(auto& h : vec)
+        {
+            h->Rebin(2);
             h->Scale(1. / h->Integral());
+        }
 
     // Perform minimization
     std::vector<TGraphErrors*> gs;
@@ -149,7 +201,7 @@ void plot()
         }
     }
 
-    // Minimize
+    // Find minimum distance
     for(auto& g : gs)
     {
         TF1 func {"func", [=](double* x, double* p) { return g->Eval(x[0], nullptr, "S"); }, dists.front(),
@@ -163,62 +215,92 @@ void plot()
         g->GetListOfFunctions()->Add(text);
     }
 
+    // Compute cross section for g.s
+    std::vector<std::vector<Angular::Comparator>> comps(dists.size());
+    for(int i = 0; i < dists.size(); i++)
+    {
+        for(int j = 0; j < Exs.size(); j++)
+        {
+            auto key {keys[j]};
+            Interpolators::Efficiency aux;
+            aux.Add(key, effs[i][j]);
+            Angular::DifferentialXS xs {&ivs, &aux, &exp};
+            xs.DoFor(gexps[j], key);
+            auto gxs {xs.Get(key)};
+            auto str {gSelector->GetShortStr()};
+            Angular::Comparator comp {
+                TString::Format("%s %s %.2f mm", str.c_str(), key.c_str(), CorrDist(dists[i])).Data(), gxs};
+            if(str == "pd")
+                comp.Add(key, (path + "Inputs/g0_2FNR/21.g0").Data());
+            else if(str == "dt")
+            {
+                if(key == "g0")
+                    comp.Add(key, (path + "Inputs/gs/Fresco/fort.202").Data());
+                else if(key == "g2")
+                    comp.Add(key, (path + "Inputs/ex_3.16/l1/fort.202").Data());
+                else
+                    throw std::runtime_error("No Comparator for dt in this channel");
+            }
+            else
+                throw std::runtime_error("Comparator file not specified");
+            comp.Fit();
+            comps[i].push_back(comp);
+        }
+    }
+
     // Draw
     for(int ic = 0; ic < Exs.size(); ic++)
     {
-        auto* c {new TCanvas {TString::Format("c%d", ic), TString::Format("Ex = %.2f MeV", Exs[ic])}};
-        c->DivideSquare(dists.size() * 2);
+        auto* cRPx {new TCanvas {TString::Format("cRPx%d", ic), TString::Format("Ex = %.2f MeV", Exs[ic])}};
+        cRPx->DivideSquare(dists.size());
         int ip {1};
         for(int id = 0; id < dists.size(); id++)
         {
-            c->cd(ip);
+            cRPx->cd(ip);
             auto* stack {new THStack};
             stack->SetTitle(TString::Format("%s;RP.X() [mm];Normalized counts", hsRPx[id][ic]->GetTitle()));
             stack->Add(hsRPx[id][ic]);
             stack->Add(hsAnaRPx[ic]);
             stack->Draw("nostack histe");
-            // hsRPx[id][ic]->DrawNormalized("hist");
-            // hsAnaRPx[ic]->DrawNormalized("histe same");
             ip++;
-            c->cd(ip);
-            effs[id][ic]->Draw();
+        }
+        auto* cxs {new TCanvas {TString::Format("cxs%d", ic), TString::Format("Ex = %.2f MeV", Exs[ic])}};
+        cxs->DivideSquare(dists.size());
+        ip = 1;
+        for(int id = 0; id < dists.size(); id++)
+        {
+            auto pad {cxs->cd(ip)};
+            comps[id][ic].Draw("", false, true, 3, pad);
             ip++;
         }
     }
 
-    // Multigraph
-    auto* mg {new TMultiGraph};
-    mg->SetTitle(";#theta_{CM} [#circ];#epsilon");
-    for(auto& v : effs)
-    {
-        auto* g {v[0]->CreateGraph()};
-        mg->Add(g, "lp");
-    }
 
-    auto* c0 {new TCanvas {"c-1", "Ex canvas"}};
+    gROOT->SetSelectedPad(nullptr);
+    auto* c0 {new TCanvas {"cEff", "Ex canvas"}};
     c0->DivideSquare(6);
     c0->cd(1);
     hEx->DrawClone();
     for(auto h : hsAnaEx)
         h->Draw("same");
-    c0->cd(2);
-    hsAnaRPx[0]->Draw("histe");
-    c0->cd(3);
-    hsAnaRPx[1]->Draw("histe");
-    c0->cd(4);
-    gs[0]->Draw("apl");
-    c0->cd(5);
-    if(gs[1])
-        gs[1]->Draw("apl");
-    c0->cd(6);
-    mg->Draw("apl plc pmc");
+    for(int i = 0; i < gs.size(); i++)
+    {
+        c0->cd(2 + i);
+        gs[i]->Draw("apl");
+    }
+    // Draw all effs together
+    for(int j = 0; j < Exs.size(); j++)
+    {
+        Interpolators::Efficiency inter;
+        for(int i = 0; i < dists.size(); i++)
+            inter.Add(TString::Format("%.0f", CorrDist(dists[i])).Data(), (TEfficiency*)effs[i][j]->Clone());
+        inter.Draw(true, keys[j], c0->cd(4 + j));
+    }
 
     // Bugfix for jsroot
     for(auto& g : gs)
         g->GetYaxis()->UnZoom();
 
     auto* list {gROOT->GetListOfCanvases()};
-    gSelector->SendToWebsite("sim_to_ana.root", list->FindObject("c0"), "cIter0_" + gSelector->GetShortStr());
-    gSelector->SendToWebsite("sim_to_ana.root", list->FindObject("c1"), "cIter1_" + gSelector->GetShortStr());
-    gSelector->SendToWebsite("sim_to_ana.root", list->FindObject("c-1"), "cIter2_" + gSelector->GetShortStr());
+    gSelector->SendToWebsite(TString::Format("iter_dist_%s.root", gSelector->GetShortStr().c_str()).Data(), list);
 }

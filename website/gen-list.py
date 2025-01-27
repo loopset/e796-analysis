@@ -25,6 +25,7 @@ def attachUrl(url: str | list, path: str, title: str = "") -> str:
     return base + options
 
 
+webdir = "website/RootFiles/"
 # List of subfolders, their labels, and manually specified links
 subfolders = [
     {
@@ -53,7 +54,7 @@ subfolders = [
         "links": [
             {
                 "url": "website/RootFiles/dt.root",
-                "text": "Global fit and angular distributions",
+                "text": "Fit and CM distributions",
             },
         ],
     },
@@ -62,9 +63,10 @@ subfolders = [
         "label": "20O(p,d)",
         "links": [
             {
-                "url": "website/RootFiles/pd.root",
-                "text": "Global fit and angular distributions",
+                "url": webdir + "pd.root",
+                "text": "Fit and CM distributions",
             },
+            {"url": webdir + "pd_lab.root", "text": "Lab distributions (preliminary)"},
         ],
     },
     {
@@ -74,8 +76,12 @@ subfolders = [
             {"url": "", "text": "Go to JSRoot"},
             {"url": "website/RootFiles/sigmas.root", "text": "Sigma study"},
             {
-                "url": "website/RootFiles/sim_to_ana.root",
-                "text": "RP.X() distribution comparison",
+                "url": webdir + "iter_dist_pd.root",
+                "text": "Iterative study for pd",
+            },
+            {
+                "url": webdir + "iter_dist_dt.root",
+                "text": "Iterative study for dt",
             },
             {"url": "website/RootFiles/emittance.root", "text": "Emittance"},
         ],
