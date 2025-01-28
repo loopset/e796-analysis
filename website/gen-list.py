@@ -53,9 +53,10 @@ subfolders = [
         "label": "20O(d,t)",
         "links": [
             {
-                "url": "website/RootFiles/dt.root",
+                "url": webdir + "dt.root",
                 "text": "Fit and CM distributions",
             },
+            {"url": webdir + "dt_lab.root", "text": "Lab distributions (preliminary)"},
         ],
     },
     {
