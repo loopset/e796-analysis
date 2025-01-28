@@ -1,3 +1,5 @@
+#include "ActKinematics.h"
+
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RResultPtr.hxx"
 
@@ -36,8 +38,8 @@ void Ang(bool isLab = false)
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -2)};
 
     // Init intervals
-    double thetaMin {isLab ? 8 : 7.};
-    double thetaMax {isLab ? 26. : 16.};
+    double thetaMin {isLab ? 10 : 7.};
+    double thetaMax {isLab ? 22. : 16.};
     double thetaStep {1};
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Expd, thetaStep, 1};
     // Fill
@@ -84,9 +86,25 @@ void Ang(bool isLab = false)
     for(const auto& peak : peaks)
         inter.AddAngularDistribution(peak, xs.Get(peak));
     inter.ReadCompConfig("./comps.conf");
+    inter.FillComp();
     if(isLab)
+    {
         inter.SetCompConfig("save", "0");
-    inter.DoComp();
+        // And convert xs to lab!
+        ActPhysics::Kinematics kin {"20O(p,d)@700"};
+        for(const auto& peak : inter.GetPeaks())
+        {
+            auto comp {inter.GetComp(peak)};
+            auto theo {comp->GetTheoGraphs()};
+            for(const auto& [name, gtheo] : theo)
+            {
+                auto trans {kin.TransfromCMCrossSectionToLab(gtheo)};
+                comp->Replace(name, trans);
+                delete trans;
+            }
+        }
+    }
+    inter.FitComp();
     inter.GetComp("g0")->QuotientPerPoint();
 
     // plotting
