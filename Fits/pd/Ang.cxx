@@ -38,9 +38,9 @@ void Ang(bool isLab = false)
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -2)};
 
     // Init intervals
-    double thetaMin {isLab ? 10 : 7.};
-    double thetaMax {isLab ? 22. : 16.};
-    double thetaStep {1};
+    double thetaMin {isLab ? 12 : 7.};
+    double thetaMax {isLab ? 24. : 16.};
+    double thetaStep {1.5};
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Expd, thetaStep, 1};
     // Fill
     if(isLab)

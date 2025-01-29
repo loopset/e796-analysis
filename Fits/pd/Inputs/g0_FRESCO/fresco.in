@@ -49,15 +49,15 @@ elab(1)=35 /
 &pot /
 
 ! Form factor of deuteron
-&OVERLAP kn1=1 kn2=2 ic1=2 ic2=1 in=-1 kind=3 nn=1 l=0 lmax=2 sn=0.5 ia=0 j=0.5 ib=1 kbpot=2 krpot=0 be=2.224 isc=0 ipc=4 nfl=0 nam=1 ampl=0.0 /
+&OVERLAP kn1=1 kn2=2 ic1=2 ic2=1 in=-1 kind=3 nn=1 l=0 lmax=2 sn=0.5 ia=0 j=0.5 ib=1 kbpot=2 be=2.224 isc=0 ipc=4 nfl=0 nam=0 ampl=0.0 /
 ! Form factor of 19O + n
-&OVERLAP kn1=3 kn2=3 ic1=1 ic2=2 in=2 kind=0 nn=1 l=2 sn=0.5 j=2.5 kbpot=3 krpot=0 be=7.6081 isc=1 ipc=4 nfl=-22 nam=0 ampl=0.0 /
+&OVERLAP kn1=3 kn2=3 ic1=1 ic2=2 in=2 kind=0 nn=1 l=2 sn=0.5 j=2.5 kbpot=3 be=7.6081 isc=1 ipc=4 nfl=-22 nam=0 ampl=0.0 /
 &overlap /
 
 ! 0 range: kind = 5 and set p1 = D0 p2= LEA (0 by default 2FNR)
 ! D0 constant = -122.5 fm default value 
 ! Finite range: kind = 7 -> p1,p2 not used
-&COUPLING icto=-2 icfrom=1 kind=5 ip1=1 ip2=0 ip3=0 p1=-122.5 p2=0 /
+&COUPLING icto=-2 icfrom=1 kind=5 ip1=1 ip2=0 ip3=0 p1=122.5 p2=0 /
 ! Projectile coupling
 &cfp  in=1 ib=1 ia=1 kn=1  a=1.0 /
 ! Oxygen coupling
