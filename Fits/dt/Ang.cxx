@@ -90,6 +90,8 @@ void Ang(bool isLab = false)
     if(!isLab)
     {
         xs.TrimX("v0", 13, false);
+        xs.TrimX("v3", 7);
+        xs.TrimX("v4", 7);
         xs.Write("./Outputs/", gSelector->GetFlag());
     }
 
@@ -116,6 +118,8 @@ void Ang(bool isLab = false)
         }
     }
     inter.FitComp();
+    if(!isLab)
+        inter.WriteComp("./Outputs/sfs.root");
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

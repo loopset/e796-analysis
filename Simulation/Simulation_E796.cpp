@@ -123,6 +123,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Set different options
     bool deutonbreakup {};
     bool pdphase {};
+    bool dtcont {};
     if(neutronPS == -1)
         deutonbreakup = true;
     if(neutronPS == -2)
@@ -130,6 +131,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         pdphase = true;
         isEl = false; // deuterons that go to front layer
     }
+    if(neutronPS == -3)
+        dtcont = true;
 
     // Resolutions
     const double sigmaSil {0.060 / 2.355};
@@ -152,65 +155,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     bool stragglingInSil {true};
     bool silResolution {true};
     bool thetaResolution {true};
-
-    // Silicon specs
-    auto* specs {new ActPhysics::SilSpecs};
-    bool isIter {TString(gSelector->GetFlag()).Contains("iter")};
-    if(isIter)
-    {
-        specs->ReadFile("/media/Data/E796v2/configs/simu_silicons.conf");
-        std::cout << "Iter f0 point: " << specs->GetLayer("f0").GetPoint() << '\n';
-    }
-    else
-        specs->ReadFile("/media/Data/E796v2/configs/detailedSilicons.conf");
-    // Silicon EFFECTIVE matrix
-    ActPhysics::SilMatrix* sm {};
-    // Set reference position and offset along Z!
-    double silCentre {};
-    double beamOffset {}; // determined from emittance calculations
-    // Set layers
-    std::string firstLayer {};
-    std::string secondLayer {};
-    if(isEl)
-    {
-        sm = E796Utils::GetSideMatrix();
-        silCentre = sm->GetMeanZ({3, 4, 5});
-        specs->GetLayer("l0").ReplaceWithMatrix(sm);
-        beamOffset = 7.52; // mm
-        // specs->GetLayer("l0").SetPoint({0, 174.425, 0});
-        specs->EraseLayer("f0");
-        specs->EraseLayer("f1");
-        firstLayer = "l0";
-    }
-    else
-    {
-        sm = E796Utils::GetFrontSilMatrix(arglight);
-        // Uncomment to reproduce Juan simu
-        // sm = new ActPhysics::SilMatrix;
-        // sm->Read("./Macros/juan_veto.root");
-        // sm->Erase(7);
-        silCentre = sm->GetMeanZ({3, 4});
-        beamOffset = 9.01; // mm
-        // If in iter mode
-        if(isIter)
-        {
-            std::cout << "Iter: scaling sil matrix" << '\n';
-            // Scale sm matrix now!
-            double xyRef {181};                                   // pad units, value which it has been obtained
-            auto xyTarget {specs->GetLayer("f0").GetPoint().X()}; // pad units
-            // Refence point: middle Y coordinate plus beam centering
-            sm->MoveXYTo(xyRef, {126, silCentre + beamOffset}, xyTarget);
-            // Scale also beamOffset after scaling matrix haha
-            beamOffset *= xyTarget / xyRef;
-        }
-
-        specs->GetLayer("f0").ReplaceWithMatrix(sm);
-        specs->GetLayer("f1").MoveZTo(silCentre, {3, 4});
-        specs->EraseLayer("l0");
-        firstLayer = "f0";
-        secondLayer = "f1";
-    }
-    double zVertexMean {silCentre + beamOffset};
 
     // TPC basic parameters
     ActRoot::TPCParameters tpc {"Actar"};
@@ -288,10 +232,76 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         reckin = new ActPhysics::Kinematics {"20O(p,d)@700"};
         std::cout << BOLDYELLOW << "Simulation_E796(): 20O(d,d) 1n PS as 20O(p,d)" << RESET << '\n';
     }
+    else if(dtcont)
+    {
+        reckin = new ActPhysics::Kinematics {"20O(d,t)@700"};
+        std::cout << BOLDYELLOW << "Simulation_E796(): 20O(p,d) gs as 20O(d,t)" << RESET << '\n';
+        light = "3H";
+        std::cout << BOLDYELLOW << "Overriding light from " << arglight << " to " << light << RESET << '\n';
+    }
     else
     {
         reckin = kingen.GetBinaryKinematics();
     }
+
+    // Silicon specs
+    auto* specs {new ActPhysics::SilSpecs};
+    bool isIter {TString(gSelector->GetFlag()).Contains("iter")};
+    if(isIter)
+    {
+        specs->ReadFile("/media/Data/E796v2/configs/simu_silicons.conf");
+        std::cout << "Iter f0 point: " << specs->GetLayer("f0").GetPoint() << '\n';
+    }
+    else
+        specs->ReadFile("/media/Data/E796v2/configs/detailedSilicons.conf");
+    // Silicon EFFECTIVE matrix
+    ActPhysics::SilMatrix* sm {};
+    // Set reference position and offset along Z!
+    double silCentre {};
+    double beamOffset {}; // determined from emittance calculations
+    // Set layers
+    std::string firstLayer {};
+    std::string secondLayer {};
+    if(isEl)
+    {
+        sm = E796Utils::GetSideMatrix();
+        silCentre = sm->GetMeanZ({3, 4, 5});
+        specs->GetLayer("l0").ReplaceWithMatrix(sm);
+        beamOffset = 7.52; // mm
+        // specs->GetLayer("l0").SetPoint({0, 174.425, 0});
+        specs->EraseLayer("f0");
+        specs->EraseLayer("f1");
+        firstLayer = "l0";
+    }
+    else
+    {
+        sm = E796Utils::GetFrontSilMatrix(light);
+        // Uncomment to reproduce Juan simu
+        // sm = new ActPhysics::SilMatrix;
+        // sm->Read("./Macros/juan_veto.root");
+        // sm->Erase(7);
+        silCentre = sm->GetMeanZ({3, 4});
+        beamOffset = 9.01; // mm
+        // If in iter mode
+        if(isIter)
+        {
+            std::cout << "Iter: scaling sil matrix" << '\n';
+            // Scale sm matrix now!
+            double xyRef {181};                                   // pad units, value which it has been obtained
+            auto xyTarget {specs->GetLayer("f0").GetPoint().X()}; // pad units
+            // Refence point: middle Y coordinate plus beam centering
+            sm->MoveXYTo(xyRef, {126, silCentre + beamOffset}, xyTarget);
+            // Scale also beamOffset after scaling matrix haha
+            beamOffset *= xyTarget / xyRef;
+        }
+
+        specs->GetLayer("f0").ReplaceWithMatrix(sm);
+        specs->GetLayer("f1").MoveZTo(silCentre, {3, 4});
+        specs->EraseLayer("l0");
+        firstLayer = "f0";
+        secondLayer = "f1";
+    }
+    double zVertexMean {silCentre + beamOffset};
 
     // CUTS ON SILICON ENERGY, depending on particle
     // from the graphical PID cut

@@ -28,6 +28,7 @@ void Runner(TString what = "plot", bool standalone = true)
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
     int neutronPS {0}; // number of neutrons in final state:
     // if -1, break deuteron; if -2, 20O(d,d) 1n PS but rec as 20O(p,d)
+    // if -3, 20O(p,d) gs reconstructed as 20O(d,t)
     int protonPS {0}; // number of protons in final state
     double T1 {35};   // Beam energy: 35 MeV / u
 

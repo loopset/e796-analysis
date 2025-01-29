@@ -12,7 +12,6 @@
 #include "Interpolators.h"
 
 #include <string>
-#include <vector>
 
 #include "/media/Data/E796v2/Fits/FitHist.h"
 #include "/media/Data/E796v2/Selector/Selector.h"
@@ -32,6 +31,11 @@ void Fit()
     auto hPS2 {phase2.Histo1D(E796Fit::Exdt, "Eex", "weight")};
     hPS2->SetNameTitle("hPS", "2n PS");
     Fitters::TreatPS(hEx.GetPtr(), hPS2.GetPtr());
+    // // Contamination of 20O(p,d)
+    // ROOT::RDataFrame cont {"SimulationTTree", gSelector->GetSimuFile("20O", "1H", "2H", 0, -3, 0)};
+    // auto hCont {cont.Histo1D(E796Fit::Exdt, "Eex", "weight")};
+    // hCont->SetNameTitle("hPS", "2n PS");
+    // Fitters::TreatPS(hEx.GetPtr(), hCont.GetPtr());
 
     // Sigma interpolators
     Interpolators::Sigmas sigmas {gSelector->GetSigmasFile("2H", "3H").Data()};
@@ -53,6 +57,7 @@ void Fit()
     // inter.AddState("v8", {10, 17.5, sigma, 0.1}, "cont");
     inter.AddState("ps0", {0.1});
     inter.AddState("ps1", {0.1});
+    // inter.AddState("ps2", {0.1});
     inter.EndAddingStates();
     // Wider mean margin
     inter.SetOffsetMeanBounds(0.5);
@@ -79,12 +84,12 @@ void Fit()
     gPad->cd();
     auto* line {new TLine {3.956, gPad->GetUymin(), 3.956, gPad->GetUymax()}};
     line->SetLineWidth(2);
-    line->SetLineColor(kMagenta);
+    line->SetLineColor(kOrange);
     line->Draw("same");
-    auto* line2 {new TLine {17.069, gPad->GetUymin(), 17.069, gPad->GetUymax()}};
-    line2->SetLineWidth(2);
-    line2->SetLineColor(kOrange);
-    line2->Draw("same");
+    // auto* line2 {new TLine {17.069, gPad->GetUymin(), 17.069, gPad->GetUymax()}};
+    // line2->SetLineWidth(2);
+    // line2->SetLineColor(kOrange);
+    // line2->Draw("same");
     auto* line3 {new TLine {12, gPad->GetUymin(), 12, gPad->GetUymax()}};
     line3->SetLineWidth(2);
     line3->SetLineColor(kCyan);
