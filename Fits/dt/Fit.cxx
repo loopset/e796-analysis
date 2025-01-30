@@ -44,7 +44,7 @@ void Fit()
     double sigma {0.364}; // common guess for all states
     inter.AddState("g0", {400, 0, sigma}, "5/2+");
     inter.AddState("g1", {10, 1.4, sigma}, "1/2+");
-    inter.AddState("g2", {110, 3.2, sigma}, "3/2+");
+    inter.AddState("g2", {110, 3.2, sigma}, "(1/2,3/2)-");
     inter.AddState("v0", {60, 4.5, sigma, 0.1}, "3/2-");
     inter.AddState("v1", {60, 6.7, sigma, 0.1}, "?");
     inter.AddState("v2", {60, 7.9, sigma, 0.1}, "?");

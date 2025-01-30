@@ -64,6 +64,6 @@ void Fit()
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,d) fit",
                     {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "1-n phase"}});
-
+    gPad->GetListOfPrimitives()->RemoveLast();
     gSelector->SendToWebsite("dd.root", gPad, "cFit");
 }

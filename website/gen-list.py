@@ -125,6 +125,8 @@ for subfolder in subfolders:
             if key == "url":
                 link[key] = attachUrl(link[key], localhost, label)
 
+    # Disable images
+    images = []
     # Write to table!
     website[label] = {"images": images, "links": links}
     local[label] = {"images": images, "links": aux}
