@@ -49,6 +49,7 @@ void Fit()
     // Run for all the cuts
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     "./Outputs/fit_" + gSelector->GetFlag() + ".root", "20O(p,d)");
-
+    
+    gPad->GetListOfPrimitives()->RemoveLast();
     gSelector->SendToWebsite("pd.root", gPad, "cFit");
 }

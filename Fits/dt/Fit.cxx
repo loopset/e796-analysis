@@ -1,7 +1,6 @@
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
-#include "TLine.h"
 #include "TROOT.h"
 #include "TString.h"
 #include "TVirtualPad.h"
@@ -79,21 +78,22 @@ void Fit()
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,t)");
 
-    // Draw Sn and S2n lines
-    gPad->Update();
-    gPad->cd();
-    auto* line {new TLine {3.956, gPad->GetUymin(), 3.956, gPad->GetUymax()}};
-    line->SetLineWidth(2);
-    line->SetLineColor(kOrange);
-    line->Draw("same");
-    // auto* line2 {new TLine {17.069, gPad->GetUymin(), 17.069, gPad->GetUymax()}};
-    // line2->SetLineWidth(2);
-    // line2->SetLineColor(kOrange);
-    // line2->Draw("same");
-    auto* line3 {new TLine {12, gPad->GetUymin(), 12, gPad->GetUymax()}};
-    line3->SetLineWidth(2);
-    line3->SetLineColor(kCyan);
-    line3->Draw("same");
+    gPad->GetListOfPrimitives()->FindObject("TPave")->Delete();
+    // // Draw Sn and S2n lines
+    // gPad->Update();
+    // gPad->cd();
+    // auto* line {new TLine {3.956, gPad->GetUymin(), 3.956, gPad->GetUymax()}};
+    // line->SetLineWidth(2);
+    // line->SetLineColor(kOrange);
+    // line->Draw("same");
+    // // auto* line2 {new TLine {17.069, gPad->GetUymin(), 17.069, gPad->GetUymax()}};
+    // // line2->SetLineWidth(2);
+    // // line2->SetLineColor(kOrange);
+    // // line2->Draw("same");
+    // auto* line3 {new TLine {12, gPad->GetUymin(), 12, gPad->GetUymax()}};
+    // line3->SetLineWidth(2);
+    // line3->SetLineColor(kCyan);
+    // line3->Draw("same");
 
     gSelector->SendToWebsite("dt.root", gPad, "cFit");
 }

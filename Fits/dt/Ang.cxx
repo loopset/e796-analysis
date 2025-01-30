@@ -92,6 +92,7 @@ void Ang(bool isLab = false)
         xs.TrimX("v0", 13, false);
         xs.TrimX("v3", 7);
         xs.TrimX("v4", 7);
+        xs.TrimX("v5", 7);
         xs.Write("./Outputs/", gSelector->GetFlag());
     }
 

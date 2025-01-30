@@ -35,7 +35,7 @@
  NAMEP='t       ',
  MASSP=  3.01604891    ,
  ZP=  1.00000000    ,
- NEX=1          ,
+ NEX=3          ,
  PWF=T,
  NAMET='O19     ',
  MASST=  18.9991894    ,
@@ -56,7 +56,49 @@
  COPYT=0          ,
  PTYT=1          ,
  BANDT=1          ,
- ET=  1.56599998    ,
+ ET=  1.63800001    ,
+ KKT=  0.00000000    ,
+ TT=  0.00000000    ,
+ FEXCH=F,
+ IGNORE=F,
+ INFAM=0          ,
+ OUTFAM=0          ,
+ /
+&STATES
+ JP=  0.00000000    ,
+ COPYP=1          ,
+ PTYP=0          ,
+ BANDP=0          ,
+ EP=  0.00000000    ,
+ KKP=  0.00000000    ,
+ TP=  0.00000000    ,
+ CPOT=2          ,
+ JT= 0.500000000    ,
+ COPYT=0          ,
+ PTYT=-1         ,
+ BANDT=-1         ,
+ ET=  1.63800001    ,
+ KKT=  0.00000000    ,
+ TT=  0.00000000    ,
+ FEXCH=F,
+ IGNORE=F,
+ INFAM=0          ,
+ OUTFAM=0          ,
+ /
+&STATES
+ JP=  0.00000000    ,
+ COPYP=1          ,
+ PTYP=0          ,
+ BANDP=0          ,
+ EP=  0.00000000    ,
+ KKP=  0.00000000    ,
+ TP=  0.00000000    ,
+ CPOT=2          ,
+ JT=  2.50000000    ,
+ COPYT=0          ,
+ PTYT=1          ,
+ BANDT=1          ,
+ ET=  1.63800001    ,
  KKT=  0.00000000    ,
  TT=  0.00000000    ,
  FEXCH=F,
@@ -136,7 +178,7 @@
  ITT=F,
  NOSUB=F,
  SHAPEI=0          ,
- P=  0.00000000    ,  109.162003    ,  1.12010002    , 0.819999993    ,  6.26809978    ,
+ P=  0.00000000    ,  109.237000    ,  1.12010002    , 0.819999993    ,  6.20100021    ,
    1.26129997    , 0.839999974    , 2*0.00000000      ,
  LSHAPEI=0          ,
  JL=' ',
@@ -149,7 +191,7 @@
  ITT=F,
  NOSUB=F,
  SHAPEI=0          ,
- P= 4*0.00000000      ,  12.0841999    ,  1.26129997    , 0.839999974    , 2*0.00000000      ,
+ P= 4*0.00000000      ,  12.1233997    ,  1.26129997    , 0.839999974    , 2*0.00000000      ,
  
  LSHAPEI=0          ,
  JL=' ',
@@ -287,7 +329,77 @@
  IB=0          ,
  KBPOT=4          ,
  KRPOT=0          ,
- BE=  9.17409039    ,
+ BE=  9.24600029    ,
+ ISC=1          ,
+ IPC=4          ,
+ NFL=0          ,
+ NAM=1          ,
+ AMPL=  1.00000000    ,
+ KEEP=F,
+ DM=  1.0004978179931641     ,
+ NK=0          ,
+ ER=  0.00000000    ,
+ E=  0.0000000000000000     ,
+ RSMIN=  0.0000000000000000     ,
+ RSMAX=  60.000000000000000     ,
+ RSALPHA=  0.0000000000000000     ,
+ NLAG=0          ,
+ PHASE=  0.0000000000000000     ,
+ AUTOWID=  0.00000000    ,
+ /
+&OVERLAP
+ KN1=3          ,
+ KN2=3          ,
+ IC1=1          ,
+ IC2=2          ,
+ IN=2          ,
+ KIND=0          ,
+ CH1=' ',
+ NN=1          ,
+ L=1          ,
+ LMAX=0          ,
+ SN= 0.500000000    ,
+ IA=0          ,
+ J= 0.500000000    ,
+ IB=0          ,
+ KBPOT=4          ,
+ KRPOT=0          ,
+ BE=  9.24600029    ,
+ ISC=1          ,
+ IPC=4          ,
+ NFL=0          ,
+ NAM=1          ,
+ AMPL=  1.00000000    ,
+ KEEP=F,
+ DM=  1.0004978179931641     ,
+ NK=0          ,
+ ER=  0.00000000    ,
+ E=  0.0000000000000000     ,
+ RSMIN=  0.0000000000000000     ,
+ RSMAX=  60.000000000000000     ,
+ RSALPHA=  0.0000000000000000     ,
+ NLAG=0          ,
+ PHASE=  0.0000000000000000     ,
+ AUTOWID=  0.00000000    ,
+ /
+&OVERLAP
+ KN1=4          ,
+ KN2=4          ,
+ IC1=1          ,
+ IC2=2          ,
+ IN=2          ,
+ KIND=0          ,
+ CH1=' ',
+ NN=1          ,
+ L=2          ,
+ LMAX=0          ,
+ SN= 0.500000000    ,
+ IA=0          ,
+ J=  2.50000000    ,
+ IB=0          ,
+ KBPOT=4          ,
+ KRPOT=0          ,
+ BE=  9.24600029    ,
  ISC=1          ,
  IPC=4          ,
  NFL=0          ,
@@ -333,10 +445,26 @@
  KEEP=F,
  /
 &CFP
- IN=-2         ,
+ IN=2          ,
  IB=1          ,
  IA=1          ,
  KN=2          ,
+ A=  1.00000000    ,
+ KEEP=F,
+ /
+&CFP
+ IN=2          ,
+ IB=1          ,
+ IA=2          ,
+ KN=3          ,
+ A=  1.00000000    ,
+ KEEP=F,
+ /
+&CFP
+ IN=-2         ,
+ IB=1          ,
+ IA=3          ,
+ KN=4          ,
  A=  1.00000000    ,
  KEEP=F,
  /
@@ -345,17 +473,17 @@
 
 
  parameters:    mxx    mxp  mxpex  maxit maxcpl maxnnu 
-   required:      1      2      3      0      1     36
+   required:      3      2      5      0      1     36
 
  parameters:   maxn  mint  maxnln maxnlo    msp  lmax1  mpair
-   required:   1202   1201    601    101      2     80      1
+   required:   1202   1201    601    101      4     80      1
 
  parameters:     mloc   mclist   maxqrn
-   required:       13        6        2
+   required:       13        6        9
 
 
  parameters:     mloc   mclist   maxqrn
-   required:       13        6        2
+   required:       13        6        9
 
 
 20O(d,t) @ 30AMeV Haixia (d) + Pang (t)                                         
