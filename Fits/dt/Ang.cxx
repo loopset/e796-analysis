@@ -56,7 +56,6 @@ void Ang(bool isLab = false)
     phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
                    {"theta3CM", "Eex", "weight"});
     ivs.TreatPS();
-    // ivs.Draw();
     if(!isLab)
         ivs.Write("./Outputs/ivs.root");
 
@@ -67,7 +66,7 @@ void Ang(bool isLab = false)
     fitter.Draw();
     fitter.ComputeIntegrals(2);
     fitter.DrawCounts(true);
-    if(isLab)
+    if(!isLab)
         fitter.Write("./Outputs/counts.root");
 
     // Interface
@@ -93,7 +92,7 @@ void Ang(bool isLab = false)
         xs.TrimX("v3", 7);
         xs.TrimX("v4", 7);
         xs.TrimX("v5", 7);
-        xs.Write("./Outputs/", gSelector->GetFlag());
+        xs.Write("./Outputs/");
     }
 
     // Comparators!

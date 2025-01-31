@@ -5,6 +5,7 @@
 
 #include "TString.h"
 
+#include <cstdio>
 #include <mutex>
 #include <string>
 #include <unordered_map>
@@ -22,6 +23,7 @@ class Config
 public:
     std::pair<double, double> fRPx {};
     double fLengthX {};
+    std::string fMaskTransSilOpt {};
     bool fMaskElSil {};
 
     void ReadConfig(std::shared_ptr<ActRoot::InputBlock> b);
@@ -52,6 +54,9 @@ private:
     // Add a label to allow tagging simulation files
     std::string fTag {};
 
+    // Set options for simulation that can be read through this global class
+    std::unordered_map<std::string, double> fOpts {};
+
 public:
     Selector(Selector&) = delete;
     void operator=(const Selector&) = delete;
@@ -77,6 +82,7 @@ public:
         fLight = light;
         ReassignNames();
     }
+    void SetOpt(const std::string& key, double val) { fOpts[key] = val; }
 
     // Getters
     const std::string& GetTag() const { return fTag; }
@@ -86,8 +92,9 @@ public:
     std::pair<double, double> GetRPx() const { return fCurrent->fRPx; }
     double GetLengthX() const { return fCurrent->fLengthX; }
     bool GetMaskElSil() const { return fCurrent->fMaskElSil; }
-
+    const std::string& GetMaskTransSilOpt() const { return fCurrent->fMaskTransSilOpt; }
     std::vector<std::string> GetFlags() const;
+    double GetOpt(const std::string& key) { return fOpts[key]; }
 
     // Browse directories
     TString GetAnaFile(int pipe, bool withFlag = true);

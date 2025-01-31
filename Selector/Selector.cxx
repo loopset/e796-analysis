@@ -27,14 +27,16 @@ void E796::Config::ReadConfig(std::shared_ptr<ActRoot::InputBlock> b)
     auto vrpx {b->GetDoubleVector("RPx")};
     fRPx = {vrpx[0], vrpx[1]};
     fLengthX = fRPx.second - fRPx.first;
+    fMaskTransSilOpt = b->GetString("MaskTransOpt");
     fMaskElSil = b->GetBool("MaskElSil");
 }
 
 void E796::Config::Print() const
 {
-    std::cout << "  RPx       : [" << fRPx.first << " , " << fRPx.second << "] mm" << '\n';
-    std::cout << "  LengthX   : " << fLengthX << " mm" << '\n';
-    std::cout << "  MaskSilEl : " << std::boolalpha << fMaskElSil << '\n';
+    std::cout << "  RPx          : [" << fRPx.first << " , " << fRPx.second << "] mm" << '\n';
+    std::cout << "  LengthX      : " << fLengthX << " mm" << '\n';
+    std::cout << "  MaskTransOpt : " << fMaskTransSilOpt << '\n';
+    std::cout << "  MaskSilEl    : " << std::boolalpha << fMaskElSil << '\n';
 }
 
 E796::Selector* E796::Selector::fInstance {nullptr};

@@ -15,6 +15,7 @@
 
 #include "TCanvas.h"
 #include "TEfficiency.h"
+#include "TF2.h"
 #include "TFile.h"
 #include "TGraphErrors.h"
 #include "TH2.h"
@@ -148,7 +149,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double thresholdSi1 {0.5};
 
     // number of iterations
-    const int iterations {static_cast<int>(standalone ? 5e7 : (deutonbreakup || pdphase || isPS ? 4e8 : 1e8))};
+    const int iterations {static_cast<int>(standalone ? 2e7 : (deutonbreakup || pdphase || isPS ? 4e8 : 1e8))};
 
     // Which parameters will be activated
     bool stragglingInGas {true};
@@ -246,8 +247,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // Silicon specs
     auto* specs {new ActPhysics::SilSpecs};
-    bool isIter {TString(gSelector->GetFlag()).Contains("iter")};
-    if(isIter)
+    bool isIterDist {(gSelector->GetFlag() == "iter_front")};
+    if(isIterDist)
     {
         specs->ReadFile("/media/Data/E796v2/configs/simu_silicons.conf");
         std::cout << "Iter f0 point: " << specs->GetLayer("f0").GetPoint() << '\n';
@@ -283,7 +284,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         silCentre = sm->GetMeanZ({3, 4});
         beamOffset = 9.01; // mm
         // If in iter mode
-        if(isIter)
+        if(isIterDist)
         {
             std::cout << "Iter: scaling sil matrix" << '\n';
             // Scale sm matrix now!
@@ -302,6 +303,25 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         secondLayer = "f1";
     }
     double zVertexMean {silCentre + beamOffset};
+
+    double xf0ref {specs->GetLayer("f0").GetPoint().X()};
+    auto deltax {specs->GetLayer("f1").GetPoint().X() - xf0ref};
+    bool isIterAngle {(gSelector->GetFlag() == "iter_angle")};
+    TF2* funcxf0 {};
+    if(isIterAngle)
+    {
+        std::cout << "Iter: setting angle " << gSelector->GetOpt("angle") << '\n';
+        // X: in pad units; position per YZ pair
+        // Y: in mm units. Z dependence with angle
+        // 85: onset of silicon plane along Z
+        funcxf0 = new TF2 {"funcxf0",
+                           TString::Format("%.2f + (y - 85) * TMath::Tan(%.2f * TMath::DegToRad())", xf0ref,
+                                           gSelector->GetOpt("angle")),
+                           0,
+                           350,
+                           0,
+                           350};
+    }
 
     // CUTS ON SILICON ENERGY, depending on particle
     // from the graphical PID cut
@@ -373,6 +393,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // 5-> Theta in Lab frame
     auto* outFile {new TFile(gSelector->GetSimuFile(beam, target, arglight, Ex, neutronPS, protonPS), "recreate")};
     auto* outTree {new TTree("SimulationTTree", "A TTree containing only our Eex obtained by simulation")};
+    ROOT::Math::XYZPoint sp_tree {};
+    outTree->Branch("SP", &sp_tree);
     double theta3CM_tree {};
     outTree->Branch("theta3CM", &theta3CM_tree);
     double Ex_tree {};
@@ -490,6 +512,16 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // Rotate to world = geometry frame
         auto dirWorldFrame {runner.RotateToWorldFrame(dirBeamFrame, beamDir)};
         auto [silIndex0, silPoint0InMM] {specs->FindSPInLayer(firstLayer, vertex, dirWorldFrame)};
+        if(isIterAngle)
+        {
+            // Eval x corresponding to nominal YZ
+            auto xeval {funcxf0->Eval(silPoint0InMM.Y(), silPoint0InMM.Z())};
+            // Reset sil point
+            specs->GetLayer("f0").SetPoint({(float)xeval, 0, 0});
+            std::tie(silIndex0, silPoint0InMM) = specs->FindSPInLayer(firstLayer, vertex, dirWorldFrame);
+            // And reset back to next iteration
+            specs->GetLayer("f0").SetPoint({(float)xf0ref, 0, 0});
+        }
 
         // skip tracks that doesn't reach silicons or are not in SiliconMatrix indexes
         if(silIndex0 == -1 || !(sm->IsInMatrix(silIndex0)))
@@ -498,10 +530,17 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // Apply SilMatrix cut
         if(!sm->IsInside(silIndex0, (isEl ? silPoint0InMM.X() : silPoint0InMM.Y()), silPoint0InMM.Z()))
             continue;
-        // And if elastic, apply cut in silicon index
+        // Apply cuts in sil index
         if(isEl)
+        {
             if(!E796Gates::maskelsil(silIndex0))
                 continue;
+        }
+        else
+        {
+            if(!E796Gates::masktranssil(silIndex0))
+                continue;
+        }
 
         // Define SP distance
         auto distance0 {(vertex - silPoint0InMM).R()};
@@ -612,6 +651,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             hThetaLab->Fill(theta3LabEff * TMath::RadToDeg());
 
             // write to TTree
+            sp_tree = silPoint0InMM;
             Ex_tree = ExAfter;
             weight_tree = weight;
             theta3CM_tree = thetaCM * TMath::RadToDeg();

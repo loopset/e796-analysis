@@ -7,7 +7,6 @@
 
 namespace E796Gates
 {
-// auto rp {[](double xrp) -> bool { return (26 <= xrp) && (xrp <= 220); }};
 auto rp {[](double xrp) -> bool
          { return (gSelector->GetRPxLow() <= xrp) && (xrp <= gSelector->GetRPxUp()); }}; // same as Juan
 
@@ -18,6 +17,29 @@ auto maskelsil {[](int idx) -> bool
                     else
                         return true;
                 }};
+
+auto masktranssil {[](int idx)
+                   {
+                       auto opt {gSelector->GetMaskTransSilOpt()};
+                       if(opt == "" || opt == "all")
+                           return true;
+                       else if(opt == "center")
+                       {
+                           if(idx == 3 || idx == 4)
+                               return true;
+                           else
+                               return false;
+                       }
+                       else if(opt == "up")
+                       {
+                           if(idx == 8 || idx == 8 || idx == 10)
+                               return true;
+                           else
+                               return false;
+                       }
+                       else
+                           return false;
+                   }};
 
 auto left0 {[](const ActRoot::MergerData& d) -> bool
             {

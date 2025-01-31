@@ -30,9 +30,12 @@ void Pipe3_Selector(const std::string& beam, const std::string target, const std
             // Apply cut in RPx
             auto rp {E796Gates::rp(merger.fRP.X())};
             bool masksilel {true};
+            bool masksiltrans {true};
             if(isEl)
                 masksilel = E796Gates::maskelsil(merger.fSilNs.front());
-            return rp && masksilel;
+            else
+                masksiltrans = E796Gates::masktranssil(merger.fSilNs.front());
+            return rp && masksilel && masksiltrans;
         },
         {"MergerData"})};
 

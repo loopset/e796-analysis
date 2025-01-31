@@ -18,7 +18,7 @@ def attachUrl(url: str | list, path: str, title: str = "") -> str:
         files = f"[{', '.join([repr(path + item) for item in url])}]"
         base = jsroot + "?files=" + files
     # Append options
-    options = "&status=size&layout=tabs&datex=0.5&optfile=1&title=e796"
+    options = "&status=size&layout=tabs&noselect&title=e796"
     # And title
     if len(title):
         options += " " + title
