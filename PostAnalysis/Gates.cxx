@@ -32,7 +32,7 @@ auto masktranssil {[](int idx)
                        }
                        else if(opt == "up")
                        {
-                           if(idx == 8 || idx == 8 || idx == 10)
+                           if(idx == 8 || idx == 9 || idx == 10)
                                return true;
                            else
                                return false;

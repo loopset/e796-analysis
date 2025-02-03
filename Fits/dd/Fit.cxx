@@ -38,7 +38,7 @@ void Fit()
     inter.AddState("g0", {400, 0, sigma}, "0+");
     inter.AddState("g1", {100, 1.6, sigma}, "2+0");
     inter.AddState("g2", {50, 4, sigma}, "2+0");
-    inter.AddState("g3", {50, 5.5, sigma}, "0+1");
+    inter.AddState("g3", {50, 5.5, sigma}, "3-");
     inter.AddState("g4", {50, 6.5, sigma}, "2+");
     inter.AddState("g5", {50, 7.6, sigma}, "3- and 4+");
     inter.AddState("g6", {50, 8.6, sigma}, "4+0");

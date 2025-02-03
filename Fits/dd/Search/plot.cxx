@@ -60,7 +60,7 @@ void plot()
     auto* f {new TFile {"../Outputs/xs.root"}};
 
     // Init canvas
-    auto* c0 {new TCanvas {"cBeta2", "Beta2 search for dd"}};
+    auto* c0 {new TCanvas {"cBeta2", "BetaK search for dd"}};
     c0->DivideSquare(states.size() * 2);
 
     // Do!
