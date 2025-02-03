@@ -35,7 +35,7 @@
  NAMEP='DEUTERON',
  MASSP=  2.01360011    ,
  ZP=  1.00000000    ,
- NEX=1          ,
+ NEX=3          ,
  PWF=T,
  NAMET='O19     ',
  MASST=  18.9991894    ,
@@ -53,6 +53,48 @@
  TP=  0.00000000    ,
  CPOT=4          ,
  JT= 0.500000000    ,
+ COPYT=0          ,
+ PTYT=1          ,
+ BANDT=1          ,
+ ET=  1.35699999    ,
+ KKT=  0.00000000    ,
+ TT=  0.00000000    ,
+ FEXCH=F,
+ IGNORE=F,
+ INFAM=0          ,
+ OUTFAM=0          ,
+ /
+&STATES
+ JP=  0.00000000    ,
+ COPYP=1          ,
+ PTYP=0          ,
+ BANDP=0          ,
+ EP=  0.00000000    ,
+ KKP=  0.00000000    ,
+ TP=  0.00000000    ,
+ CPOT=4          ,
+ JT= 0.500000000    ,
+ COPYT=0          ,
+ PTYT=-1         ,
+ BANDT=-1         ,
+ ET=  1.35699999    ,
+ KKT=  0.00000000    ,
+ TT=  0.00000000    ,
+ FEXCH=F,
+ IGNORE=F,
+ INFAM=0          ,
+ OUTFAM=0          ,
+ /
+&STATES
+ JP=  0.00000000    ,
+ COPYP=1          ,
+ PTYP=0          ,
+ BANDP=0          ,
+ EP=  0.00000000    ,
+ KKP=  0.00000000    ,
+ TP=  0.00000000    ,
+ CPOT=4          ,
+ JT=  2.50000000    ,
  COPYT=0          ,
  PTYT=1          ,
  BANDT=1          ,
@@ -353,11 +395,81 @@
  PHASE=  0.0000000000000000     ,
  AUTOWID=  0.00000000    ,
  /
+&OVERLAP
+ KN1=4          ,
+ KN2=4          ,
+ IC1=1          ,
+ IC2=2          ,
+ IN=2          ,
+ KIND=0          ,
+ CH1=' ',
+ NN=1          ,
+ L=1          ,
+ LMAX=0          ,
+ SN= 0.500000000    ,
+ IA=0          ,
+ J= 0.500000000    ,
+ IB=0          ,
+ KBPOT=3          ,
+ KRPOT=0          ,
+ BE=  8.96510029    ,
+ ISC=1          ,
+ IPC=4          ,
+ NFL=-22        ,
+ NAM=0          ,
+ AMPL=  0.00000000    ,
+ KEEP=F,
+ DM=  1.0004978179931641     ,
+ NK=0          ,
+ ER=  0.00000000    ,
+ E=  0.0000000000000000     ,
+ RSMIN=  0.0000000000000000     ,
+ RSMAX=  30.000000000000000     ,
+ RSALPHA=  0.0000000000000000     ,
+ NLAG=0          ,
+ PHASE=  0.0000000000000000     ,
+ AUTOWID=  0.00000000    ,
+ /
+&OVERLAP
+ KN1=5          ,
+ KN2=5          ,
+ IC1=1          ,
+ IC2=2          ,
+ IN=2          ,
+ KIND=0          ,
+ CH1=' ',
+ NN=1          ,
+ L=2          ,
+ LMAX=0          ,
+ SN= 0.500000000    ,
+ IA=0          ,
+ J=  2.50000000    ,
+ IB=0          ,
+ KBPOT=3          ,
+ KRPOT=0          ,
+ BE=  8.96510029    ,
+ ISC=1          ,
+ IPC=4          ,
+ NFL=-22        ,
+ NAM=0          ,
+ AMPL=  0.00000000    ,
+ KEEP=F,
+ DM=  1.0004978179931641     ,
+ NK=0          ,
+ ER=  0.00000000    ,
+ E=  0.0000000000000000     ,
+ RSMIN=  0.0000000000000000     ,
+ RSMAX=  30.000000000000000     ,
+ RSALPHA=  0.0000000000000000     ,
+ NLAG=0          ,
+ PHASE=  0.0000000000000000     ,
+ AUTOWID=  0.00000000    ,
+ /
  &overlap /
 &COUPLING
  ICTO=-2         ,
  ICFROM=1          ,
- KIND=5          ,
+ KIND=7          ,
  IP1=1          ,
  IP2=0          ,
  IP3=0          ,
@@ -381,10 +493,26 @@
  KEEP=F,
  /
 &CFP
- IN=-2         ,
+ IN=2          ,
  IB=1          ,
  IA=1          ,
  KN=3          ,
+ A=  1.00000000    ,
+ KEEP=F,
+ /
+&CFP
+ IN=2          ,
+ IB=1          ,
+ IA=2          ,
+ KN=4          ,
+ A=  1.00000000    ,
+ KEEP=F,
+ /
+&CFP
+ IN=-2         ,
+ IB=1          ,
+ IA=3          ,
+ KN=5          ,
  A=  1.00000000    ,
  KEEP=F,
  /
@@ -393,17 +521,17 @@
 
 
  parameters:    mxx    mxp  mxpex  maxit maxcpl maxnnu 
-   required:      1      2      3      0      1     48
+   required:      3      2      5      0      1     48
 
  parameters:   maxn  mint  maxnln maxnlo    msp  lmax1  mpair
-   required:    302    301    302     46      3     60      1
+   required:    302    301    302     46      5     60      1
 
  parameters:     mloc   mclist   maxqrn
-   required:       19        7        2
+   required:       17        7       26
 
 
  parameters:     mloc   mclist   maxqrn
-   required:       19        7        2
+   required:       17        7       26
 
 
 20O(p,d) @ 30AMeV CH89 (p) + ADWA (d) 1st ex                                    
@@ -503,7 +631,7 @@ NAMELIST
  MAXCOUP= 3*0          ,
  OMPFORM=0          ,
  INITWF=0          ,
- INH=2          ,
+ INH=0          ,
  TMP='                                                                      ',
  MASFIL='/netopt/PHS1IT/lib/m88lrb                                             ',
  UNITMASS=  1.0000000000000000     ,

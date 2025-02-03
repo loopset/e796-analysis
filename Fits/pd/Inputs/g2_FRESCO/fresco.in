@@ -6,15 +6,17 @@ hcm=0.10 rmatch=30.0 rintp=0.10
 hnl=0.10 rnl=4.50 centre=0.0
 jtmin=0.0 jtmax=40.0 absend=-0.1000
 thmin=0.00 thmax=-180.00 thinc=1.00
-it0=1 iter=1 iblock=0 nnu=48 inh=2
+it0=1 iter=1 iblock=0 nnu=48 inh=0
 chans=1 listcc=0 treneg=0 cdetr=0 smats=2 xstabl=1 
 elab(1)=35 /
 
 &PARTITION namep='PROTON' massp=1.0073 zp=1 nex=1 namet='O20' masst=19.999687 zt=8 qval=0/
 &STATES jp=0.5 bandp=1 kkp=0 ep=0.0000 cpot=1 jt=0.0 bandt=1 kkt=0 et=0.0000/
 
-&PARTITION namep='DEUTERON' massp=2.0136 zp=1 nex=1 namet='O19' masst=18.999189 zt=8 qval=-5.3835/
-&STATES jp=1 bandp=1 ep=0.0000 kkp=0 cpot=4 jt=2.5 bandt=1 kkt=0 et=3.12/
+&PARTITION namep='DEUTERON' massp=2.0136 zp=1 nex=3 namet='O19' masst=18.999189 zt=8 qval=-5.3835/
+&STATES jp=1 bandp=1 ep=0.0000 kkp=0 cpot=4 jt=0.5 bandt=+1 kkt=0 et=3.12/
+&STATES copyp=1 cpot=4 jt=0.5 bandt=-1 kkt=0 et=3.12/
+&STATES copyp=1 cpot=4 jt=2.5 bandt=+1 kkt=0 et=3.12/
 &partition /
 
 ! 20O + p elastic scattering: Chapell-Hill 89 OMP
@@ -51,16 +53,20 @@ elab(1)=35 /
 ! Form factor of deuteron
 &OVERLAP kn1=1 kn2=2 ic1=2 ic2=1 in=-1 kind=3 nn=1 l=0 lmax=2 sn=0.5 ia=0 j=0.5 ib=1 kbpot=2 be=2.224 isc=0 ipc=4 nfl=0 nam=0 ampl=0.0 /
 ! Form factor of 19O + n
-&OVERLAP kn1=3 kn2=3 ic1=1 ic2=2 in=2 kind=0 nn=1 l=2 sn=0.5 j=2.5 kbpot=3 be=10.7281 isc=1 ipc=4 nfl=-22 nam=0 ampl=0.0 /
+&OVERLAP kn1=3 kn2=3 ic1=1 ic2=2 in=2 kind=0 nn=2 l=0 sn=0.5 j=0.5 kbpot=3 be=10.7281 isc=1 ipc=4 nfl=-22 nam=0 ampl=0.0 /
+&OVERLAP kn1=4 kn2=4 ic1=1 ic2=2 in=2 kind=0 nn=1 l=1 sn=0.5 j=0.5 kbpot=3 be=10.7281 isc=1 ipc=4 nfl=-22 nam=0 ampl=0.0 /
+&OVERLAP kn1=5 kn2=5 ic1=1 ic2=2 in=2 kind=0 nn=1 l=2 sn=0.5 j=2.5 kbpot=3 be=10.7281 isc=1 ipc=4 nfl=-22 nam=0 ampl=0.0 /
 &overlap /
 
 ! 0 range: kind = 5 and set p1 = D0 p2= LEA (0 by default 2FNR)
 ! D0 constant = -122.5 fm default value 
 ! Finite range: kind = 7 -> p1,p2 not used
-&COUPLING icto=-2 icfrom=1 kind=5 ip1=1 ip2=0 ip3=0 p1=122.5 p2=0 /
+&COUPLING icto=-2 icfrom=1 kind=7 ip1=1 ip2=0 ip3=0 p1=122.5 p2=0 /
 ! Projectile coupling
 &cfp  in=1 ib=1 ia=1 kn=1  a=1.0 /
 ! Oxygen coupling
-&cfp  in=-2 ib=1 ia=1 kn=3  a=1.0 /
+&cfp  in=2 ib=1 ia=1 kn=3  a=1.0 /
+&cfp  in=2 ib=1 ia=2 kn=4  a=1.0 /
+&cfp  in=-2 ib=1 ia=3 kn=5  a=1.0 /
 &COUPLING /
 
