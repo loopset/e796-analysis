@@ -125,6 +125,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     bool deutonbreakup {};
     bool pdphase {};
     bool dtcont {};
+    bool pdcont {};
     if(neutronPS == -1)
         deutonbreakup = true;
     if(neutronPS == -2)
@@ -134,6 +135,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
     if(neutronPS == -3)
         dtcont = true;
+    if(protonPS == -1)
+        pdcont = true;
 
     // Resolutions
     const double sigmaSil {0.060 / 2.355};
@@ -181,6 +184,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         xspath = "/media/Data/E796v2/Fits/dd/";
     else if(target == "2H" && arglight == "3H")
         xspath = "/media/Data/E796v2/Fits/dt/";
+    else if(target == "2H" && arglight == "3He")
+        xspath = "/media/Data/E796v2/Fits/d3He/";
+    else if(target == "2H" && arglight == "4He")
+        xspath = "";
     else if(target == "1H" && arglight == "2H")
         xspath = "/media/Data/E796v2/Fits/pd/";
     else
@@ -202,6 +209,13 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             xs->ReadGraph(&aux);
         }
     }
+    // If contamination from d3He
+    if((pdcont || dtcont) && arglight == "3He")
+    {
+        std::cout << BOLDYELLOW << "Reading 2fnr xs for 20O(d,3He)" << RESET << '\n';
+        xs = new ActSim::CrossSection;
+        xs->ReadFile((xspath + "Inputs/g0/21.gs"));
+    }
 
     // Kinematics
     ActPhysics::Particle p1 {beam};
@@ -211,7 +225,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     ActPhysics::Kinematics kaux {p1, p2, p3};
     ActPhysics::Particle p4 {kaux.GetParticle(4)};
     // Binary kinematics generator
-    ActSim::KinematicGenerator kingen {p1, p2, p3, p4, protonPS, (neutronPS > 0 ? neutronPS : (pdphase ? 1 : 0))};
+    ActSim::KinematicGenerator kingen {
+        p1, p2, p3, p4, (protonPS > 0 ? protonPS : 0), (neutronPS > 0 ? neutronPS : (pdphase ? 1 : 0))};
     kingen.Print();
     // Allow breakup of deuteron!
     ActSim::DecayGenerator decaygen;
@@ -236,8 +251,15 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     else if(dtcont)
     {
         reckin = new ActPhysics::Kinematics {"20O(d,t)@700"};
-        std::cout << BOLDYELLOW << "Simulation_E796(): 20O(p,d) gs as 20O(d,t)" << RESET << '\n';
+        std::cout << BOLDYELLOW << "Simulation_E796(): " << gSelector->GetStr() << " gs as 20O(d,t)" << RESET << '\n';
         light = "3H";
+        std::cout << BOLDYELLOW << "Overriding light from " << arglight << " to " << light << RESET << '\n';
+    }
+    else if(pdcont)
+    {
+        reckin = new ActPhysics::Kinematics {"20O(p,d)@700"};
+        std::cout << BOLDYELLOW << "Simulation_E796(): " << gSelector->GetStr() << " gs as 20O(p,d)" << RESET << '\n';
+        light = "2H";
         std::cout << BOLDYELLOW << "Overriding light from " << arglight << " to " << light << RESET << '\n';
     }
     else
@@ -376,6 +398,22 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     srim->ReadTable(
         "lightInSil",
         TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_silicon.txt", light.c_str()).Data());
+    // If contamination, SRIM must use original particle to propagate from vertex to silicons
+    ActPhysics::SRIM* srimCont {};
+    if(pdcont || dtcont)
+    {
+        // Notice: keys are the same but we read the original particle: arglight!!
+        srimCont = new ActPhysics::SRIM;
+        std::cout << BOLDCYAN << "SRIM for contamination: reading original " << arglight << " particle" << RESET
+                  << '\n';
+        srimCont->ReadTable(
+            "light",
+            TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_952mb_mixture.txt", arglight.c_str())
+                .Data());
+        srimCont->ReadTable(
+            "lightInSil",
+            TString::Format("/media/Data/E796v2/Calibrations/SRIMData/raw/%s_silicon.txt", arglight.c_str()).Data());
+    }
 
 
     // Random generator
@@ -544,7 +582,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
         // Define SP distance
         auto distance0 {(vertex - silPoint0InMM).R()};
-        auto T3EnteringSil {srim->SlowWithStraggling("light", T3Lab, distance0)};
+        auto T3EnteringSil {(srimCont ? srimCont : srim)->SlowWithStraggling("light", T3Lab, distance0)};
         ApplyNaN(T3EnteringSil);
         // nan if stopped in gas
         if(!std::isfinite(T3EnteringSil))
@@ -553,7 +591,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // First layer of silicons
         // Angle with normal
         auto angleNormal0 {AngleWithNormal(dirWorldFrame, {(isEl ? 0. : 1.), (isEl ? 1. : 0.), 0})};
-        auto T3AfterSil0 {srim->SlowWithStraggling("lightInSil", T3EnteringSil,
+        auto T3AfterSil0 {(srimCont ? srimCont : srim)
+                              ->SlowWithStraggling("lightInSil", T3EnteringSil,
                                                    specs->GetLayer(firstLayer).GetUnit().GetThickness(), angleNormal0)};
         auto eLoss0 {T3EnteringSil - T3AfterSil0};
         // Apply resolution
@@ -584,7 +623,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
                 continue;
 
             distance1 = (silPoint1InMM - silPoint0InMM).R();
-            T3AfterInterGas = srim->SlowWithStraggling("light", T3AfterSil0, distance1);
+            T3AfterInterGas = (srimCont ? srimCont : srim)->SlowWithStraggling("light", T3AfterSil0, distance1);
             ApplyNaN(T3AfterInterGas);
             if(!std::isfinite(T3AfterInterGas))
                 continue;
@@ -594,7 +633,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             {
                 // For e796 angleNormal0 = angleNormal1 but this is not general
                 auto angleNormal1 {angleNormal0};
-                auto T3AfterSil1 {srim->SlowWithStraggling("lightInSil", T3AfterInterGas,
+                auto T3AfterSil1 {(srimCont ? srimCont : srim)
+                                      ->SlowWithStraggling("lightInSil", T3AfterInterGas,
                                                            specs->GetLayer(secondLayer).GetUnit().GetThickness(),
                                                            angleNormal1)};
                 auto eLoss1 {T3AfterInterGas - T3AfterSil1};
@@ -606,6 +646,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         }
 
         // 7 -> Reconstruct energy at vertex
+        // INFO: using reconstruction SRIM
         double EBefSil0 {};
         if(isPunch && T3AfterSil1 == 0 && std::isfinite(eLoss1))
         {

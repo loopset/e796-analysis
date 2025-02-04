@@ -263,4 +263,9 @@ std::string E796::Selector::GetShortStr() const
         return "dt";
     return "";
 }
+
+std::string E796::Selector::GetStr() const
+{
+    return TString::Format("%s(%s,%s)", fBeam.c_str(), fTarget.c_str(), fLight.c_str()).Data();
+}
 #endif

@@ -6,7 +6,6 @@
 #include "ActDataManager.h"
 #include "ActMergerData.h"
 #include "ActSilMatrix.h"
-#include "ActTypes.h"
 
 #include "ROOT/RDF/InterfaceUtils.hxx"
 #include "ROOT/RDataFrame.hxx"
@@ -16,7 +15,6 @@
 #include "TROOT.h"
 #include "TString.h"
 
-#include <fstream>
 #include <iostream>
 #include <string>
 

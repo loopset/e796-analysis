@@ -123,6 +123,7 @@ public:
     const std::string GetLight() const { return fLight; }
     const bool GetIsElastic() const { return fTarget == fLight; }
     std::string GetShortStr() const;
+    std::string GetStr() const;
 
 private:
     void ReassignNames();

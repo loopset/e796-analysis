@@ -28,9 +28,10 @@ void Runner(TString what = "plot", bool standalone = true)
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
     int neutronPS {0}; // number of neutrons in final state:
     // if -1, break deuteron; if -2, 20O(d,d) 1n PS but rec as 20O(p,d)
-    // if -3, 20O(p,d) gs reconstructed as 20O(d,t)
+    // if -3, (d,t) contamination for gSelector channel
     int protonPS {0}; // number of protons in final state
-    double T1 {35};   // Beam energy: 35 MeV / u
+    // if -1: (p,d) contamination for gSelector channel
+    double T1 {35}; // Beam energy: 35 MeV / u
 
     std::vector<double> Eexs;
     if(neutronPS == 0 && protonPS == 0)
@@ -60,7 +61,7 @@ void Runner(TString what = "plot", bool standalone = true)
     }
     else if(neutronPS != 0 && protonPS == 0)
         Eexs = {0}; // only gs for n phase space
-    else if(neutronPS == 0 && protonPS > 0)
+    else if(neutronPS == 0 && protonPS != 0)
         Eexs = {0};
     else
         throw std::runtime_error("Simulation::Runner(): No confs with neutronPS and protonPS enabled at the same time");

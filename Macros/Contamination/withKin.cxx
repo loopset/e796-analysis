@@ -7,7 +7,7 @@
 
 #include "../../PostAnalysis/HistConfig.h"
 #include "../../Selector/Selector.h"
-void contamination()
+void withKin()
 {
     // Get same cuts as for dt
     gSelector->SetTarget("2H");
@@ -31,7 +31,7 @@ void contamination()
     {
         auto theta {gpd->GetPointX(p)};
         auto e {gpd->GetPointY(p)};
-        if((*minTheta <= theta && theta <= *maxTheta) && (*minE <= e && e <= *maxE))
+        if((*minE <= e && e <= *maxE))
         {
             auto ex {dt.ReconstructExcitationEnergy(e, theta * TMath::DegToRad())};
             hEx->Fill(ex);
