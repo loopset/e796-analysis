@@ -27,9 +27,10 @@ void Fit()
     // Init interface
     Fitters::Interface inter;
     double sigma {0.240};
-    inter.AddState("g0", {2000, 0, sigma}, "5/2+");
-    inter.AddState("g1", {250, 1.4, sigma}, "1/2+");
-    inter.AddState("g2", {110, 3.1, sigma}, "5/2+");
+    double offset {0.0};// to add when ExLegacy is emplyed
+    inter.AddState("g0", {2000, 0 - offset, sigma}, "5/2+");
+    inter.AddState("g1", {250, 1.4 - offset, sigma}, "1/2+");
+    inter.AddState("g2", {110, 3.1 - offset, sigma}, "5/2+");
     inter.AddState("ps0", {1});
     inter.EndAddingStates();
     inter.ReadPreviousFit("./Outputs/fit_" + gSelector->GetFlag() + ".root");

@@ -42,17 +42,18 @@ void Fit()
     // Interface for fitting!
     Fitters::Interface inter;
     double sigma {0.364}; // common guess for all states
-    inter.AddState("g0", {400, 0, sigma}, "5/2+");
-    inter.AddState("g1", {10, 1.4, sigma}, "1/2+");
-    inter.AddState("g2", {110, 3.2, sigma}, "(1/2,3/2)-");
-    inter.AddState("v0", {60, 4.5, sigma, 0.1}, "3/2-");
-    inter.AddState("v1", {60, 6.7, sigma, 0.1}, "?");
-    inter.AddState("v2", {60, 7.9, sigma, 0.1}, "?");
-    inter.AddState("v3", {60, 8.9, sigma, 0.1}, "?");
-    inter.AddState("v4", {60, 11, sigma, 0.1}, "?");
+    double offset {0.0}; // != 0 only when using ExLegacy
+    inter.AddState("g0", {400, 0 - offset, sigma}, "5/2+");
+    inter.AddState("g1", {10, 1.4 - offset, sigma}, "1/2+");
+    inter.AddState("g2", {110, 3.2 - offset, sigma}, "(1/2,3/2)-");
+    inter.AddState("v0", {60, 4.5 - offset, sigma, 0.1}, "3/2-");
+    inter.AddState("v1", {60, 6.7 - offset, sigma, 0.1}, "?");
+    inter.AddState("v2", {60, 7.9 - offset, sigma, 0.1}, "?");
+    inter.AddState("v3", {60, 8.9 - offset, sigma, 0.1}, "?");
+    inter.AddState("v4", {60, 11 - offset, sigma, 0.1}, "?");
     // inter.AddState("v5", {5, 12.8, sigma, 0.1}, "?");
-    inter.AddState("v5", {20, 14.9, sigma, 0.1}, "?");
-    inter.AddState("v6", {10, 16, sigma, 0.1}, "?");
+    inter.AddState("v5", {20, 14.9 - offset, sigma, 0.1}, "?");
+    inter.AddState("v6", {10, 16 - offset, sigma, 0.1}, "?");
     // inter.AddState("v8", {10, 17.5, sigma, 0.1}, "cont");
     inter.AddState("ps0", {0.1});
     inter.AddState("ps1", {0.1});
