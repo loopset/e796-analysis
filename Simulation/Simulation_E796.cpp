@@ -375,6 +375,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     auto hThetaLab {HistConfig::ChangeTitle(HistConfig::ThetaCM, "ThetaLab", "Lab").GetHistogram()};
     auto hDistF0 {HistConfig::ChangeTitle(HistConfig::TL, "Distance to F0").GetHistogram()};
     auto hKinVertex {HistConfig::ChangeTitle(HistConfig::KinSimu, "Kinematics at vertex").GetHistogram()};
+    auto hKinSampled {HistConfig::ChangeTitle(HistConfig::KinSimu, "Sampled kinematics").GetHistogram()};
     auto hSP {HistConfig::SP.GetHistogram()};
     auto hEexAfter {HistConfig::ChangeTitle(HistConfig::Ex, "Ex after resolutions").GetHistogram()};
     auto hSPTheta {std::make_unique<TProfile2D>("hSPTheta", "SP vs #theta_{CM};Y [mm];Z [mm];#theta_{CM} [#circ]", 75,
@@ -385,6 +386,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     auto hDeltaE {
         std::make_unique<TH2D>("hDeltaEE", "#Delta E - E;E_{in} [MeV];#Delta E_{0} [MeV]", 300, 0, 60, 300, 0, 60)};
     auto hELoss0 {std::make_unique<TH2D>("hELoss0", "ELoss0;E_{in} [MeV];#Delta E_{0} [MeV]", 200, 0, 40, 200, 0, 40)};
+    auto hThetaLabNormal {std::make_unique<TH2D>("hThetaLabNormal",
+                                                 "Theta in sil corr;#theta_{Lab} [#circ];#theta_{Normal Si} [#circ]",
+                                                 250, 0, 90, 250, 0, 90)};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -605,7 +609,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // nan if bellow threshold
         if(!std::isfinite(eLoss0))
             continue;
+        // Debug histograms
         hDeltaE->Fill(T3EnteringSil, eLoss0);
+        hThetaLabNormal->Fill(theta3Lab * TMath::RadToDeg(), angleNormal0 * TMath::RadToDeg());
 
         // 6-> Same but to silicon layer 1 if exists
         double T3AfterInterGas {};
@@ -672,6 +678,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
             // fill histograms
             hDistF0->Fill(distance0);
+            hKinSampled->Fill(theta3LabEff * TMath::RadToDeg(), T3Lab);
             hKinVertex->Fill(theta3Lab * TMath::RadToDeg(), T3Recon);
             hEexAfter->Fill(ExAfter, weight);
             hSP->Fill((isEl) ? silPoint0InMM.X() : silPoint0InMM.Y(), silPoint0InMM.Z());
@@ -727,23 +734,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // plotting
     if(standalone)
     {
-        auto* c0 {new TCanvas("c0", "Canvas for inspection 0")};
-        c0->DivideSquare(6);
-        c0->cd(1);
-        hThetaCM->DrawClone();
-        c0->cd(2);
-        hThetaCMAll->DrawClone();
-        c0->cd(3);
-        hDistF0->DrawClone();
-        c0->cd(4);
-        // hThetaCMAll->DrawClone();
-        hRP->DrawClone("colz");
-        c0->cd(5);
-        hRPz->DrawClone("colz");
-        sm->DrawClone();
-        c0->cd(6);
-        hELoss0->DrawClone("colz");
-
         // draw theoretical kinematics
         ActPhysics::Kinematics theokin {p1, p2, p3, p4, T1 * p1.GetAMU(), Ex};
         if(neutronPS == 1)
@@ -751,6 +741,26 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         if(neutronPS == 2)
             theokin.SetEx(p4.GetS2n());
         auto* gtheo {theokin.GetKinematicLine3()};
+
+        auto* c0 {new TCanvas("c0", "Canvas for inspection 0")};
+        c0->DivideSquare(6);
+        c0->cd(1);
+        hThetaCM->DrawClone();
+        c0->cd(2);
+        hThetaCMAll->DrawClone();
+        c0->cd(3);
+        // hDistF0->DrawClone();
+        hKinSampled->DrawClone("colz");
+        gtheo->Draw("lp");
+        c0->cd(4);
+        // hThetaCMAll->DrawClone();
+        hRP->DrawClone("colz");
+        c0->cd(5);
+        hRPz->DrawClone("colz");
+        sm->DrawClone();
+        c0->cd(6);
+        // hELoss0->DrawClone("colz");
+        hThetaLabNormal->DrawClone("colz");
 
         auto* c1 {new TCanvas("cAfter", "Canvas for inspection 1")};
         c1->DivideSquare(6);

@@ -107,6 +107,7 @@ void Ang(bool isLab = false)
     inter.FitComp();
     inter.GetComp("g0")->QuotientPerPoint();
     inter.GetComp("g0")->ScaleToExp("l = 2 ZR 2FNR", &exp, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
+    inter.WriteComp("./Outputs/sfs.root");
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

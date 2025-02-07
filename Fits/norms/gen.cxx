@@ -12,8 +12,12 @@ void gen()
     double Np {0.3125 * 1.93e21};
     double Nd {0.5625 * 1.93e21};
     // Set renormalizations
-    Nd *= 0.7344;
-    Np *= 0.7344;
+    // DEUTERON normalization
+    // Nd *= 0.4949;
+    // Np *= 0.4949;
+    // PROTON normalization
+    Nd *= 0.7344 * 0.95887;
+    Np *= 0.7344 * 0.95887;
     // Exact targets depend on the actual length of ACTAR
     // considered in the analysis, accesible in the gSelector
     // Then Ntargets = actualLength / totalLength * Np or Nd

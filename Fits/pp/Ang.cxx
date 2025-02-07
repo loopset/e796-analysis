@@ -76,6 +76,7 @@ void Ang()
     inter.ReadCompConfig("./comps.conf");
     inter.DoComp();
     inter.GetComp("g0")->ScaleToExp("CH89", &exp, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
+    inter.WriteComp("./Outputs/sfs.root");
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

@@ -113,7 +113,103 @@
             contentDiv.appendChild(folderDiv);
         }
     }
+    // Populate tables in website!
+    function populateTables(tablesData) {
+        // Iterate through all entries in the provided data
+        Object.entries(tablesData).forEach(([header, tableInfo]) => {
+            if (!tableInfo) {
+                console.warn(`No valid table data found for "${header}"`);
+                return; // Skip if there is no table data
+            }
 
+            // Ensure tableInfo is always an array (handle both single and multiple tables)
+            const tableInfoArray = Array.isArray(tableInfo) ? tableInfo : [tableInfo];
+
+            // Find the corresponding section header (h2)
+            document.querySelectorAll('h2').forEach(h => {
+                if (h.textContent.trim() === header) {
+                    // Create a container to hold all tables for this header
+                    const tablesContainer = document.createElement('div');
+                    tablesContainer.style.display = 'flex'; // Use flexbox to align tables side by side
+                    tablesContainer.style.justifyContent = 'center';
+                    tablesContainer.style.gap = '5%'; // Add space between tables
+                    tablesContainer.style.flexWrap = 'wrap';
+
+                    // Iterate through all tables for the current header
+                    tableInfoArray.forEach(tableInfo => {
+                        const { title = "", data } = tableInfo;
+
+                        // Skip if table data is empty or invalid
+                        if (!Array.isArray(data) || data.length === 0) {
+                            console.warn(`No valid data found for table under header "${header}"`);
+                            return;
+                        }
+
+                        // Create a wrapper for each table and title
+                        const tableWrapper = document.createElement('div');
+                        tableWrapper.style.width = '40%'; // Adjust table width for side-by-side display
+
+                        // Add table title if available
+                        if (title) {
+                            const tableTitle = document.createElement('h3');
+                            tableTitle.textContent = title;
+                            tableTitle.style.textAlign = 'center'; // Center align the title
+                            tableWrapper.appendChild(tableTitle); // Add title above the table
+                        }
+
+                        // Create a table
+                        const table = document.createElement('table');
+                        table.style.width = '100%'; // Set table width to fill the container
+                        table.style.borderCollapse = 'collapse';
+
+                        // Table Header
+                        const thead = document.createElement('thead');
+                        const headerRow = document.createElement('tr');
+                        Object.keys(data[0]).forEach(col => {
+                            const th = document.createElement('th');
+                            th.textContent = col;
+                            th.style.border = '1px solid #ddd';
+                            th.style.padding = '12px';
+                            th.style.backgroundColor = "#f4f4f4";
+                            th.style.textAlign = 'center'; // Align header text to center
+                            th.style.fontSize = '14px';
+                            headerRow.appendChild(th);
+                        });
+                        thead.appendChild(headerRow);
+                        table.appendChild(thead);
+
+                        // Table Body
+                        const tbody = document.createElement('tbody');
+                        data.forEach(row => {
+                            const tr = document.createElement('tr');
+                            Object.values(row).forEach(val => {
+                                const td = document.createElement('td');
+                                td.textContent = val;
+                                td.style.border = '1px solid #ddd';
+                                td.style.padding = '8px';
+                                td.style.textAlign = 'center'; // Align data text to center
+                                td.style.fontSize = '14px';
+                                tr.appendChild(td);
+                            });
+                            tbody.appendChild(tr);
+                        });
+                        table.appendChild(tbody);
+
+                        // Append the table to the wrapper
+                        tableWrapper.appendChild(table);
+
+                        // Append the wrapper (title + table) to the container
+                        tablesContainer.appendChild(tableWrapper);
+                    });
+
+                    // Insert the tables container after the header
+                    // h.insertAdjacentElement('afterend', tablesContainer);
+                    const folderDiv = h.closest('.folder');
+                    folderDiv.appendChild(tablesContainer);
+                }
+            });
+        });
+    }
     // Fetch the proper JSON file
     const isLocalhost = window.location.hostname === 'localhost';
     const jsonFile = isLocalhost ? './website/local.json' : './website/list.json';
@@ -132,6 +228,14 @@
         .catch(error => {
             console.error("Fetch error:", error); // Error handling
         });
+    // Tables
+    fetch('./website/tables.json')
+        .then(response => response.json())
+        .then(tablesData => {
+            console.log("Fetched tables data:", tablesData);
+            populateTables(tablesData);  // Calling the function to populate the tables
+        })
+        .catch(error => console.error("Fetch error:", error));
 </script>
 </body>
 </html>
