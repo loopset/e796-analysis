@@ -49,6 +49,26 @@
         .gallery img:hover {
             transform: scale(1.1);
         }
+        @media (max-width: 768px) { /* Mobile */
+            .tables-container {
+                flex-direction: column; /* Stack tables vertically */
+                align-items: center;
+            }
+            .tables-container div { /* Each table wrapper */
+                width: 90% !important; /* Make tables full width */
+            }
+        }
+        @media (min-width: 769px) { /* Desktop */
+            .tables-container {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 5%;
+            }
+            .tables-container div {
+                width: 40%; /* Two tables side by side */
+            }
+        }
     </style>
 </head>
 <body>
@@ -115,53 +135,34 @@
     }
     // Populate tables in website!
     function populateTables(tablesData) {
-        // Iterate through all entries in the provided data
         Object.entries(tablesData).forEach(([header, tableInfo]) => {
-            if (!tableInfo) {
-                console.warn(`No valid table data found for "${header}"`);
-                return; // Skip if there is no table data
-            }
+            if (!tableInfo) return;
 
-            // Ensure tableInfo is always an array (handle both single and multiple tables)
             const tableInfoArray = Array.isArray(tableInfo) ? tableInfo : [tableInfo];
 
-            // Find the corresponding section header (h2)
             document.querySelectorAll('h2').forEach(h => {
                 if (h.textContent.trim() === header) {
-                    // Create a container to hold all tables for this header
                     const tablesContainer = document.createElement('div');
-                    tablesContainer.style.display = 'flex'; // Use flexbox to align tables side by side
+                    tablesContainer.classList.add('tables-container');
+                    tablesContainer.style.display = 'flex';
                     tablesContainer.style.justifyContent = 'center';
-                    tablesContainer.style.gap = '5%'; // Add space between tables
+                    tablesContainer.style.gap = '5%';
                     tablesContainer.style.flexWrap = 'wrap';
 
-                    // Iterate through all tables for the current header
                     tableInfoArray.forEach(tableInfo => {
                         const { title = "", data } = tableInfo;
+                        if (!Array.isArray(data) || data.length === 0) return;
 
-                        // Skip if table data is empty or invalid
-                        if (!Array.isArray(data) || data.length === 0) {
-                            console.warn(`No valid data found for table under header "${header}"`);
-                            return;
-                        }
-
-                        // Create a wrapper for each table and title
                         const tableWrapper = document.createElement('div');
-                        tableWrapper.style.width = '40%'; // Adjust table width for side-by-side display
-
-                        // Add table title if available
                         if (title) {
                             const tableTitle = document.createElement('h3');
                             tableTitle.textContent = title;
-                            tableTitle.style.textAlign = 'center'; // Center align the title
-                            tableWrapper.appendChild(tableTitle); // Add title above the table
+                            tableTitle.style.textAlign = 'center';
+                            tableWrapper.appendChild(tableTitle);
                         }
-
-                        // Create a table
                         const table = document.createElement('table');
-                        table.style.width = '100%'; // Set table width to fill the container
+                        table.style.width = '100%';
                         table.style.borderCollapse = 'collapse';
-
                         // Table Header
                         const thead = document.createElement('thead');
                         const headerRow = document.createElement('tr');
@@ -171,39 +172,88 @@
                             th.style.border = '1px solid #ddd';
                             th.style.padding = '12px';
                             th.style.backgroundColor = "#f4f4f4";
-                            th.style.textAlign = 'center'; // Align header text to center
+                            th.style.textAlign = 'center';
                             th.style.fontSize = '14px';
                             headerRow.appendChild(th);
                         });
                         thead.appendChild(headerRow);
                         table.appendChild(thead);
-
+                        //Highlight correct rows and for these columns
+                        const columnsToHighlight = [0, 1, 2];
+                        const highlightMinChi = {};
+                        data.forEach((row, rowIndex) =>{
+                            const first = row[Object.keys(row)[0]];
+                            const last = row[Object.keys(row).slice(-1)[0]];
+                            if (!highlightMinChi[first]) {
+                                    highlightMinChi[first] = { value: last, rowIndex: rowIndex };
+                            }
+                            else {
+                                if (last < highlightMinChi[first].value) {
+                                    highlightMinChi[first] = { value: last, rowIndex: rowIndex };
+                                }
+                            }
+                        });
                         // Table Body
                         const tbody = document.createElement('tbody');
-                        data.forEach(row => {
+                        const rowspanTracker = {}; // Track row spans for first column
+                        data.forEach((row, rowIndex) => {
                             const tr = document.createElement('tr');
-                            Object.values(row).forEach(val => {
+
+                            // First column value (used for grouping)
+                            const firstColValue = row[Object.keys(row)[0]];
+                            const secondColValue = row[Object.keys(row)[1]]; // Second column
+                            const lastColumnValue = row[Object.keys(row).slice(-1)[0]]; // Last column
+
+                            if (!rowspanTracker[firstColValue]) {
+                                // Count how many times it repeats
+                                const rowSpanCount = data.slice(rowIndex).filter(r => r[Object.keys(r)[0]] === firstColValue).length;
+                                rowspanTracker[firstColValue] = rowSpanCount;
+
+                                // Create and append merged cell for first column
+                                const td1 = document.createElement('td');
+                                td1.textContent = firstColValue;
+                                td1.rowSpan = rowSpanCount;
+                                td1.style.border = '1px solid #ddd';
+                                td1.style.padding = '8px';
+                                td1.style.textAlign = 'center';
+                                td1.style.fontSize = '14px';
+                                tr.appendChild(td1);
+
+                                // Create and append merged cell for second column
+                                const td2 = document.createElement('td');
+                                td2.textContent = secondColValue;
+                                td2.rowSpan = rowSpanCount;
+                                td2.style.border = '1px solid #ddd';
+                                td2.style.padding = '8px';
+                                td2.style.textAlign = 'center';
+                                td2.style.fontSize = '14px';
+                                tr.appendChild(td2);
+                            } else {
+                                // Reduce count for already used value
+                                rowspanTracker[firstColValue]--;
+                            }
+                            // Append remaining columns normally
+                            Object.values(row).slice(2).forEach((val, colIndex) => {
                                 const td = document.createElement('td');
                                 td.textContent = val;
                                 td.style.border = '1px solid #ddd';
                                 td.style.padding = '8px';
-                                td.style.textAlign = 'center'; // Align data text to center
+                                td.style.textAlign = 'center';
                                 td.style.fontSize = '14px';
+                                // Higlight minimum chi2
+                                if(highlightMinChi[firstColValue].rowIndex === rowIndex && columnsToHighlight.includes(colIndex)){
+                                    td.style.fontWeight = 'bold';
+                                    td.style.backgroundColor = '#e0f7e0';
+                                }
                                 tr.appendChild(td);
                             });
+
                             tbody.appendChild(tr);
                         });
                         table.appendChild(tbody);
-
-                        // Append the table to the wrapper
                         tableWrapper.appendChild(table);
-
-                        // Append the wrapper (title + table) to the container
                         tablesContainer.appendChild(tableWrapper);
                     });
-
-                    // Insert the tables container after the header
-                    // h.insertAdjacentElement('afterend', tablesContainer);
                     const folderDiv = h.closest('.folder');
                     folderDiv.appendChild(tablesContainer);
                 }
