@@ -23,6 +23,9 @@ def extract(dir: str) -> dict:
         col = file.Get(f"{state}_sfs")
         data = []
         ex = unc.ufloat(inter.GetParameter(state, 1), inter.GetUnc(state, 1))
+        ## Save best gs model
+        if state == "g0":
+            bestgs = col.GetBestChi2()
         for _, name in enumerate(col.GetModels()):
             sf_obj = col.Get(name)
             ## Define the values to be printed to table
@@ -36,9 +39,18 @@ def extract(dir: str) -> dict:
                 ]
             )
         sfs[state.decode("utf-8")] = data
+    ## Append column relative to gs, last - 1 column
+    gs = unc.ufloat(bestgs.GetSF(), bestgs.GetUSF())
+    for state in states:
+        col = file.Get(f"{state}_sfs")
+        for i, name in enumerate(col.GetModels()):
+            sf_obj = col.Get(name)
+            sf = unc.ufloat(sf_obj.GetSF(), sf_obj.GetUSF())
+            sfs[state.decode("utf-8")][i].insert(-1, "{:.2uS}".format(sf / gs))
     return sfs
 
 
+## Create JSON table structure
 all = {}
 for header, dir in files.items():
     d = extract(dir)
@@ -54,6 +66,8 @@ for header, dir in files.items():
                 elif i == 2:
                     row["SF"] = val
                 elif i == 3:
+                    row["SF / SF gs"] = val
+                elif i == 4:
                     row["Chi2red"] = val
             table.append(row)
     all[header] = {"title": "SFs (p norm)", "data": table}
