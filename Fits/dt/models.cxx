@@ -6,6 +6,7 @@
 #include "ModelPlotter.h"
 #include "PhysColors.h"
 #include "PhysSF.h"
+#include "PhysSM.h"
 
 #include <algorithm>
 #include <string>
@@ -58,28 +59,35 @@ void models()
     ours.SetJp({"5/2+", "1/2+", "(1/2,3/2)-", "(1/2,3/2)-", "(1/2,3/2)-", "1/2+", "(1/2,3/2-)", "(1/2,3/2)-"});
     ours.SetUniqueColor(gPhysColors->Get(14));
 
+    PhysUtils::ModelParser ysox {{"./Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1p.txt",
+                                  "./Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1n.txt"}};
+    ysox.ShiftEx();
+    ysox.MaskExAbove(10);
+    ysox.MaskSFBelow(0.1);
+
     PlotUtils::ModelToPlot mysox {"YSOX"};
-    // Parse theoretical file
-    double be {7.655};
-    std::vector<std::tuple<double, double, std::string>> theo {{{7.655, 3.45, "5/2+"},
-                                                                {13.558, 0.101, "3/2+"},
-                                                                {9.016, 0.229, "1/2+"},
-                                                                {12.738, 0.487, "1/2-"},
-                                                                {13.991, 0.583, "1/2-"}}};
-    // Transform
-    std::for_each(theo.begin(), theo.end(), [&](auto& p) { std::get<0>(p) = std::get<0>(p) - be; });
-    std::sort(theo.begin(), theo.end(), [](auto& a, auto& b) { return std::get<0>(a) < std::get<0>(b); });
-    std::vector<double> theoEx {};
-    std::vector<std::string> theosfs, theojpi;
-    for(const auto& [ex, sf, jpi] : theo)
-    {
-        theoEx.push_back(ex);
-        theosfs.push_back(TString::Format("%.2f", sf).Data());
-        theojpi.push_back(jpi);
-    }
-    mysox.SetEx(theoEx);
-    mysox.SetSF(theosfs);
-    mysox.SetJp(theojpi);
+    mysox.SetFromParser(&ysox);
+    // // Parse theoretical file
+    // double be {7.655};
+    // std::vector<std::tuple<double, double, std::string>> theo {{{7.655, 3.45, "5/2+"},
+    //                                                             {13.558, 0.101, "3/2+"},
+    //                                                             {9.016, 0.229, "1/2+"},
+    //                                                             {12.738, 0.487, "1/2-"},
+    //                                                             {13.991, 0.583, "1/2-"}}};
+    // // Transform
+    // std::for_each(theo.begin(), theo.end(), [&](auto& p) { std::get<0>(p) = std::get<0>(p) - be; });
+    // std::sort(theo.begin(), theo.end(), [](auto& a, auto& b) { return std::get<0>(a) < std::get<0>(b); });
+    // std::vector<double> theoEx {};
+    // std::vector<std::string> theosfs, theojpi;
+    // for(const auto& [ex, sf, jpi] : theo)
+    // {
+    //     theoEx.push_back(ex);
+    //     theosfs.push_back(TString::Format("%.2f", sf).Data());
+    //     theojpi.push_back(jpi);
+    // }
+    // mysox.SetEx(theoEx);
+    // mysox.SetSF(theosfs);
+    // mysox.SetJp(theojpi);
     mysox.SetUniqueColor(gPhysColors->Get(5));
 
     // Ramus thesis
