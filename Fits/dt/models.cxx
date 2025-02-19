@@ -8,9 +8,7 @@
 #include "PhysSF.h"
 #include "PhysSM.h"
 
-#include <algorithm>
 #include <string>
-#include <utility>
 #include <vector>
 
 #include "../../Selector/Selector.h"
@@ -18,15 +16,17 @@
 void models()
 {
     gStyle->SetTextFont(132);
+    gStyle->SetTextSize(0.025);
 
     double ymin {0};  // MeV
-    double ymax {18}; // MeV
-    int nmodels {3};
+    double ymax {20}; // MeV
+    int nmodels {4};
 
     // Parse
     Fitters::Interface inter;
     inter.Read("./Outputs/interface.root", "./Outputs/fit_juan_RPx.root");
     auto file {std::make_unique<TFile>("./Outputs/sfs.root")};
+    std::map<std::string, PhysUtils::SMData> exp;
     std::vector<double> Exs;
     std::vector<double> gammas;
     std::vector<std::string> sfs;
@@ -48,6 +48,9 @@ void models()
                 sf->GetSF(), sf->GetUSF())); // sfs.push_back(TString::Format("%.2f", sf->GetSF()).Data());
         else
             sfs.push_back("");
+        exp[peak] = PhysUtils::SMData(ex, sf->GetSF(), gamma);
+        // Add uncertainty in sf
+        exp[peak].SetuSF(sf->GetUSF());
     }
     file->Close();
 
@@ -59,36 +62,29 @@ void models()
     ours.SetJp({"5/2+", "1/2+", "(1/2,3/2)-", "(1/2,3/2)-", "(1/2,3/2)-", "1/2+", "(1/2,3/2-)", "(1/2,3/2)-"});
     ours.SetUniqueColor(gPhysColors->Get(14));
 
-    PhysUtils::ModelParser ysox {{"./Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1p.txt",
-                                  "./Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1n.txt"}};
-    ysox.ShiftEx();
-    ysox.MaskExAbove(10);
-    ysox.MaskSFBelow(0.1);
+    // Paramerers to plot theo models
+    double maxEx {18};
+    double minSF {0.075};
 
+    // YSOX
+    PhysUtils::SMParser ysox {
+        {"./Inputs/SM/log_O20_O19_ysox_tr_j0p_m1p.txt", "./Inputs/SM/log_O20_O19_ysox_tr_j0p_m1n.txt"}};
+    ysox.ShiftEx();
+    ysox.MaskExAbove(maxEx);
+    ysox.MaskSFBelow(minSF);
     PlotUtils::ModelToPlot mysox {"YSOX"};
     mysox.SetFromParser(&ysox);
-    // // Parse theoretical file
-    // double be {7.655};
-    // std::vector<std::tuple<double, double, std::string>> theo {{{7.655, 3.45, "5/2+"},
-    //                                                             {13.558, 0.101, "3/2+"},
-    //                                                             {9.016, 0.229, "1/2+"},
-    //                                                             {12.738, 0.487, "1/2-"},
-    //                                                             {13.991, 0.583, "1/2-"}}};
-    // // Transform
-    // std::for_each(theo.begin(), theo.end(), [&](auto& p) { std::get<0>(p) = std::get<0>(p) - be; });
-    // std::sort(theo.begin(), theo.end(), [](auto& a, auto& b) { return std::get<0>(a) < std::get<0>(b); });
-    // std::vector<double> theoEx {};
-    // std::vector<std::string> theosfs, theojpi;
-    // for(const auto& [ex, sf, jpi] : theo)
-    // {
-    //     theoEx.push_back(ex);
-    //     theosfs.push_back(TString::Format("%.2f", sf).Data());
-    //     theojpi.push_back(jpi);
-    // }
-    // mysox.SetEx(theoEx);
-    // mysox.SetSF(theosfs);
-    // mysox.SetJp(theojpi);
     mysox.SetUniqueColor(gPhysColors->Get(5));
+
+    // SFO-tls
+    PhysUtils::SMParser sfotls {{"./Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1p.txt",
+                                 "./Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1n.txt"}};
+    sfotls.ShiftEx();
+    sfotls.MaskExAbove(maxEx);
+    sfotls.MaskSFBelow(minSF);
+    PlotUtils::ModelToPlot msfotls {"SFO-tls"};
+    msfotls.SetFromParser(&sfotls);
+    msfotls.SetUniqueColor(gPhysColors->Get(14));
 
     // Ramus thesis
     PlotUtils::ModelToPlot mramus {"A. Ramus"};
@@ -100,8 +96,9 @@ void models()
     PlotUtils::ModelPlotter mpl {ymin, ymax, nmodels};
     mpl.SetYaxisLabel("E_{x} [MeV]");
     mpl.AddModel(ours);
-    mpl.AddModel(mysox);
     mpl.AddModel(mramus);
+    mpl.AddModel(mysox);
+    mpl.AddModel(msfotls);
 
     auto canv = mpl.Draw();
 
