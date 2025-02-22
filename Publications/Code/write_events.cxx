@@ -12,7 +12,7 @@ void write_events()
 {
     ActRoot::DataManager datman {"../../configs/data.conf"};
     // Which events?
-    std::vector<std::pair<int, int>> events {{157, 46581}};
+    std::vector<std::pair<int, int>> events {{155, 38}, {157, 46581}};
 
     for(const auto& [run, entry] : events)
     {
@@ -43,7 +43,7 @@ void write_events()
         for(int x = 0; x < 128; x++)
             for(int y = 0; y < 128; y++)
             {
-                auto val {projection[{x,y}]};
+                auto val {projection[{x, y}]};
                 streamer << x << " " << y << " " << (val ? std::to_string(val) : "nan") << '\n';
             }
         // for(const auto& [key, val] : projection)
