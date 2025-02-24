@@ -12,7 +12,7 @@ void write_events()
 {
     ActRoot::DataManager datman {"../../configs/data.conf"};
     // Which events?
-    std::vector<std::pair<int, int>> events {{155, 38}, {157, 46581}};
+    std::vector<std::pair<int, int>> events {{155, 38}, {155, 1296}, {157, 46581}, {160, 49121}};
 
     for(const auto& [run, entry] : events)
     {
@@ -22,12 +22,12 @@ void write_events()
         chain->SetBranchAddress("TPCData", &data);
         chain->GetEntry(entry);
         // data->Print();
-        std::map<std::pair<int, int>, double> projection;
+        std::map<std::tuple<int, int, int>, double> map;
         // Noise
         for(const auto& v : data->fRaw)
         {
             auto& pos {v.GetPosition()};
-            projection[{pos.X(), pos.Y()}] += v.GetCharge();
+            map[{pos.X(), pos.Y(), pos.Z()}] += v.GetCharge();
         }
         // Clusters
         for(const auto& cl : data->fClusters)
@@ -35,19 +35,16 @@ void write_events()
             for(const auto& v : cl.GetVoxels())
             {
                 auto& pos {v.GetPosition()};
-                projection[{pos.X(), pos.Y()}] += v.GetCharge();
+                map[{pos.X(), pos.Y(), pos.Z()}] += v.GetCharge();
             }
         }
         // Write projection
         std::ofstream streamer {TString::Format("./Events/run_%d_entry_%d.dat", run, entry).Data()};
-        for(int x = 0; x < 128; x++)
-            for(int y = 0; y < 128; y++)
-            {
-                auto val {projection[{x, y}]};
-                streamer << x << " " << y << " " << (val ? std::to_string(val) : "nan") << '\n';
-            }
-        // for(const auto& [key, val] : projection)
-        //     streamer << key.first << " " << key.second << " " << val << '\n';
+        for(const auto& [key, val] : map)
+        {
+            auto [x, y, z] {key};
+            streamer << x << " " << y << " " << z << " " << val << '\n';
+        }
         streamer.close();
     }
 }

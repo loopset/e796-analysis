@@ -126,6 +126,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     bool pdphase {};
     bool dtcont {};
     bool pdcont {};
+    bool ptcont {};
     if(neutronPS == -1)
         deutonbreakup = true;
     if(neutronPS == -2)
@@ -190,6 +191,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         xspath = "";
     else if(target == "1H" && arglight == "2H")
         xspath = "/media/Data/E796v2/Fits/pd/";
+    else if(target == "1H" && arglight == "3H")
+        xspath = "";
     else
         throw std::runtime_error("Simulation_E796(): no known xs config");
     // If interface is available
@@ -639,10 +642,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             {
                 // For e796 angleNormal0 = angleNormal1 but this is not general
                 auto angleNormal1 {angleNormal0};
-                auto T3AfterSil1 {(srimCont ? srimCont : srim)
-                                      ->SlowWithStraggling("lightInSil", T3AfterInterGas,
-                                                           specs->GetLayer(secondLayer).GetUnit().GetThickness(),
-                                                           angleNormal1)};
+                T3AfterSil1 =
+                    (srimCont ? srimCont : srim)
+                        ->SlowWithStraggling("lightInSil", T3AfterInterGas,
+                                             specs->GetLayer(secondLayer).GetUnit().GetThickness(), angleNormal1);
                 auto eLoss1 {T3AfterInterGas - T3AfterSil1};
                 ApplySilRes(eLoss1, sigmaSil);
                 T3AfterSil1 = T3AfterInterGas - eLoss1;

@@ -7,13 +7,15 @@
 #include "PhysColors.h"
 #include "PhysSF.h"
 #include "PhysSM.h"
+#include "uncertainties.hpp"
+#include "ureal.hpp"
 
 #include <string>
 #include <vector>
 
 #include "../../Selector/Selector.h"
 
-void models()
+void models(bool normalized = false)
 {
     gStyle->SetTextFont(132);
     gStyle->SetTextSize(0.025);
@@ -30,6 +32,8 @@ void models()
     std::vector<double> Exs;
     std::vector<double> gammas;
     std::vector<std::string> sfs;
+    std::vector<PhysUtils::SpectroscopicFactor> sfso;
+    unc::udouble gs {};
     for(const auto peak : inter.GetPeaks())
     {
         auto sfcol {file->Get<PhysUtils::SFCollection>((peak + "_sfs").c_str())};
@@ -43,16 +47,32 @@ void models()
         else
             gammas.push_back(gamma);
         auto sf {sfcol->GetBestChi2()};
+        sfso.push_back(*sf);
         if(sf)
             sfs.push_back(PlotUtils::ModelToPlot::FormatSF(
                 sf->GetSF(), sf->GetUSF())); // sfs.push_back(TString::Format("%.2f", sf->GetSF()).Data());
         else
             sfs.push_back("");
+        if(normalized && peak == "g0")
+            gs = {sf->GetSF(), sf->GetUSF()};
         exp[peak] = PhysUtils::SMData(ex, sf->GetSF(), gamma);
         // Add uncertainty in sf
         exp[peak].SetuSF(sf->GetUSF());
     }
     file->Close();
+    // Normalize experimental
+    if(normalized)
+    {
+        for(int i = 0; i < sfs.size(); i++)
+        {
+            if(!sfs[i].length())
+                continue;
+            auto& o {sfso[i]};
+            unc::udouble sf {sfso[i].GetSF(), sfso[i].GetUSF()};
+            auto quotient {sf / gs};
+            sfs[i] = PlotUtils::ModelToPlot::FormatSF(quotient.n(), quotient.s());
+        }
+    }
 
     // Define models to plot
     PlotUtils::ModelToPlot ours {"Our work"};
@@ -72,6 +92,8 @@ void models()
     ysox.ShiftEx();
     ysox.MaskExAbove(maxEx);
     ysox.MaskSFBelow(minSF);
+    if(normalized)
+        ysox.SFRelativeToGS();
     PlotUtils::ModelToPlot mysox {"YSOX"};
     mysox.SetFromParser(&ysox);
     mysox.SetUniqueColor(gPhysColors->Get(5));
@@ -82,6 +104,8 @@ void models()
     sfotls.ShiftEx();
     sfotls.MaskExAbove(maxEx);
     sfotls.MaskSFBelow(minSF);
+    if(normalized)
+        sfotls.SFRelativeToGS();
     PlotUtils::ModelToPlot msfotls {"SFO-tls"};
     msfotls.SetFromParser(&sfotls);
     msfotls.SetUniqueColor(gPhysColors->Get(14));
@@ -89,7 +113,17 @@ void models()
     // Ramus thesis
     PlotUtils::ModelToPlot mramus {"A. Ramus"};
     mramus.SetEx({0, 1.459, 3.23});
-    mramus.SetSF({"4.70(94)", "0.50(11)", "1.47(30)"});
+    std::vector<unc::udouble> ramusSFs {{4.70, 0.94}, {0.50, 0.11}, {1.47, 0.30}};
+    auto gsRamus {ramusSFs.front()};
+    if(normalized)
+    {
+        for(auto& sf : ramusSFs)
+            sf /= gsRamus;
+    }
+    std::vector<std::string> ramusSFsStr;
+    for(const auto& sf : ramusSFs)
+        ramusSFsStr.push_back(PlotUtils::ModelToPlot::FormatSF(sf.n(), sf.s()));
+    mramus.SetSF(ramusSFsStr);
     mramus.SetJp({"5/2+", "1/2+", "(1/2,3/2)-"});
 
 
@@ -102,5 +136,5 @@ void models()
 
     auto canv = mpl.Draw();
 
-    gSelector->SendToWebsite("dt.root", canv, "cYSOX");
+    gSelector->SendToWebsite("dt.root", canv, TString::Format("cYSOX%s", (normalized ? "_norm" : "")));
 }
