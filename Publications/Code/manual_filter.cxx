@@ -5,11 +5,13 @@
 #include "ActTPCData.h"
 #include "ActTypes.h"
 
+#include "TFile.h"
 #include "TString.h"
 #include "TSystem.h"
 
 #include <fstream>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -59,6 +61,13 @@ void write_lines(int run, int entry, ActRoot::TPCData* data)
     streamer.close();
 }
 
+void write_tfile(const std::string& name, ActRoot::TPCData* data)
+{
+    auto f {
+        std::make_unique<TFile>(("/media/Data/E796v2/Publications/Code/Events/" + name + ".root").c_str(), "recreate")};
+    f->WriteObject(data, "TPCData");
+}
+
 void manual_filter()
 {
     gSystem->cd("/media/Data/E796v2/");
@@ -68,7 +77,8 @@ void manual_filter()
     ActRoot::Options::GetInstance()->SetMode(ActRoot::ModeType::EFilter);
     ActRoot::Options::GetInstance()->Print();
     // Events
-    std::vector<std::pair<int, int>> events {{157, 46581}};
+    std::vector<std::pair<int, int>> events {{155, 1296}};
+    std::vector<std::string> labels {"fine_before"};
     // Data
     ActRoot::DataManager dataman {"./configs/data.conf", ActRoot::ModeType::EReadTPC};
     // Detector manager
@@ -77,6 +87,7 @@ void manual_filter()
     detman.ReadCalibrationsFile("./configs/calibration.conf");
 
     TStopwatch timer {};
+    int idx {};
     for(const auto& [run, entry] : events)
     {
         dataman.SetRuns(run, run);
@@ -89,7 +100,9 @@ void manual_filter()
         auto filterData {
             dynamic_cast<ActRoot::TPCData*>(detman.GetDetector(ActRoot::DetectorType::EActar)->GetOutputFilter())};
         // filterData->Print();
-        write(run, entry, filterData);
-        write_lines(run, entry, filterData);
+        std::cout << "Saving in " << labels[idx] << '\n';
+        // write(run, entry, filterData);
+        write_tfile(labels[idx], filterData);
+        idx++;
     }
 }

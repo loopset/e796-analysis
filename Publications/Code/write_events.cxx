@@ -5,6 +5,7 @@
 #include "TString.h"
 
 #include <fstream>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -22,12 +23,13 @@ void write_events()
         chain->SetBranchAddress("TPCData", &data);
         chain->GetEntry(entry);
         // data->Print();
-        std::map<std::tuple<int, int, int>, double> map;
+        std::map<std::tuple<int, int, int>, std::pair<double, int>> map;
         // Noise
         for(const auto& v : data->fRaw)
         {
             auto& pos {v.GetPosition()};
-            map[{pos.X(), pos.Y(), pos.Z()}] += v.GetCharge();
+            map[{pos.X(), pos.Y(), pos.Z()}].first += v.GetCharge();
+            map[{pos.X(), pos.Y(), pos.Z()}].second = -11;
         }
         // Clusters
         for(const auto& cl : data->fClusters)
@@ -35,16 +37,20 @@ void write_events()
             for(const auto& v : cl.GetVoxels())
             {
                 auto& pos {v.GetPosition()};
-                map[{pos.X(), pos.Y(), pos.Z()}] += v.GetCharge();
+                map[{pos.X(), pos.Y(), pos.Z()}].first += v.GetCharge();
+                map[{pos.X(), pos.Y(), pos.Z()}].second = cl.GetClusterID();
             }
         }
         // Write projection
-        std::ofstream streamer {TString::Format("./Events/run_%d_entry_%d.dat", run, entry).Data()};
+        auto name {TString::Format("./Events/run_%d_entry_%d", run, entry)};
+        std::ofstream streamer {(name + ".dat").Data()};
         for(const auto& [key, val] : map)
         {
             auto [x, y, z] {key};
-            streamer << x << " " << y << " " << z << " " << val << '\n';
+            streamer << x << " " << y << " " << z << " " << val.first << " " << val.second << '\n';
         }
         streamer.close();
+        auto f {std::make_unique<TFile>(name + ".root", "recreate")};
+        f->WriteObject(data, "TPCData");
     }
 }

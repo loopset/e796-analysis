@@ -16,7 +16,7 @@ def add_colorbar(im, ax):
 
 # Function to force X and Y ticks to be equal
 def set_ticks(ax):
-    ticks = np.arange(0, 128, 20)
+    ticks = np.arange(0, 128, 40)
     ax.set(xticks=ticks, yticks=ticks)
     return
 
@@ -35,13 +35,13 @@ def plot(matrix, filename, ax = None):
     if len(filename):
         plt.savefig(f"{filename}.pdf")
 
-def plot_unique(matrix: np.ndarray, name: str, ax: plt.Axes = None):
+def plot_unique(matrix: np.ndarray, name: str, ax: plt.Axes = None, aspect: str = "equal"):
     if not ax:
         fig = plt.figure(name, figsize=(3.5,3.5))
         fig.clf()
         ax = fig.add_subplot(111);
     # Imshow
-    im = ax.imshow(matrix.T, origin="lower", aspect="auto", interpolation="none", 
+    im = ax.imshow(matrix.T, origin="lower", aspect=aspect, interpolation="nearest", 
                    cmap=cmc.managua_r)
     set_ticks(ax)
     ax.set_xlabel("X [pads]", loc="right")
