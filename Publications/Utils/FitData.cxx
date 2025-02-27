@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-void PubUtils::FitData::Parse(const std::string& file)
+void PubUtils::FitData::Parse(const std::string& file, const std::string& key)
 {
     auto f {std::make_unique<TFile>(file.c_str())};
     // Ex histogram

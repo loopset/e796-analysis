@@ -51,5 +51,5 @@ void fits()
     }
     
     // Save
-    padman.GetCanvas()->SaveAs("./Outputs/elastic_xz.pdf");
+    padman.GetCanvas()->SaveAs("./Outputs/elastic_xs.pdf");
 }

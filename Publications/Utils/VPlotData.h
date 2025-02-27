@@ -19,13 +19,12 @@ public:
     VPlotData() = default;
     virtual ~VPlotData() = default;
 
-    virtual void Parse(const std::string& file) {}
+    virtual void Parse(const std::string& file, const std::string& key = "") {}
     virtual void SetOpts(Opts opts) {}
     virtual void Draw() {}
     virtual void Print() const {}
 
-protected:
-    inline void SortNames(std::vector<std::string>& names)
+    inline static void SortNames(std::vector<std::string>& names)
     {
         std::sort(names.begin(), names.end(),
                   [](const std::string& a, const std::string& b)

@@ -30,7 +30,7 @@ public:
     FitData() = default;
     FitData(const std::string& file) { Parse(file); }
 
-    void Parse(const std::string& file) override;
+    void Parse(const std::string& file, const std::string& key = "") override;
     void SetOpts(Opts opts) override;
     void Draw() override;
     void Print() const override;
