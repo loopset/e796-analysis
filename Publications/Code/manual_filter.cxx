@@ -78,7 +78,7 @@ void manual_filter()
     ActRoot::Options::GetInstance()->Print();
     // Events
     std::vector<std::pair<int, int>> events {{155, 1296}};
-    std::vector<std::string> labels {"fine_before"};
+    std::vector<std::string> labels {"fine_after"};
     // Data
     ActRoot::DataManager dataman {"./configs/data.conf", ActRoot::ModeType::EReadTPC};
     // Detector manager

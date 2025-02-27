@@ -23,7 +23,8 @@ class DataInterface():
         # Sort clusters from bigger to smaller
         pairs = []
         for i, cl in enumerate(tpc.fClusters):
-            pairs.append((i, cl.GetSizeOfVoxels()))
+            alpha = 2 if cl.GetIsBeamLike() else 1
+            pairs.append((i, alpha * cl.GetSizeOfVoxels()))
         pairs = sorted(pairs, key=lambda x : x[1], reverse=True)
         ids = [e[0] for e in pairs]
         for i, cl in enumerate(tpc.fClusters):
@@ -64,11 +65,10 @@ class DataInterface():
     def imshow(self, id: bool = False, proj: str = "xy") -> None:
         matrix = self.xy if "xy" in proj else self.xz
         ax = plt.gca()
-        ax.imshow(matrix[:, :, 1 if id else 0].T, origin="lower", aspect="auto", interpolation="none", 
-            cmap=cmc.managua_r)
+        ax.pcolormesh(matrix[:, :, 1 if id else 0].T, cmap=cmc.managua_r)
         ax.set_xlabel("X [pads]", loc="right")
-        ax.set_xlim(0, 127)
-        ax.set_ylim(0, 127)
+        ax.set_xlim(0, 128)
+        ax.set_ylim(0, 128)
         ticks = np.arange(0, 128, 40)
         ax.set(xticks=ticks, yticks=ticks)
         if "xy" in proj:
@@ -76,7 +76,7 @@ class DataInterface():
         else:
             ax.set_ylabel("Z [time buckets]", loc="top")
     
-    def draw_line(self, idx: int, min: float = 0, max: float = 127, **kwargs)-> None:
+    def draw_line(self, idx: int, min: float = 0, max: float = 128, **kwargs)-> None:
         vx = [min, max]
         vy = []
         for x in vx:
@@ -87,7 +87,7 @@ class DataInterface():
     def draw_rp(self, **kwargs) -> None:
         if np.any(self.rp == np.nan):
             return
-        plt.gca().plot(self.rp[0], self.rp[1], marker="*", markersize=10, **kwargs)
+        plt.gca().plot(self.rp[0], self.rp[1], marker="*", **kwargs)
     
 def add_subplot_label(label:str, x: float = 0.925, y: float = 0.910)-> None:
     ax = plt.gca()
