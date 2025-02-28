@@ -93,6 +93,8 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
         auto filename {gSelector->GetAnaFile(1, beam, target, light, false)};
         pid.Snapshot("PID_Tree", filename);
     }
+    // Write to file
+    hPID->SaveAs(TString::Format("/media/Data/E796v2/Publications/pid/Inputs/pid_%s.root", isEl ? "side" : "front"));
 
     // plotting
     auto* c10 {new TCanvas("c10", "Pipe1 canvas 0")};
