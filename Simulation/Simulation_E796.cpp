@@ -238,7 +238,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     ActPhysics::Kinematics* reckin {};
     if(deutonbreakup)
     {
-        decaygen = ActSim::DecayGenerator {"d", "p", "n"};
+        ActPhysics::Particle deuterium {"d"};
+        deuterium.SetEx(deuterium.GetBE());
+        decaygen = ActSim::DecayGenerator {deuterium, "p", "n"};
         light = "1H"; // originally is 20O(d,d) but d decays to p + n so we propagate a proton
         decaygen.Print();
         reckin = new ActPhysics::Kinematics {beam, "p", "p"};

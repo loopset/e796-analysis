@@ -25,11 +25,19 @@ void PubUtils::PadManager::Init(int npads)
         fCanv = nullptr;
     }
     // Initialize
-    fCanv = new TCanvas {"canv", "Manual canvas"};
+    static int counter {};
+    fCanv = new TCanvas {TString::Format("cPadManager%d", counter), TString::Format("Pad manager canvas %d", counter)};
+    counter++;
     // Rows
     auto nrows {static_cast<int>(npads / 2)};
     // Columns (always 2 unless npads == 3)
     auto ncols {(npads == 3) ? 3 : 2};
+    // Overwrite for the case of 1 pad
+    if(npads == 1)
+    {
+        nrows = 1;
+        ncols = 1;
+    }
     // Pad sizes
     double width {1. / ncols - (fxleft + fxright)};
     double height {1. / nrows - (fylow + fyup)};

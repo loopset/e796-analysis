@@ -46,7 +46,7 @@ void fits()
     for(int i = 0; i < fdata.size(); i++)
     {
         padman.GetPad(i)->SetLeftMargin(0.125);
-        padman.CenterXTitle();
+        // padman.CenterXTitle();
         fdata[i].Draw();
     }
     

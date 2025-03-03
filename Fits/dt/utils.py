@@ -1,6 +1,5 @@
 import uncertainties as unc
 
-
 class QuantumNumber:
     """
     A class representing the (nlj)

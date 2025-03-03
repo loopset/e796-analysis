@@ -67,11 +67,16 @@ void PubUtils::FitData::BuildStack()
         auto* h {(TH1D*)o};
         auto col {gPhysColors->Get(idx, "mpl")};
         h->SetLineColor(col);
+        h->SetLineWidth(1);
         auto fs {1001};
-        // auto fs {3000 + 300 + (idx < 10 ? idx * 10 + 5 : 50 + 10 - idx)};
-        // std::cout << "Idx : " << idx << " fs: " << fs << '\n';
+        auto alpha {0.15};
+        if(TString(fPeakNames[idx]).Contains("ps"))
+        {
+            fs = 3244;
+            alpha = 0.45;
+        }
         h->SetFillStyle(fs);
-        h->SetFillColorAlpha(col, 0.15);
+        h->SetFillColorAlpha(col, alpha);
         fStack->Add(h);
         idx++;
     }
@@ -85,7 +90,7 @@ void PubUtils::FitData::SetOpts(Opts opts)
         auto str {std::any_cast<const char*>(opts["title"])};
         fHist->SetTitle(str);
     }
-    fHist->SetLineWidth(2);
+    fHist->SetLineWidth(1);
     fHist->SetLineColor(kBlack);
     // Ex range
     if(opts.count("rangex"))
@@ -104,7 +109,7 @@ void PubUtils::FitData::SetOpts(Opts opts)
         auto color {std::any_cast<int>(opts["color"])};
         fGlobal->SetLineColor(color);
     }
-    fGlobal->SetLineWidth(3);
+    fGlobal->SetLineWidth(2);
     // Legend
     if(opts.count("labels"))
     {

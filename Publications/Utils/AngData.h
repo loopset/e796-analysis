@@ -34,6 +34,8 @@ public:
     void DisableLabel(const std::string& axis, int idx);
     void SetNDiv(const std::string& axis, int ndiv);
     void SetGraphsStyle(const VPlotData::Styles& styles);
+    void SetRangeY(double ymin = -11, double ymax = -11);
+    void CenterY(double factor = 1.2);
     void SetOpts(Opts opts) override;
     void Draw() override;
     void Print() const override;

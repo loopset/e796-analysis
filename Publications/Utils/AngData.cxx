@@ -7,6 +7,7 @@
 #include "TGraphErrors.h"
 #include "TH1.h"
 #include "TLegend.h"
+#include "TMath.h"
 #include "TMultiGraph.h"
 #include "TPaveText.h"
 #include "TString.h"
@@ -135,7 +136,7 @@ void PubUtils::AngData::SetGraphsStyle(const VPlotData::Styles& styles)
             TString title {g->GetTitle()};
             title.ToLower();
             title.ReplaceAll(" ", "");
-            std::cout<<"Key : "<<k<<" title: "<<title<<'\n';
+            // std::cout << "Key : " << k << " title: " << title << '\n';
             if(title.Contains(k))
             {
                 g->SetLineWidth(st.GetLineWidth());
@@ -154,6 +155,34 @@ void PubUtils::AngData::GetLegendGraph(TLegend* leg, TAttLine st, const std::str
     g->SetLineColor(st.GetLineColor());
     g->SetTitle(name.c_str());
     leg->AddEntry(g, name.c_str(), "l");
+}
+
+void PubUtils::AngData::SetRangeY(double ymin, double ymax)
+{
+    if(ymin != -11)
+        fMulti->SetMinimum(ymin);
+    if(ymax != -11)
+        fMulti->SetMaximum(ymax);
+}
+
+void PubUtils::AngData::CenterY(double factor)
+{
+    // Experimental graph ch
+    TGraphErrors* gexp {};
+    for(const auto& g : fGraphs)
+        if(TString name {g->GetName()}; name.Contains("xs"))
+        {
+            gexp = g;
+            break;
+        }
+    auto min {TMath::MinElement(gexp->GetN(), gexp->GetY())};
+    auto max {TMath::MaxElement(gexp->GetN(), gexp->GetY())};
+    auto diff {max - min};
+    // std::cout << "Min : " << min << " max : " << max << '\n';
+    auto y0 {min  - factor * diff};
+    auto y1 {max + factor * diff};
+    fMulti->SetMinimum(y0 < 0 ? 0 : y0);
+    fMulti->SetMaximum(y1);
 }
 
 void PubUtils::AngData::Draw()
