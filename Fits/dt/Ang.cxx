@@ -38,12 +38,14 @@ void Ang(bool isLab = false)
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
     ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
+    // Contamination of 20O(p,d) gs
+    ROOT::RDataFrame cont {"SimulationTTree", gSelector->GetSimuFile("20O", "1H", "2H", 0, -3, 0)};
 
     // Init intervals
     double thetaMin {isLab ? 14 : 5.5};
     double thetaMax {isLab ? 32. : 14.};
     double thetaStep {isLab ? 4 : 1.5};
-    int nps {2};
+    int nps {2 + 1}; // 2 nps + 1 contamination
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdt, thetaStep, nps};
     // Fill
     if(isLab)
@@ -55,7 +57,9 @@ void Ang(bool isLab = false)
                   {"theta3CM", "Eex", "weight"});
     phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
                    {"theta3CM", "Eex", "weight"});
-    ivs.TreatPS();
+    cont.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(2, thetacm, ex, weight); },
+                 {"theta3CM", "Eex", "weight"});
+    ivs.TreatPS(10, 0.2, {0, 1}); // disable smoothing for contamination ps
     if(!isLab)
         ivs.Write("./Outputs/ivs.root");
 

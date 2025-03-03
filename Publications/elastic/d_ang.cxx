@@ -1,6 +1,10 @@
+#include "TCanvas.h"
 #include "TFile.h"
+#include "TLegend.h"
 #include "TROOT.h"
 #include "TStyle.h"
+
+#include "PhysColors.h"
 
 #include <iostream>
 #include <memory>
@@ -22,6 +26,7 @@ void d_ang()
     gStyle->SetLabelSize(0.06, "XYZ");
     gStyle->SetTitleOffset(0.85, "Y");
     gStyle->SetTitleSize(0.07, "XYZ");
+    gStyle->SetLegendTextSize(0.07);
 
     std::vector<std::string> files {"../../Fits/dd/Outputs/sfs.root"};
     std::vector<PubUtils::AngData> data;
@@ -53,6 +58,22 @@ void d_ang()
     data[1].DisableLabel("y", 1);
     data[2].DisableLabel("x", -1);
 
+    // Line styles
+    gPhysColors->Draw();
+    PubUtils::VPlotData::Styles sts {
+        {"daeh", TAttLine(gPhysColors->Get(8, "mpl"), 1, 3)},
+        {"haix", TAttLine(gPhysColors->Get(2, "mpl"), 2, 3)},
+    };
+    for(auto& d : data)
+        d.SetGraphsStyle(sts);
+    // Build a legend
+    auto* leg {new TLegend {0.2, 0.75, 0.5, 0.95, "", "ndc"}};
+    leg->SetBorderSize(0);
+    leg->SetMargin(0.5);
+    leg->SetHeader("OMP", "C");
+    PubUtils::AngData::GetLegendGraph(leg, sts["daeh"], "Daeh");
+    PubUtils::AngData::GetLegendGraph(leg, sts["haix"], "Haixia");
+
     // Text
     double tx {0.8};
     double ty {0.85};
@@ -67,7 +88,7 @@ void d_ang()
     padman.Init(4);
     padman.SetMargins(0, -1, 0.1, 0.01, 0.01, 0.01);
     padman.SetMargins(1, -1, 0.1, 0.01, -1, 0.00);
-    padman.GetCanvas()->SetWindowSize(900, 700);
+    padman.GetCanvas()->SetWindowSize(800, 500);
     for(int i = 0; i < 4; i++)
     {
         auto p {padman.GetPad(i)};
@@ -78,9 +99,11 @@ void d_ang()
             p->SetLogy();
         padman.CenterXTitle();
         data[i].Draw();
+        if(i == 0)
+            leg->Draw();
     }
 
-    padman.AddXTitle(0.2, 0.05, "#theta_{CM} [#circ]", 0.525);
+    padman.AddXTitle(0.2, 0.05, "#theta_{CM} [#circ]", 0.525, 0.85);
     padman.AddYTitle(0.4, 0.03, "d#sigma / d#Omega [mb/sr]", 0.525, 0.85);
 
     padman.GetCanvas()->SaveAs("./Outputs/d_ang.pdf");

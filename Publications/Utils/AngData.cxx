@@ -6,11 +6,14 @@
 #include "TFile.h"
 #include "TGraphErrors.h"
 #include "TH1.h"
+#include "TLegend.h"
 #include "TMultiGraph.h"
 #include "TPaveText.h"
+#include "TString.h"
 #include "TStyle.h"
 
 #include "PhysSF.h"
+#include "VPlotData.h"
 
 #include <any>
 #include <iostream>
@@ -118,6 +121,39 @@ void PubUtils::AngData::SetText(double x, double y, const std::string& text, dou
     if(b.length())
         pave->AddText(b.c_str());
     fMulti->GetListOfFunctions()->Add(pave);
+}
+
+void PubUtils::AngData::SetGraphsStyle(const VPlotData::Styles& styles)
+{
+    for(const auto& [key, st] : styles)
+    {
+        TString k {key};
+        k.ToLower();
+        k.ReplaceAll(" ", "");
+        for(const auto& g : fGraphs)
+        {
+            TString title {g->GetTitle()};
+            title.ToLower();
+            title.ReplaceAll(" ", "");
+            std::cout<<"Key : "<<k<<" title: "<<title<<'\n';
+            if(title.Contains(k))
+            {
+                g->SetLineWidth(st.GetLineWidth());
+                g->SetLineStyle(st.GetLineStyle());
+                g->SetLineColor(st.GetLineColor());
+            }
+        }
+    }
+}
+
+void PubUtils::AngData::GetLegendGraph(TLegend* leg, TAttLine st, const std::string& name)
+{
+    auto* g {new TGraphErrors};
+    g->SetLineWidth(st.GetLineWidth());
+    g->SetLineStyle(st.GetLineStyle());
+    g->SetLineColor(st.GetLineColor());
+    g->SetTitle(name.c_str());
+    leg->AddEntry(g, name.c_str(), "l");
 }
 
 void PubUtils::AngData::Draw()

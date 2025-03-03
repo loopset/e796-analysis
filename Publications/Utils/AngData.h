@@ -9,6 +9,7 @@
 // forward declarations
 class TGraphErrors;
 class TMultiGraph;
+class TLegend;
 namespace PhysUtils
 {
 class SFCollection;
@@ -32,9 +33,13 @@ public:
     void SetText(double x, double y, const std::string& text, double w = 0.4, double h = 0.2);
     void DisableLabel(const std::string& axis, int idx);
     void SetNDiv(const std::string& axis, int ndiv);
+    void SetGraphsStyle(const VPlotData::Styles& styles);
     void SetOpts(Opts opts) override;
     void Draw() override;
     void Print() const override;
+
+    // Some static utility functions
+    static void GetLegendGraph(TLegend* leg, TAttLine st, const std::string& name);
 
 private:
     void SetMulti(TMultiGraph* mg);

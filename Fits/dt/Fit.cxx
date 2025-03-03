@@ -28,13 +28,13 @@ void Fit()
     Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr());
     ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
     auto hPS2 {phase2.Histo1D(E796Fit::Exdt, "Eex", "weight")};
-    hPS2->SetNameTitle("hPS", "2n PS");
+    hPS2->SetNameTitle("hPS2", "2n PS");
     Fitters::TreatPS(hEx.GetPtr(), hPS2.GetPtr());
-    // // Contamination of 20O(p,d)
-    // ROOT::RDataFrame cont {"SimulationTTree", gSelector->GetSimuFile("20O", "1H", "2H", 0, -3, 0)};
-    // auto hCont {cont.Histo1D(E796Fit::Exdt, "Eex", "weight")};
-    // hCont->SetNameTitle("hPS", "2n PS");
-    // Fitters::TreatPS(hEx.GetPtr(), hCont.GetPtr());
+    // Contamination of 20O(p,d) gs
+    ROOT::RDataFrame cont {"SimulationTTree", gSelector->GetSimuFile("20O", "1H", "2H", 0, -3, 0)};
+    auto hCont {cont.Histo1D(E796Fit::Exdt, "Eex", "weight")};
+    hCont->SetNameTitle("hCont", "20O(p,d) gs cont");
+    Fitters::TreatPS(hEx.GetPtr(), hCont.GetPtr(), 0);
 
     // Sigma interpolators
     Interpolators::Sigmas sigmas {gSelector->GetSigmasFile("2H", "3H").Data()};
@@ -53,11 +53,11 @@ void Fit()
     inter.AddState("v4", {60, 11 - offset, sigma, 0.1}, "?");
     // inter.AddState("v5", {5, 12.8, sigma, 0.1}, "?");
     inter.AddState("v5", {20, 14.9 - offset, sigma, 0.1}, "?");
-    inter.AddState("v6", {10, 16 - offset, sigma, 0.1}, "?");
+    // inter.AddState("v6", {10, 16 - offset, sigma, 0.1}, "?");
     // inter.AddState("v8", {10, 17.5, sigma, 0.1}, "cont");
     inter.AddState("ps0", {0.1});
     inter.AddState("ps1", {0.1});
-    // inter.AddState("ps2", {0.1});
+    inter.AddState("ps2", {0.1});
     inter.EndAddingStates();
     // Wider mean margin
     inter.SetOffsetMeanBounds(0.5);
@@ -74,7 +74,7 @@ void Fit()
     double exmin {-5};
     double exmax {25};
     // Model
-    Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS, *hPS2}};
+    Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS, *hPS2, *hCont}};
     // Run!
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,t)");

@@ -1,6 +1,8 @@
 #ifndef VPlotData_h
 #define VPlotData_h
 
+#include "TAttLine.h"
+
 #include <algorithm>
 #include <any>
 #include <map>
@@ -14,6 +16,7 @@ class VPlotData
 public:
     using Opts = std::map<std::string, std::any>;
     using Labels = std::map<std::string, std::string>;
+    using Styles = std::map<std::string, TAttLine>;
 
 public:
     VPlotData() = default;
