@@ -79,7 +79,7 @@ void models(bool normalized = false)
     ours.SetEx(Exs);
     ours.SetGammas(gammas);
     ours.SetSF(sfs);
-    ours.SetJp({"5/2+", "1/2+", "(1/2,3/2)-", "(1/2,3/2)-", "(1/2,3/2)-", "1/2+", "(1/2,3/2-)", "(1/2,3/2)-"});
+    ours.SetJp({"5/2+", "1/2+", "(1/2,3/2)-", "(1/2,3/2)-", "(1/2,3/2)-", "1/2+", "(1/2,3/2-)", "(1/2,3/2)-", "?"});
     ours.SetUniqueColor(gPhysColors->Get(14));
 
     // Paramerers to plot theo models
@@ -137,4 +137,9 @@ void models(bool normalized = false)
     auto canv = mpl.Draw();
 
     gSelector->SendToWebsite("dt.root", canv, TString::Format("cYSOX%s", (normalized ? "_norm" : "")));
+
+    // Save also
+    canv->SetWindowSize(1100, 700);
+    if(normalized)
+        canv->SaveAs("./Pictures/normalized_models.pdf");
 }

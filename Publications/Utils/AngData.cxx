@@ -20,6 +20,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <vector>
 
 // If we read the multigraph from the file it is impossible
 // to change its attributes in an easy manner
@@ -126,23 +127,27 @@ void PubUtils::AngData::SetText(double x, double y, const std::string& text, dou
 
 void PubUtils::AngData::SetGraphsStyle(const VPlotData::Styles& styles)
 {
+    std::vector<double> alreadySet(fGraphs.size(), false);
     for(const auto& [key, st] : styles)
     {
         TString k {key};
         k.ToLower();
         k.ReplaceAll(" ", "");
+        int idx {};
         for(const auto& g : fGraphs)
         {
             TString title {g->GetTitle()};
             title.ToLower();
             title.ReplaceAll(" ", "");
             // std::cout << "Key : " << k << " title: " << title << '\n';
-            if(title.Contains(k))
+            if(title.Contains(k) && !alreadySet[idx])
             {
                 g->SetLineWidth(st.GetLineWidth());
                 g->SetLineStyle(st.GetLineStyle());
                 g->SetLineColor(st.GetLineColor());
+                alreadySet[idx] = true;
             }
+            idx++;
         }
     }
 }
@@ -179,7 +184,7 @@ void PubUtils::AngData::CenterY(double factor)
     auto max {TMath::MaxElement(gexp->GetN(), gexp->GetY())};
     auto diff {max - min};
     // std::cout << "Min : " << min << " max : " << max << '\n';
-    auto y0 {min  - factor * diff};
+    auto y0 {min - factor * diff};
     auto y1 {max + factor * diff};
     fMulti->SetMinimum(y0 < 0 ? 0 : y0);
     fMulti->SetMaximum(y1);

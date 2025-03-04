@@ -36,20 +36,7 @@ class ShellModelData:
         return
 
     def __str__(self) -> str:
-        return f"Shell Model:\n Ex : {self.Ex}\n SF : {self.SF}"
-
-
-class BaragerRes:
-    def __init__(
-        self,
-        addStr: float | unc.UFloat,
-        remStr: float | unc.UFloat,
-        espe: float | unc.UFloat,
-    ) -> None:
-        self.AddStr = addStr
-        self.RemStr = remStr
-        self.ESPE = espe
-        return
+        return f"Data:\n  Ex : {self.Ex}\n  SF : {self.SF}"
 
 
 class ShellModel:
@@ -108,3 +95,30 @@ class ShellModel:
                     else:
                         ret[q].append(sm)
         return ret
+
+    def set_max_Ex(self, maxEx: float) -> None:
+        for key, vals in self.data.items():
+            newlist = []
+            for val in vals:
+                if val.Ex <= maxEx:
+                    newlist.append(val)
+            self.data[key] = newlist
+        return
+
+    def set_min_SF(self, minSF: float) -> None:
+        for key, vals in self.data.items():
+            newlist = []
+            for val in vals:
+                if val.SF >= minSF:
+                    newlist.append(val)
+            self.data[key] = newlist
+        return
+    
+    def print(self) -> None:
+        print("-- Shell Model --")
+        for key, vals in self.data.items():
+            print(key)
+            for val in vals:
+                print(val)
+            print("---------------")
+        return

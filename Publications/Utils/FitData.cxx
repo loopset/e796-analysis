@@ -115,6 +115,7 @@ void PubUtils::FitData::SetOpts(Opts opts)
     {
         auto map {std::any_cast<std::map<std::string, std::string>>(opts["labels"])};
         fLegend->SetNColumns((map.size() + 2) / 4 + 1);
+        fLegend->SetBorderSize(0);
         for(int i = 0; i < fPeakNames.size(); i++)
         {
             auto& peak {fPeakNames[i]};

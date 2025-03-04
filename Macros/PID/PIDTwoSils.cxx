@@ -1,14 +1,17 @@
 #include "ActDataManager.h"
+#include "ActModularData.h"
 #include "ActSilData.h"
+#include "ActSilSpecs.h"
 #include "ActTypes.h"
 
 #include "ROOT/RDataFrame.hxx"
 
 #include "TCanvas.h"
 #include "TROOT.h"
+#include "TVirtualPad.h"
 
+#include <memory>
 #include <string>
-#include <vector>
 
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
 void PIDTwoSils()
@@ -16,63 +19,40 @@ void PIDTwoSils()
     ROOT::EnableImplicitMT();
     // Read data
     ActRoot::DataManager datman {"../../configs/data.conf", ActRoot::ModeType::EReadSilMod};
+    datman.SetRuns(155, 185);
     auto chain {datman.GetChain()};
     ROOT::RDataFrame df {*chain};
-    // Filter
+
+    // SilSpecs for thresholds
+    auto specs {std::make_shared<ActPhysics::SilSpecs>()};
+    specs->ReadFile("../../configs/detailedSilicons.conf");
+    specs->Print();
+    // And now apply cuts
     auto twosils {df.Filter(
-        [](ActRoot::SilData& data)
-        {
-            if(data.fSiN.size() == 2)
-            {
-                if(data.fSiN.count("f0") && data.fSiN.count("f1"))
-                    return true;
-            }
-            return false;
-        },
-        {"SilData"})};
+                        [&](ActRoot::SilData& data, ActRoot::ModularData& mod)
+                        {
+                            if(mod.Get("GATCONF") != 4)
+                                return false;
+                            data.ApplyFinerThresholds(specs);
+                            auto& ns {data.fSiN};
+                            if(ns.size() == 2)
+                            {
+                                if(ns["f0"].size() == 1 && ns["f1"].size() == 1)
+                                    return true;
+                            }
+                            return false;
+                        },
+                        {"SilData", "ModularData"})
+                      .Define("E0", [](ActRoot::SilData& data) { return data.fSiE["f0"].front(); }, {"SilData"})
+                      .Define("E1", [](ActRoot::SilData& data) { return data.fSiE["f1"].front(); }, {"SilData"})};
 
-    auto def = twosils
-                   .Define("Layers",
-                           [](ActRoot::SilData& data)
-                           {
-                               std::vector<std::string> ret;
-                               for(const auto& [key, vals] : data.fSiN)
-                                   for(const auto& val : vals)
-                                       ret.push_back(key);
-                               return ret;
-                           },
-                           {"SilData"})
-                   .Define("Energies",
-                           [](ActRoot::SilData& data)
-                           {
-                               std::vector<float> ret;
-                               for(const auto& [key, vals] : data.fSiE)
-                                   for(const auto& val : vals)
-                                       ret.push_back(val);
-                               return ret;
-                           },
-                           {"SilData"});
+    // Book histograms
+    auto hPID {twosils.Histo2D(HistConfig::PIDTwo, "E1", "E0")};
 
-    def.Snapshot("Simple_Tree", "./twopid.root", {"Layers", "Energies"});
-    // Get PID
-    // auto hPID {twosils.Define("ESil0", "fSilEs[0]")
-    //                .Define("ESil1", "fSilEs[1]")
-    //                .Histo2D(HistConfig::PIDTwo, "ESil1", "ESil0")};
-    //
-    // // Get cuts
-    // // ActRoot::CutsManager<int> cut;
-    // // cut.ReadCut(0, "./debug_hes.root");
-    // // std::ofstream streamer {"./debug_hes_twosils.dat"};
-    // // twosils.Foreach(
-    // //     [&](const ActRoot::MergerData& d)
-    // //     {
-    // //         if(cut.IsInside(0, d.fSilEs[1], d.fSilEs[0]))
-    // //             streamer << d.fRun << " " << d.fEntry << '\n';
-    // //     },
-    // //     {"MergerData"});
-    // // streamer.close();
-    //
-    // // plot
-    // auto* c1 {new TCanvas("c1", "Two sils PID")};
-    // hPID->DrawClone("colz");
+    twosils.Snapshot("Simple_Tree", "./twopid.root", {"E0", "E1"});
+
+    // plot
+    auto* c1 {new TCanvas("c1", "Two sils PID")};
+    gPad->SetLogz();
+    hPID->DrawClone("colz");
 }

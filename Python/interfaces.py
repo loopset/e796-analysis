@@ -1,3 +1,4 @@
+from math import sqrt
 import ROOT as r
 import uncertainties as unc
 
@@ -17,7 +18,8 @@ class ExpeState:
         self.Chis: list = []
 
     def get_best(self) -> tuple:
-        idx, lowest = min((i, chi) for i, chi in enumerate(self.Chis))
+        # Very important of ordeR: float has to be 1st element in tuple of list expression
+        lowest, idx = min((chi, i) for i, chi in enumerate(self.Chis))
         return (self.Models[idx], self.SFs[idx], lowest)
 
     def __str__(self) -> str:
@@ -76,3 +78,14 @@ class FitInterface:
                 if key in self.best:
                     sm.data[q].append(self.best[key])
         return sm
+
+    def add_systematic(self, factor: float = 0.25) -> None:
+        for key, expe in self.data.items():
+            for sf in expe.SFs:
+                systematic = sf.n * factor
+                sf.std_dev = sqrt(sf.s**2 + systematic**2)
+        # Also for best
+        for key, data in self.best.items():
+            systematic = data.SF.n * factor
+            data.SF.std_dev = sqrt(data.SF.s**2 + systematic**2)
+        return

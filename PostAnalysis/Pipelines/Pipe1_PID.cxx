@@ -14,6 +14,7 @@
 #include "TCanvas.h"
 #include "TROOT.h"
 #include "TString.h"
+#include "TSystem.h"
 
 #include <iostream>
 #include <string>
@@ -66,6 +67,16 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     auto hSP {
         vetoed.Histo2D(HistConfig::SP, (isEl) ? "fSP.fCoordinates.fX" : "fSP.fCoordinates.fY", "fSP.fCoordinates.fZ")};
 
+    auto auxfile {TString::Format("/media/Data/E796v2/Publications/pid/Inputs/pid_%s.root", isEl ? "side" : "front")};
+    // if file doesnt exist
+    if(gSystem->AccessPathName(auxfile))
+    {
+        std::cout << BOLDGREEN << "Saving PID tree : " << auxfile << RESET << '\n';
+        vetoed.Define("ESil0", "fSilEs.front()").Snapshot(
+            "PID_Tree",
+            TString::Format("/media/Data/E796v2/Publications/pid/Inputs/pid_%s.root", isEl ? "side" : "front").Data(),
+            {"ESil0", "fQave"});
+    }
     // // Write entries
     // std::cout << "Writing : " << vetoed.Count().GetValue() << " entries" << '\n';
     // std::ofstream streamer {
@@ -94,7 +105,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
         pid.Snapshot("PID_Tree", filename);
     }
     // Write to file
-    hPID->SaveAs(TString::Format("/media/Data/E796v2/Publications/pid/Inputs/pid_%s.root", isEl ? "side" : "front"));
+    // hPID->SaveAs(TString::Format("/media/Data/E796v2/Publications/pid/Inputs/pid_%s.root", isEl ? "side" : "front"));
 
     // plotting
     auto* c10 {new TCanvas("c10", "Pipe1 canvas 0")};

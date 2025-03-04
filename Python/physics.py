@@ -1,3 +1,4 @@
+from matplotlib.pyplot import sca
 import shell_model as sm
 
 import uncertainties as unc
@@ -52,17 +53,21 @@ class Barager:
         self.Add: sm.ShellModel | None = None
         self.SnRem: float = 0
         self.SnAdd: float = 0
+        self.ScaleAdd: float = 1
+        self.ScaleRem: float = 1
         self.Results: Dict[sm.QuantumNumbers, BaragerRes] = {}
         return
 
-    def set_removal(self, rem: sm.ShellModel, sn: float) -> None:
+    def set_removal(self, rem: sm.ShellModel, sn: float, scale: float = 1) -> None:
         self.Rem = rem
         self.SnRem = sn
+        self.ScaleRem = scale
         return
 
-    def set_adding(self, add: sm.ShellModel, sn: float) -> None:
+    def set_adding(self, add: sm.ShellModel, sn: float, scale: float = 1) -> None:
         self.Add = add
         self.SnAdd = sn
+        self.ScaleAdd = scale
         return
 
     def do_for(self, qs: List[sm.QuantumNumbers]) -> None:
@@ -70,10 +75,10 @@ class Barager:
             res = BaragerRes()
             # Removal
             if self.Rem is not None:
-                res.do_removal(q, self.Rem, self.SnRem)
+                res.do_removal(q, self.Rem, self.SnRem, self.ScaleRem)
             # Adding
             if self.Add is not None:
-                res.do_adding(q, self.Add, self.SnAdd)
+                res.do_adding(q, self.Add, self.SnAdd, self.ScaleAdd)
             res.do_espe()
             # Results
             self.Results[q] = res
@@ -85,3 +90,11 @@ class Barager:
         if q0 in self.Results and q1 in self.Results:
             return abs(self.Results[q0].ESPE - self.Results[q1].ESPE)
         return 0
+
+    def print(self) -> None:
+        print("----- Barager -----")
+        for q, val in self.Results.items():
+            print(q)
+            print(val)
+        print("--------------------")
+        return
