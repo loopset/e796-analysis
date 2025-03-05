@@ -13,7 +13,7 @@ void run(const std::string& current_path = "./")
 
             auto path {subdir.path()};
             auto name {path.string()};
-            if(name.find("ex_") != std::string::npos)
+            if(name.find("ex_") != std::string::npos || name.find("gs") != std::string::npos)
             {
                 // If has fresco.in inside
                 auto file {path / "fresco.in"};

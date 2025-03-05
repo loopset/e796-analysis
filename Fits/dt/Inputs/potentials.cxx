@@ -11,7 +11,7 @@ void potentials(double Ex = 0)
     ActPhysics::Particle d {"d"};
     double Ebeam {35 * d.GetAMU()};
     auto Sn {beam.GetSn()};
-    PhysOMP::Haixia in {beam.GetZ(), beam.GetA(), Ebeam};
+    PhysOMP::Daehnick in {beam.GetZ(), beam.GetA(), Ebeam};
     in.Print();
 
     // Compute equivalent energy
