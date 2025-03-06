@@ -239,7 +239,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     if(deutonbreakup)
     {
         ActPhysics::Particle deuterium {"d"};
-        deuterium.SetEx(deuterium.GetBE());
+        deuterium.SetEx(deuterium.GetBE() * 2);
         decaygen = ActSim::DecayGenerator {deuterium, "p", "n"};
         light = "1H"; // originally is 20O(d,d) but d decays to p + n so we propagate a proton
         decaygen.Print();

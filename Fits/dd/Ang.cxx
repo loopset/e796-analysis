@@ -41,6 +41,9 @@ void Ang()
     phase.Foreach([&](double thetacm, double ex, double w) { ivs.FillPS(0, thetacm, ex, w); },
                   {"theta3CM", "Eex", "weight"});
     ivs.TreatPS(2);
+    ivs.FitPS("pol6");
+    ivs.ReplacePSWithFit();
+    ivs.Draw();
 
     // Init fitter
     Angular::Fitter fitter {&ivs};

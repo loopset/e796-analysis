@@ -27,6 +27,7 @@ void Fit()
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, 1, 0)};
     auto hPS {phase.Histo1D(E796Fit::Exdd, "Eex", "weight")};
     Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr(), 2);
+    Fitters::FitPS(hPS.GetPtr(), "pol6", true, true);
 
     // Sigmas
     Interpolators::Sigmas sigmas;
@@ -43,6 +44,8 @@ void Fit()
     inter.AddState("g5", {50, 7.6, sigma}, "3- and 4+");
     inter.AddState("g6", {50, 8.6, sigma}, "4+0");
     inter.AddState("g7", {50, 9.6, sigma}, "0+2");
+    inter.AddState("g8", {50, 10.4, sigma}, "2+4");
+    inter.AddState("g9", {50, 11.7, sigma}, "?");
     inter.AddState("ps0", {1.5}, "ps0");
     inter.EndAddingStates();
     // Read from previous fit

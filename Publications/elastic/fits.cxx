@@ -38,8 +38,8 @@ void fits()
                       {"labels", Map {{"g0", "g.s"}, {"g1", "1st Ex"}, {"ps0", "d-breakup"}}}});
     // dd
     fdata[1].SetOpts({{"title", "^{20}O(d,d)"},
-                      {"rangex", std::make_pair(-2., 10.)},
-                      {"rangey", std::make_pair(0., 2.5e3)},
+                      {"rangex", std::make_pair(-2., 18.)},
+                      {"rangey", std::make_pair(0., 5e2)},
                       {"color", PubUtils::dcol},
                       {"labels", Map {{"g0", "g.s"}, {"ps0", "1n PS"}}}});
 
