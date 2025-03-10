@@ -2,7 +2,6 @@ import ROOT as r
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import cmcrameri.cm as cmc
 
 class DataInterface():
     def __init__(self, file: str, dims: tuple = (128, 128, 128))-> None:
@@ -106,7 +105,7 @@ class DataInterface():
         matrix = self.xy if "xy" in proj else self.xz
         # Get axis
         ax = plt.gca()
-        mesh = ax.pcolormesh(matrix[:, :, 1 if id else 0].T, cmap=cmc.managua_r, edgecolors="none", linewidth=0, rasterized=True)
+        mesh = ax.pcolormesh(matrix[:, :, 1 if id else 0].T, cmap="managua_r", edgecolors="none", linewidth=0, rasterized=True)
         # Nice formatting
         ax.set_xlabel("X [pads]", loc="right")
         ax.set_xlim(0, 128)
@@ -131,7 +130,7 @@ class DataInterface():
         z = z + 0.5
         # Get axis
         ax = plt.gca()
-        scat = ax.scatter(x, y, z, c=q, cmap=cmc.managua_r, marker="o", s=25, edgecolor="none", linewidth=0.3, alpha=0.85)
+        scat = ax.scatter(x, y, z, c=q, cmap="managua_r", marker="o", s=25, edgecolor="none", linewidth=0.3, alpha=0.85)
         pad = 10
         ax.set_xlabel("X [pads]", labelpad=pad)
         ax.set_ylabel("Y [pads]", labelpad=pad)

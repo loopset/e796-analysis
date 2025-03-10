@@ -1,4 +1,6 @@
+#include "ActCutsManager.h"
 #include "ActDataManager.h"
+#include "ActMergerData.h"
 #include "ActModularData.h"
 #include "ActSilData.h"
 #include "ActSilSpecs.h"
@@ -10,17 +12,20 @@
 #include "TROOT.h"
 #include "TVirtualPad.h"
 
+#include <fstream>
 #include <memory>
 #include <string>
 
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
 void PIDTwoSils()
 {
-    ROOT::EnableImplicitMT();
+    // ROOT::EnableImplicitMT();
     // Read data
     ActRoot::DataManager datman {"../../configs/data.conf", ActRoot::ModeType::EReadSilMod};
-    datman.SetRuns(155, 185);
+    datman.SetRuns(155, 165);
     auto chain {datman.GetChain()};
+    auto chain2 {datman.GetChain(ActRoot::ModeType::EMerge)};
+    chain->AddFriend(chain2.get());
     ROOT::RDataFrame df {*chain};
 
     // SilSpecs for thresholds
@@ -48,11 +53,25 @@ void PIDTwoSils()
 
     // Book histograms
     auto hPID {twosils.Histo2D(HistConfig::PIDTwo, "E1", "E0")};
+    // Cuts
+    ActRoot::CutsManager<int> cuts;
+    cuts.ReadCut(0, "./Cuts/pid_2H_twosils.root");
 
-    twosils.Snapshot("Simple_Tree", "./twopid.root", {"E0", "E1"});
+    // Write entries
+    std::ofstream streamer {"./twosils.dat"};
+    twosils.Foreach(
+        [&](float e0, float e1, ActRoot::MergerData& d)
+        {
+            if(cuts.IsInside(0, e1, e0))
+                d.Stream(streamer);
+        },
+        {"E0", "E1", "MergerData"});
+
+    // twosils.Snapshot("Simple_Tree", "./twopid.root", {"E0", "E1"});
 
     // plot
     auto* c1 {new TCanvas("c1", "Two sils PID")};
     gPad->SetLogz();
     hPID->DrawClone("colz");
+    cuts.DrawAll();
 }
