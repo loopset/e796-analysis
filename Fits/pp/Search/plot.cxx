@@ -74,7 +74,10 @@ void plot()
             gexp = new TGraphErrors {"./khan_exp.dat", "%lg %lg"};
         }
         else
+        {
             gexp = f->Get<TGraphErrors>(("g" + state).c_str());
+            gexp->Scale(2.633);
+        }
         if(!gexp)
         {
             f->ls();
