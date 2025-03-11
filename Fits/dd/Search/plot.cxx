@@ -6,8 +6,10 @@
 #include "TF1.h"
 #include "TFile.h"
 #include "TGraphErrors.h"
+#include "TMath.h"
 #include "TPaveText.h"
 #include "TString.h"
+#include "TVirtualPad.h"
 
 #include "AngComparator.h"
 
@@ -52,7 +54,7 @@ std::map<double, std::string> GetFiles(const std::string& dir)
 void plot()
 {
     // Set states
-    std::vector<std::string> states {"g1", "g2"};
+    std::vector<std::string> states {"g1_Daeh", "g2_Daeh"};
     std::vector<Angular::Comparator> comps;
     std::vector<TGraphErrors*> gs;
 
@@ -67,7 +69,9 @@ void plot()
     int pad {1};
     for(const auto& state : states)
     {
-        auto* gexp {f->Get<TGraphErrors>(("g" + state).c_str())};
+        auto it {state.find_first_of("_")};
+        auto key {state.substr(0, it)};
+        auto* gexp {f->Get<TGraphErrors>(("g" + key).c_str())};
         if(!gexp)
         {
             f->ls();
@@ -86,6 +90,7 @@ void plot()
         }
         comp.Fit();
         comp.Draw("", false, true, 3, c0->cd(pad));
+        gPad->GetListOfPrimitives()->RemoveLast();
         // And add curves
         gs.push_back(new TGraphErrors);
         auto& g {gs.back()};
@@ -104,9 +109,11 @@ void plot()
     // Find 1 == crossing point
     for(auto& g : gs)
     {
+        auto xmin {TMath::MinElement(g->GetN(), g->GetX())};
+        auto xmax {TMath::MaxElement(g->GetN(), g->GetY())};
         // Build TF1
-        TF1 func {"func", [&](double* x, double* p) { return g->Eval(x[0], nullptr, "S"); }, 0, 2, 0};
-        auto root {func.GetX(1)};
+        TF1 func {"func", [&](double* x, double* p) { return g->Eval(x[0], nullptr, "S"); }, xmin, xmax, 0};
+        auto root {func.GetX(1, xmin, xmax)};
         auto* text {new TPaveText {0.65, 0.7, 0.85, 0.85, "NDC"}};
         text->SetBorderSize(0);
         text->AddText(TString::Format("#beta_{2} = %.3f", root));

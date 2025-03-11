@@ -1,7 +1,10 @@
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
+#include "TCanvas.h"
+#include "TF1.h"
 #include "TROOT.h"
+#include "TRatioPlot.h"
 #include "TString.h"
 #include "TVirtualPad.h"
 
@@ -64,9 +67,23 @@ void Fit()
     double exmax {25};
 
     // Run!
-    Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
-                    ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,d) fit",
-                    {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "1-n phase"}});
+    auto res = Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(),
+                               inter.GetFixed(), ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,d) fit",
+                               {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "1-n phase"}});
     gPad->GetListOfPrimitives()->RemoveLast();
     gSelector->SendToWebsite("dd.root", gPad, "cFit");
+
+    auto* aux {new Fitters::Model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS}}};
+
+    auto* func {new TF1 {"func", [aux](double* x, double* p) { return (*aux)(x, p); }, exmin, exmax,
+                         static_cast<Int_t>(model.NPar())}};
+    func->SetParameters(res.Parameters().data());
+    func->Print();
+    func->SetNpx(1000);
+    auto* clone {(TH1D*)hEx->Clone()};
+    clone->GetListOfFunctions()->Clear();
+    clone->GetListOfFunctions()->Add(func);
+    auto* ratio {new TRatioPlot {clone, "", &res}};
+    auto* cr {new TCanvas {"cr", "Ratio plot"}};
+    ratio->Draw();
 }

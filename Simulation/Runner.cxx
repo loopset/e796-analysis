@@ -26,13 +26,14 @@ void Runner(TString what = "plot", bool standalone = true)
     gSelector->Print();
     // Phase space reactions: when the heavy decays by proton or neutron emission
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
-    int neutronPS {0}; // number of neutrons in final state:
+    int neutronPS {-1}; // number of neutrons in final state:
     // if -1, break deuteron; if -2, 20O(d,d) 1n PS but rec as 20O(p,d)
     // if -3, (d,t) contamination for gSelector channel
     int protonPS {0}; // number of protons in final state
     // if -1: (p,d) contamination for gSelector channel
     double T1 {35}; // Beam energy: 35 MeV / u
 
+    bool isPS {true};
     std::vector<double> Eexs;
     if(neutronPS == 0 && protonPS == 0)
     {
@@ -40,7 +41,7 @@ void Runner(TString what = "plot", bool standalone = true)
         if(target == "1H")
         {
             if(light == "1H")
-                Eexs = {0, 1.67};
+                Eexs = {0, 1.67, 4.1, 5.6, 7.8};
             if(light == "2H")
                 Eexs = {0, 1.4, 3.2};
         }
@@ -58,6 +59,7 @@ void Runner(TString what = "plot", bool standalone = true)
             if(light == "4He")
                 Eexs = {0};
         }
+        isPS = false;
     }
     else if(neutronPS != 0 && protonPS == 0)
         Eexs = {0}; // only gs for n phase space
@@ -71,25 +73,53 @@ void Runner(TString what = "plot", bool standalone = true)
     auto worker {[](TString str) { return gSystem->Exec(str); }};
     if(what.Contains("simu"))
     {
-        for(const auto& Eex : Eexs)
+        if(standalone)
         {
-            if(standalone)
+            Simulation_E796(beam, target, light, neutronPS, protonPS, T1, Eexs.front(), standalone);
+        }
+        else
+        {
+            TString haddlist {};
+            TString haddout {};
+            if(isPS)
             {
-                Simulation_E796(beam, target, light, neutronPS, protonPS, T1, Eex, standalone);
-                break;
+                haddout = gSelector->GetSimuFile(Eexs.front(), neutronPS, protonPS);
+                // List of files generated per thread
+                // Number of threads = 8
+                // 1e8 events each
+                for(int i = 1; i <= 8; i++)
+                {
+                    auto str {TString::Format(
+                        "root -l -b -x -q \'Simulation_E796.cpp(\"%s\",\"%s\",\"%s\",%d,%d,%f,%f,%d,%d)\'",
+                        beam.c_str(), target.c_str(), light.c_str(), neutronPS, protonPS, T1, Eexs.front(), standalone,
+                        i)};
+                    gSelector->SetTag(std::to_string(i));
+                    haddlist += gSelector->GetSimuFile(Eexs.front(), neutronPS, protonPS) + " ";
+                    threads.emplace_back(worker, str);
+                }
             }
             else
             {
-                auto str {TString::Format(
-                    "root -l -b -x -q \'Simulation_E796.cpp(\"%s\",\"%s\",\"%s\",%d,%d,%f,%f,%d)\'", beam.c_str(),
-                    target.c_str(), light.c_str(), neutronPS, protonPS, T1, Eex, standalone)};
-                threads.emplace_back(worker, str);
+                for(const auto& Eex : Eexs)
+                {
+                    auto str {TString::Format(
+                        "root -l -b -x -q \'Simulation_E796.cpp(\"%s\",\"%s\",\"%s\",%d,%d,%f,%f,%d)\'", beam.c_str(),
+                        target.c_str(), light.c_str(), neutronPS, protonPS, T1, Eex, standalone)};
+                    threads.emplace_back(worker, str);
+                }
             }
-        }
-        if(!standalone)
-        {
             for(auto& thread : threads)
                 thread.join();
+            // Once finished
+            if(isPS)
+            {
+                std::cout << "Output file: " << haddout << '\n';
+                std::cout << "Input files: " << haddlist << '\n';
+                // Merge
+                gSystem->Exec(TString::Format("hadd -f %s %s", haddout.Data(), haddlist.Data()));
+                // Remove
+                gSystem->Exec(TString::Format("rm %s", haddlist.Data()));
+            }
         }
     }
     if(what.Contains("plot"))

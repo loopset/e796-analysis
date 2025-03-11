@@ -9,6 +9,7 @@
 #include "TMath.h"
 #include "TPaveText.h"
 #include "TString.h"
+#include "TVirtualPad.h"
 
 #include "AngComparator.h"
 
@@ -53,7 +54,7 @@ std::map<double, std::string> GetFiles(const std::string& dir)
 void plot()
 {
     // Set states
-    std::vector<std::string> states {"exp", "g1"};
+    std::vector<std::string> states {"g1_Khan", "g1_BG"};
     std::vector<Angular::Comparator> comps;
     std::vector<TGraphErrors*> gs;
 
@@ -68,15 +69,19 @@ void plot()
     int pad {1};
     for(const auto& state : states)
     {
+        TString tstr {state.c_str()};
+        tstr.ToLower();
         TGraphErrors* gexp {};
-        if(state == "exp")
+        if(tstr.Contains("khan"))
         {
-            gexp = new TGraphErrors {"./khan_exp.dat", "%lg %lg"};
+            gexp = new TGraphErrors {"./../Reanalysis/inelastic.dat", "%lg %lg"};
         }
         else
         {
-            gexp = f->Get<TGraphErrors>(("g" + state).c_str());
-            gexp->Scale(2.633);
+            auto it {state.find_first_of("_")};
+            auto key {state.substr(0, it)};
+            gexp = f->Get<TGraphErrors>(("g" + key).c_str());
+            // gexp->Scale(2.633);
         }
         if(!gexp)
         {
@@ -96,6 +101,7 @@ void plot()
         }
         comp.Fit();
         comp.Draw("", false, true, 3, c0->cd(pad));
+        gPad->GetListOfPrimitives()->RemoveLast();
         // And add curves
         gs.push_back(new TGraphErrors);
         auto& g {gs.back()};

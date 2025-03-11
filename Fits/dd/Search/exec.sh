@@ -16,15 +16,12 @@ echo "-> State: $state and OMP: $omp"
 echo "-> Beta2: "
 echo "    [$start, $end], step = $step"
 
-# Set radius of nucleus
-R=$(awk 'BEGIN {print 1.3 * 20^(1.0/3)}')
-echo "    radius: $R"
-
 # Current directory
 pwd=$(pwd)
 
 # Make dir
-maindir="$pwd/$state"
+maindir="$pwd/${state}_${omp}"
+echo "maindir : ${maindir}"
 # Delete it if already exists
 if [ -d "$maindir" ]; then
     rm -rf "$maindir"
@@ -44,20 +41,31 @@ beta2s=$(awk -v start="$start" -v end="$end" -v step="$step" 'BEGIN {
 
 for beta2 in $beta2s; do
     cd $maindir
-    delta2=$(awk -v b="$beta2" -v r="$R" 'BEGIN {printf "%.3f", b * r}')
-    echo "Running for delta2 = $delta2"
+    echo "Running for beta2 = $beta2"
     # Make dir
     dir="beta_$beta2"
     mkdir -p $dir
     # And now search and replace
-    awk -v delta2="$delta2" '{
+    awk -v beta2="$beta2" '{
+    ri = 0
+    if (prev ~ /&POT kp=1 type=[12] p\([0-9:]+\)=/){
+        split(prev, arr, "p\\([0-9:]+\\)=");
+        split(arr[2], vals, " ");
+        # Clean up extra whitespace before using vals
+        for (i = 1; i <= length(vals); i++) {
+            vals[i] = gensub(/^[ \t]+|[ \t]+$/, "", "g", vals[i]);  # Trim leading/trailing whitespace
+        }
+        ri = vals[2] * 20^(1.0/3)
+    }
     if ($0 ~ /&POT kp=1 type=11 p2=/) {
         count++
-        if (count == 2 || count == 3) {
-            sub(/p2=[^ ]*/, "p2=" delta2)
+        if (count == 2 || count == 3 || count == 4) {
+            sub(/p2=[^ ]*/, "p2=" ri * beta2)
         }
     }
-    print}' fresco.in >temp_file && mv temp_file $dir/fresco.in
+    prev = $0
+    print
+    }' fresco.in >temp_file && mv temp_file $dir/fresco.in
     # cd and execute fresco
     cd $dir
     fresco <fresco.in >fresco.out

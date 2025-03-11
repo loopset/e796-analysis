@@ -26,7 +26,8 @@ void Fit()
     // Phase space deuton breakup
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
     auto hPS {phase.Histo1D(E796Fit::Expp, "Eex", "weight")};
-    Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr(), 2);
+    Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr(), 0);
+    Fitters::FitPS(hPS.GetPtr(), "pol8", false, true);
 
     // Sigmas
     Interpolators::Sigmas sigmas;
@@ -36,12 +37,21 @@ void Fit()
     Fitters::Interface inter;
     inter.AddState("g0", {400, 0, 0.3}, "0+");
     inter.AddState("g1", {100, 1.67, 0.3}, "2+");
-    inter.AddState("ps0", {1.5});
+    inter.AddState("g2", {50, 4.1, 0.3}, "2+");
+    inter.AddState("g3", {50, 5.6, 0.3}, "3-");
+    inter.AddState("g4", {50, 7.8, 0.3}, "3- and 4+");
+    inter.AddState("ps0", {0.455});
     inter.EndAddingStates();
+    // Read previous fit
+    inter.ReadPreviousFit("./Outputs/fit_juan_RPx.root");
     // Eval sigma from interpolator
     inter.EvalSigma(sigmas.GetGraph());
     // And fix it!
     inter.SetFix("g1", 2, true);
+    inter.SetFix("g2", 2, true);
+    inter.SetFix("g3", 2, true);
+    inter.SetFix("g4", 2, true);
+    // inter.SetFix("ps0", 0, true);
     inter.Print();
     inter.Write("./Outputs/interface.root");
 
@@ -49,8 +59,8 @@ void Fit()
     Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS}, inter.GetCte()};
 
     // Fitting range
-    double exmin {-5};
-    double exmax {10};
+    double exmin {-10};
+    double exmax {12};
 
     // Run!
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),

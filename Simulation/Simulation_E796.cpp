@@ -1,4 +1,5 @@
 #include "ActColors.h"
+#include "ActConstants.h"
 #include "ActCrossSection.h"
 #include "ActCutsManager.h"
 #include "ActDecayGenerator.h"
@@ -19,6 +20,8 @@
 #include "TFile.h"
 #include "TGraphErrors.h"
 #include "TH2.h"
+#include "TList.h"
+#include "TLorentzVector.h"
 #include "TMath.h"
 #include "TProfile2D.h"
 #include "TROOT.h"
@@ -40,7 +43,9 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <tuple>
 #include <utility>
+#include <vector>
 
 #include "/media/Data/E796v2/PostAnalysis/Gates.cxx"
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
@@ -111,7 +116,7 @@ double AngleWithNormal(const ROOT::Math::XYZVector& dir, const ROOT::Math::XYZVe
 }
 
 void Simulation_E796(const std::string& beam, const std::string& target, const std::string& arglight, int neutronPS,
-                     int protonPS, double T1, double Ex, bool standalone)
+                     int protonPS, double T1, double Ex, bool standalone, int thread = -1)
 {
     // set batch mode if not an independent function
     if(!standalone)
@@ -153,7 +158,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double thresholdSi1 {0.5};
 
     // number of iterations
-    const int iterations {static_cast<int>(standalone ? 2e7 : (deutonbreakup || pdphase || isPS ? 4e8 : 1e8))};
+    const int iterations {static_cast<int>(standalone ? 1e7 : (deutonbreakup || pdphase || isPS ? 2e6 : 1e8))};
 
     // Which parameters will be activated
     bool stragglingInGas {true};
@@ -231,18 +236,24 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     ActSim::KinematicGenerator kingen {
         p1, p2, p3, p4, (protonPS > 0 ? protonPS : 0), (neutronPS > 0 ? neutronPS : (pdphase ? 1 : 0))};
     kingen.Print();
-    // Allow breakup of deuteron!
-    ActSim::DecayGenerator decaygen;
+    // // Allow breakup of deuteron!
+    // ActSim::DecayGenerator decaygen;
     // Set pointers to correct kinematics and define light particle to propagate in gas and sil
     auto light {arglight};
     ActPhysics::Kinematics* reckin {};
     if(deutonbreakup)
     {
-        ActPhysics::Particle deuterium {"d"};
-        deuterium.SetEx(deuterium.GetBE() * 2);
-        decaygen = ActSim::DecayGenerator {deuterium, "p", "n"};
+        // Overwrite kinematic generator
+        // Note the particular order: "d" is now the heavy particle that gots a n-phase space
+        // It is not important while we dont access the internal binary kinematics
+        kingen = ActSim::KinematicGenerator {"20O", "d", "20O", "d", 0, 1};
+        kingen.Print();
+
+        // ActPhysics::Particle deuterium {"d"};
+        // deuterium.SetEx(deuterium.GetBE() * 2);
+        // decaygen = ActSim::DecayGenerator {deuterium, "p", "n"};
         light = "1H"; // originally is 20O(d,d) but d decays to p + n so we propagate a proton
-        decaygen.Print();
+        // decaygen.Print();
         reckin = new ActPhysics::Kinematics {beam, "p", "p"};
         std::cout << BOLDYELLOW << "Overriding light from " << arglight << " to " << light << RESET << '\n';
     }
@@ -438,6 +449,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // variables need to be weighted by this value. For binary reactions, weight = 1
     // 4-> Energy at vertex
     // 5-> Theta in Lab frame
+    // Allow multiple threads
+    if(thread > 0)
+        gSelector->SetTag(std::to_string(thread));
     auto* outFile {new TFile(gSelector->GetSimuFile(beam, target, arglight, Ex, neutronPS, protonPS), "recreate")};
     auto* outTree {new TTree("SimulationTTree", "A TTree containing only our Eex obtained by simulation")};
     ROOT::Math::XYZPoint sp_tree {};
@@ -456,6 +470,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     outTree->Branch("RPx", &rpx_tree);
     int silIdx_tree {};
     outTree->Branch("SilIdx", &silIdx_tree);
+    std::vector<float> lorE {};
+    std::vector<float> lorTheta {};
+    std::vector<float> lorPhi {};
+    outTree->Branch("LorE", &lorE);
+    outTree->Branch("LorTheta", &lorTheta);
+    outTree->Branch("LorPhi", &lorPhi);
 
     //---- SIMULATION STARTS HERE
     ROOT::EnableImplicitMT();
@@ -499,14 +519,17 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         double phi3Lab {};
         double T3Lab {};
         double weight {1};
-        if(isPS)
+        if(isPS || deutonbreakup)
         {
             weight = kingen.Generate();
             // focus on recoil 3 (light)
-            auto* PLight {kingen.GetLorentzVector(0)};
+            auto* PLight {kingen.GetLorentzVector(deutonbreakup ? 1 : 0)};
             theta3Lab = PLight->Theta();
             phi3Lab = PLight->Phi();
-            T3Lab = PLight->Energy() - p3.GetMass();
+            if(deutonbreakup)
+                T3Lab = PLight->Energy() - ActPhysics::Constants::kpMass;
+            else
+                T3Lab = PLight->Energy() - p3.GetMass();
         }
         else
         {
@@ -525,16 +548,6 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             theta3Lab = simkin->GetTheta3Lab();
             phi3Lab = phiCM;
             T3Lab = simkin->GetT3Lab();
-        }
-        // If breakup, override values
-        if(deutonbreakup)
-        {
-            decaygen.SetDecay(T3Lab, theta3Lab, phi3Lab);
-            auto bw {decaygen.Generate()};
-            auto* proton {decaygen.GetLorentzVector(0)};
-            theta3Lab = proton->Theta();
-            phi3Lab = proton->Phi();
-            T3Lab = (proton->E() - decaygen.GetFinalMass(0));
         }
         // Simulated thetaCM, to be used for efficiency computation
         double thetaCMEff {reckin->ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
@@ -702,6 +715,17 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             // Besides, this could cause errors when making the division: passed counts > 0 / all counts == 0!!
             hThetaCM->Fill(thetaCMEff * TMath::RadToDeg());
             hThetaLab->Fill(theta3LabEff * TMath::RadToDeg());
+
+            // Save lorentz vectors
+            for(auto v : {&lorE, &lorTheta, &lorPhi})
+                v->clear();
+            for(int lor = 0, size = kingen.GetNt(); lor < size; lor++)
+            {
+                auto* vec {kingen.GetLorentzVector(lor)};
+                lorE.push_back(vec->E());
+                lorTheta.push_back(vec->Theta());
+                lorPhi.push_back(vec->Phi());
+            }
 
             // write to TTree
             sp_tree = silPoint0InMM;

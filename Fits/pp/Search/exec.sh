@@ -20,7 +20,8 @@ echo "    [$start, $end], step = $step"
 pwd=$(pwd)
 
 # Make dir
-maindir="$pwd/$state"
+maindir="$pwd/${state}_${omp}"
+echo "maindir : ${maindir}"
 # Delete it if already exists
 if [ -d "$maindir" ]; then
     rm -rf "$maindir"

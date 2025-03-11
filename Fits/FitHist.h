@@ -13,7 +13,7 @@ const ROOT::RDF::TH1DModel Exdd {
     "hEx", TString::Format("^{20}O(d,d);E_{x} [MeV];Counts / %.0f keV", (25. - (-5.)) / 100 * 1000), 100, -5, 25};
 // (p,p) settings
 const ROOT::RDF::TH1DModel Expp {
-    "hEx", TString::Format("^{20}O(p, p);E_{x} [MeV];Counts / %.0f keV", (25. - (-5.)) / 200 * 1000), 200, -5, 25};
+    "hEx", TString::Format("^{20}O(p, p);E_{x} [MeV];Counts / %.0f keV", (30. - (-15.)) / 300 * 1000), 300, -15, 30};
 // (d,t) settings
 const ROOT::RDF::TH1DModel Exdt {
     "hEx", TString::Format("^{20}O(d,t);E_{x} [MeV];Counts / %.0f keV", (25. - (-5.)) / 100 * 1000), 100, -5, 25};
