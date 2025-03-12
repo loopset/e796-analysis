@@ -85,9 +85,10 @@ void Runner(TString what = "plot", bool standalone = true)
             {
                 haddout = gSelector->GetSimuFile(Eexs.front(), neutronPS, protonPS);
                 // List of files generated per thread
-                // Number of threads = 8
+                // Number of threads = 6
+                int nthreads {6};
                 // 1e8 events each
-                for(int i = 1; i <= 8; i++)
+                for(int i = 1; i <= nthreads; i++)
                 {
                     auto str {TString::Format(
                         "root -l -b -x -q \'Simulation_E796.cpp(\"%s\",\"%s\",\"%s\",%d,%d,%f,%f,%d,%d)\'",

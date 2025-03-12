@@ -2,7 +2,6 @@
 #include "ActConstants.h"
 #include "ActCrossSection.h"
 #include "ActCutsManager.h"
-#include "ActDecayGenerator.h"
 #include "ActKinematicGenerator.h"
 #include "ActKinematics.h"
 #include "ActParticle.h"
@@ -20,7 +19,6 @@
 #include "TFile.h"
 #include "TGraphErrors.h"
 #include "TH2.h"
-#include "TList.h"
 #include "TLorentzVector.h"
 #include "TMath.h"
 #include "TProfile2D.h"
@@ -158,7 +156,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double thresholdSi1 {0.5};
 
     // number of iterations
-    const int iterations {static_cast<int>(standalone ? 1e7 : (deutonbreakup || pdphase || isPS ? 2e6 : 1e8))};
+    const int iterations {static_cast<int>(standalone ? 1e7 : (deutonbreakup || pdphase || isPS ? 3e8 : 1e8))};
 
     // Which parameters will be activated
     bool stragglingInGas {true};
