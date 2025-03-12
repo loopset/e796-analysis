@@ -29,9 +29,11 @@
 #include "TString.h"
 #include "TSystem.h"
 #include "TTree.h"
+#include "TVector3.h"
 
-#include "Math/Point3Dfwd.h"
-#include "Math/Vector3Dfwd.h"
+#include "Math/Point3D.h"
+#include "Math/Vector3D.h"
+#include "Math/Vector4D.h"
 
 #include "FitInterface.h"
 
@@ -468,12 +470,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     outTree->Branch("RPx", &rpx_tree);
     int silIdx_tree {};
     outTree->Branch("SilIdx", &silIdx_tree);
-    std::vector<float> lorE {};
-    std::vector<float> lorTheta {};
-    std::vector<float> lorPhi {};
-    outTree->Branch("LorE", &lorE);
-    outTree->Branch("LorTheta", &lorTheta);
-    outTree->Branch("LorPhi", &lorPhi);
+    // Lorentz vectors
+    std::vector<ROOT::Math::XYZTVector> lor_tree {};
+    outTree->Branch("Lor", &lor_tree);
+    XYZVector beta_tree {};
+    outTree->Branch("Beta", &beta_tree);
 
     //---- SIMULATION STARTS HERE
     ROOT::EnableImplicitMT();
@@ -715,14 +716,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             hThetaLab->Fill(theta3LabEff * TMath::RadToDeg());
 
             // Save lorentz vectors
-            for(auto v : {&lorE, &lorTheta, &lorPhi})
-                v->clear();
+            lor_tree.clear();
             for(int lor = 0, size = kingen.GetNt(); lor < size; lor++)
             {
                 auto* vec {kingen.GetLorentzVector(lor)};
-                lorE.push_back(vec->E());
-                lorTheta.push_back(vec->Theta());
-                lorPhi.push_back(vec->Phi());
+                lor_tree.emplace_back(*vec);
             }
 
             // write to TTree
@@ -734,6 +732,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             theta3Lab_tree = theta3Lab * TMath::RadToDeg();
             rpx_tree = vertex.X();
             silIdx_tree = silIndex0;
+            beta_tree = *kingen.GetBeta();
             outTree->Fill();
         }
     }

@@ -24,7 +24,8 @@ void Fit()
     // Ex
     auto hEx {df.Histo1D(E796Fit::Expp, "Ex")};
     // Phase space deuton breakup
-    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
+    // ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
+    ROOT::RDataFrame phase {"SimulationTTree", "../../Simulation/Macros/Breakup/Outputs/d_breakup_trans.root"};
     auto hPS {phase.Histo1D(E796Fit::Expp, "Eex", "weight")};
     Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr(), 0);
     Fitters::FitPS(hPS.GetPtr(), "pol8", false, true);
@@ -65,8 +66,8 @@ void Fit()
     // Run!
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(p,p) fit",
-                    {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "20O(d,d) breakup"}});
+                    {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "20O(d,d) breakup"}}, true);
 
-    gPad->GetListOfPrimitives()->RemoveLast();
-    gSelector->SendToWebsite("pp.root", gPad, "cFit");
+    // gPad->GetListOfPrimitives()->RemoveLast();
+    // gSelector->SendToWebsite("pp.root", gPad, "cFit");
 }

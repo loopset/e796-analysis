@@ -4,7 +4,7 @@ import json
 root_dir = "../Fits"
 
 # JSROOT latest
-jsroot = "https://root.cern/js/latest/"
+jsroot = "https://root.cern/js/dev/"
 github = "https://loopset.github.io/e796-analysis/"
 localhost = "http://localhost:8080/currentdir/"
 
