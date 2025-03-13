@@ -111,7 +111,7 @@ void apply()
     auto* func {new TF1 {"func", "1. - 1. / 180 * x", 0, 180}};
     // auto* func {new TF1 {"func", "1. / (x + 1)", 0, 180}};
     def = def.Define("weight_trans", [&](double w, double thetapn) { return w * func->Eval(thetapn); },
-                     {"weight", "thetapnCM"});
+                     {"weight", "thetapn"});
 
     // Book histograms
     auto hpn {def.Histo2D({"hpn", "PN correlation;#theta_{p};#theta_{n}", 300, -180, 180, 300, -180, 180}, "thetap",

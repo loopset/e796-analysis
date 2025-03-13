@@ -1,3 +1,5 @@
+#include "ActKinematics.h"
+
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
@@ -11,8 +13,11 @@
 #include "FitPlotter.h"
 #include "FitUtils.h"
 #include "Interpolators.h"
+#include "uncertainties.hpp"
+#include "ureal.hpp"
 
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -22,9 +27,16 @@
 struct Return
 {
     TH1D* fHist {};
-    double fEx {};
-    double fSigma {};
+    unc::udouble fEx {};
+    unc::udouble fSigma {};
+    unc::udouble fGamma {};
 };
+
+void FillGraph(TGraphErrors* g, double x, const unc::udouble& res)
+{
+    g->AddPoint(x, res.n());
+    g->SetPointError(g->GetN() - 1, 0, res.s());
+}
 
 Return Run(ROOT::RDF::RNode ana, double emin, double emax)
 {
@@ -39,11 +51,13 @@ Return Run(ROOT::RDF::RNode ana, double emin, double emax)
     // Init interface
     Fitters::Interface inter;
     double sigma {0.3}; // common init sigma for all
-    inter.AddState("g0", {400, 0, sigma}, "0+");
-    inter.AddState("g1", {100, 1.6, sigma}, "2+0");
-    inter.AddState("g2", {50, 4, sigma}, "2+0");
-    inter.AddState("g3", {50, 5.5, sigma}, "3-");
-    inter.AddState("g4", {50, 6.5, sigma}, "2+");
+    // Key for gs
+    std::string gs {"v0"};
+    inter.AddState(gs, {400, 0, sigma, 0.04}, "0+");
+    inter.AddState("g0", {100, 1.6, sigma}, "2+0");
+    inter.AddState("g1", {50, 4, sigma}, "2+0");
+    inter.AddState("g2", {50, 5.5, sigma}, "3-");
+    // inter.AddState("g4", {50, 6.5, sigma}, "2+");
     // inter.AddState("g5", {50, 7.6, sigma}, "3- and 4+");
     // inter.AddState("g6", {50, 8.6, sigma}, "4+0");
     // inter.AddState("g7", {50, 9.6, sigma}, "0+2");
@@ -51,14 +65,16 @@ Return Run(ROOT::RDF::RNode ana, double emin, double emax)
     // Sigma from interpolator
     inter.EvalSigma(sigmas.GetGraph());
     inter.SetFixAll(2, true);
-    inter.SetFix("g0", 2, false); // release for gs
+    // inter.SetBoundsAll(3, {0.01, 0.5});
+    inter.SetFix(gs, 2, false); // release for gs
+    // inter.SetFixAll(3, true);
 
     // Model
     Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {}, inter.GetCte()};
 
     // Fitting range
     double exmin {-5};
-    double exmax {7};
+    double exmax {6.5};
 
     // Run!
     auto h {hEx.GetPtr()};
@@ -109,9 +125,30 @@ Return Run(ROOT::RDF::RNode ana, double emin, double emax)
         stack->Add(h);
     }
     stack->Draw("nostack plc pfc same");
+    // Locate parameters
+    std::vector<int> idxs;
+    for(auto str : {"_Mean", "_Sigma", "_Lg"})
+    {
+        auto key {gs + str};
+        int i {};
+        for(int p = 0; p < res.NPar(); p++)
+        {
+            auto name {res.ParName(p)};
+            if(name == key)
+            {
+                idxs.push_back(p);
+                break;
+            }
+        }
+    }
+    if(idxs.size() != 3)
+        throw std::runtime_error("std::vector<int> idxs size != 3");
 
     // Return values
-    return {.fHist = (TH1D*)h->Clone(), .fEx = res.Parameter(1), .fSigma = res.Parameter(2)};
+    return {.fHist = (TH1D*)h->Clone(),
+            .fEx = {res.Parameter(idxs[0]), res.Error(idxs[0])},
+            .fSigma = {res.Parameter(idxs[1]), res.Error(idxs[1])},
+            .fGamma = {res.Parameter(idxs[2]), res.Error(idxs[2])}};
 }
 
 
@@ -142,7 +179,9 @@ void sigma()
     gex->SetTitle("gs Ex variation;E_{lab} [MeV];E_{x} gs [MeV]");
     auto* gsigma {new TGraphErrors};
     gsigma->SetTitle("Sigma variation;E_{lab} [MeV];#sigma_{g.s} [MeV]");
-    for(auto* g : {gex, gsigma})
+    auto* ggamma {new TGraphErrors};
+    ggamma->SetTitle("#Gamma variation;E_{lab} [MeV];#Gamma_{g.s} [MeV]");
+    for(auto* g : {gex, gsigma, ggamma})
     {
         g->SetLineWidth(2);
         g->SetLineColor(kMagenta);
@@ -166,8 +205,12 @@ void sigma()
         // DO
         std::cout << "For E in [" << pair.first << ", " << pair.second << "]" << '\n';
         auto ret = Run(ana, pair.first, pair.second);
-        gsigma->AddPoint(center, ret.fSigma);
-        gex->AddPoint(center, ret.fEx);
+        // Ex
+        FillGraph(gex, center, ret.fEx);
+        // Sigma
+        FillGraph(gsigma, center, ret.fSigma);
+        // Gamma
+        FillGraph(ggamma, center, ret.fGamma);
         // Push to stack
         ret.fHist->Scale(1. / ret.fHist->Integral());
         ret.fHist->SetLineWidth(2);
@@ -187,6 +230,8 @@ void sigma()
     c1->cd(2);
     gex->Draw("apl");
     c1->cd(3);
+    ggamma->Draw("apl");
+    c1->cd(4);
     stack->Draw("nostack plc pmc");
     for(auto* h : *stack->GetHists())
         for(auto* o : *((TH1D*)h)->GetListOfFunctions())

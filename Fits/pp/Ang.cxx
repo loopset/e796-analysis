@@ -33,16 +33,17 @@ void Ang()
     // Init intervals
     double thetaCMMin {18};
     double thetaCMMax {25};
-    double thetaCMStep {1.0};
+    double thetaCMStep {2.0};
     Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Expp, thetaCMStep, 1};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
     phase.Foreach([&](double thetacm, double ex, double w) { ivs.FillPS(0, thetacm, ex, w); },
                   {"theta3CM", "Eex", "weight"});
     ivs.TreatPS(2);
-    ivs.FitPS("pol6");
-    ivs.ReplacePSWithFit();
+    // ivs.FitPS("pol6");
+    // ivs.ReplacePSWithFit();
     ivs.Draw();
+    ivs.Write("./Outputs/ivs.root");
 
     // Init fitter
     Angular::Fitter fitter {&ivs};
@@ -51,6 +52,7 @@ void Ang()
     fitter.Draw();
     fitter.ComputeIntegrals(2);
     fitter.DrawCounts();
+    fitter.Write("./Outputs/fitter.root");
 
     Fitters::Interface inter;
     inter.Read("./Outputs/interface.root");
