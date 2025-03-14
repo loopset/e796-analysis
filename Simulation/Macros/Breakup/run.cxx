@@ -17,14 +17,19 @@
 #include "TMath.h"
 #include "TROOT.h"
 #include "TRandom.h"
+#include "TString.h"
 #include "TVirtualPad.h"
 
 #include "Math/Point3D.h"
 #include "Math/Point3Dfwd.h"
 #include "Math/Vector3D.h"
 #include "Math/Vector3Dfwd.h"
-#include <memory>
 
+#include "AngIntervals.h"
+
+#include <iostream>
+#include <memory>
+#include <utility>
 
 #include "../../../PostAnalysis/HistConfig.h"
 
@@ -40,7 +45,7 @@ XYZPoint SampleVertex()
 }
 
 bool ReachesSilicon(ActPhysics::SilSpecs* specs, ActPhysics::SRIM* srim, const XYZPoint& vertex, double T, double theta,
-                    double phi)
+                    double phi, const std::pair<float, float>& elims)
 {
     // Cut on vertex
     if(!(40 <= vertex.X() && vertex.X() <= 200))
@@ -66,7 +71,7 @@ bool ReachesSilicon(ActPhysics::SilSpecs* specs, ActPhysics::SRIM* srim, const X
                                                specs->GetLayer("l0").GetUnit().GetThickness(), angleNormal)};
     auto eLoss0 {T3EnteringSil - T3AfterSil0};
     // Cut in ELoss in silicon
-    if(!(0.7 <= eLoss0 && eLoss0 <= 5.8))
+    if(!(elims.first <= eLoss0 && eLoss0 <= elims.second))
         return false;
     // No punchthrough
     if(T3AfterSil0 > 0)
@@ -93,7 +98,17 @@ void run()
     ActPhysics::Particle neutron {"n"};
     // Kinary kinematics to reconstruct
     auto* reckin {new ActPhysics::Kinematics {"20O", "p", "p"}};
+    // Test: binary kinematics
+    auto* simkin {new ActPhysics::Kinematics {"20O(d,d)@700"}};
 
+    // Experimental Eloss cuts
+    ROOT::EnableImplicitMT();
+    ROOT::RDataFrame exp {"Sel_Tree", "../../../PostAnalysis/RootFiles/Pipe3/tree_20O_1H_1H_side_juan_RPx.root"};
+    auto def {exp.Define("ESil", "fSilEs.front()")};
+    auto emin {def.Min("ESil")};
+    auto emax {def.Max("ESil")};
+    std::pair<float, float> elims {*emin, *emax};
+    std::cout << "E min : " << elims.first << " E max : " << elims.second << '\n';
 
     // Energy losses
     auto* srim {new ActPhysics::SRIM()};
@@ -128,14 +143,17 @@ void run()
     auto hKinPhase {mKin.GetHistogram()};
     hKinPhase->SetTitle("Phase space kin");
 
-    ROOT::RDF::TH1DModel mWeight {"hW", "Weight histogram;w;Coutns", 200, 0, 1};
-    auto hWSeq {mWeight.GetHistogram()};
+    ROOT::RDF::TH2DModel  mExW {"hW", "Ex vs w;E_{x} [MeV];w", 200, -20, 20, 600, 0, 1.2};
+    auto hWSeq {mExW.GetHistogram()};
     hWSeq->SetTitle("Sequential weight");
-    auto hWPhase {mWeight.GetHistogram()};
+    auto hWPhase {mExW.GetHistogram()};
     hWPhase->SetTitle("Phase space weight");
 
+    Angular::Intervals ivs {18, 25, mEx, 2, 1};
+    Angular::Intervals ivsSeq {18, 25, mEx, 2, 1};
+
     // Number of iterations
-    int iter {static_cast<int>(4e7)};
+    int iter {static_cast<int>(2e7)};
     for(int i = 0; i < iter; i++)
     {
         // Vertex
@@ -155,43 +173,55 @@ void run()
             auto phi3Lab {lor->Phi()};
 
             // Apply cuts
-            if(ReachesSilicon(specs, srim, vertex, T3Lab, theta3Lab, phi3Lab))
+            if(ReachesSilicon(specs, srim, vertex, T3Lab, theta3Lab, phi3Lab, elims))
             {
                 hKinPhase->Fill(theta3Lab * TMath::RadToDeg(), T3Lab, w);
-                hWPhase->Fill(w);
                 // Reconstruct
                 auto Ex {reckin->ReconstructExcitationEnergy(T3Lab, theta3Lab)};
+                auto thetaCM {reckin->ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
                 hExPS->Fill(Ex, w);
+                ivs.FillPS(0, thetaCM * TMath::RadToDeg(), Ex, w);
+                hWPhase->Fill(Ex, w);
             }
         }
         //////////////////////////////////////////////
         // Sequential
         {
-            seqgen->SetBeamAndExEnergies(EbeamVertex, 0);
-            auto w {seqgen->Generate()};
-            // Outgoing deuton
-            auto* lor {seqgen->GetLorentzVector(0)};
-            auto Td {lor->E() - deuton.GetGSMass()};
-            auto thetad {lor->Theta()};
-            auto phid {lor->Phi()};
+            simkin->SetBeamEnergy(EbeamVertex);
+            auto w {1.0};
+            auto thetaCM {TMath::ACos(gRandom->Uniform(-1, 1))};
+            auto phiCM {gRandom->Uniform(0, TMath::TwoPi())};
+            simkin->ComputeRecoilKinematics(thetaCM, phiCM);
+            auto Td {simkin->GetT3Lab()};
+            auto thetad {simkin->GetTheta3Lab()};
+            auto phid {simkin->GetPhi3Lab()};
+            // seqgen->SetBeamAndExEnergies(EbeamVertex, 0);
+            // auto w {seqgen->Generate()};
+            // // Outgoing deuton
+            // auto* lor {seqgen->GetLorentzVector(0)};
+            // auto Td {lor->E() - deuton.GetGSMass()};
+            // auto thetad {lor->Theta()};
+            // auto phid {lor->Phi()};
             // And now decay to p + n
             deuton.SetEx(bindingenergy * 2);
             ActSim::DecayGenerator decay {deuton, proton, neutron};
             decay.SetDecay(Td, thetad, phid);
             w *= decay.Generate();
             // And owerwrite values
-            lor = decay.GetLorentzVector(0);
+            auto lor = decay.GetLorentzVector(0);
             auto Tp {lor->E() - ActPhysics::Constants::kpMass};
             auto thetap {lor->Theta()};
             auto phip {lor->Phi()};
 
-            if(ReachesSilicon(specs, srim, vertex, Tp, thetap, phip))
+            if(ReachesSilicon(specs, srim, vertex, Tp, thetap, phip, elims))
             {
                 hKinSeq->Fill(thetap * TMath::RadToDeg(), Tp, w);
-                hWSeq->Fill(w);
                 // Reconstruct
                 auto Ex {reckin->ReconstructExcitationEnergy(Tp, thetap)};
+                auto thetaCM {reckin->ReconstructTheta3CMFromLab(Tp, thetap)};
                 hExSeq->Fill(Ex, w);
+                ivsSeq.FillPS(0, thetaCM * TMath::RadToDeg(), Ex, w);
+                hWSeq->Fill(Ex, w);
             }
         }
     }
@@ -211,7 +241,7 @@ void run()
 
     // Draw
     auto* c0 {new TCanvas {"c0", "Breakup testing canvas"}};
-    c0->DivideSquare(4);
+    c0->DivideSquare(6);
     c0->cd(1);
     hExSeq->SetLineColor(8);
     hExSeq->DrawNormalized("histe");
@@ -227,6 +257,27 @@ void run()
     hKinSeq->DrawClone("colz");
     gdd->Draw("l");
     gpp->Draw("l");
+    c0->cd(4);
+    hWPhase->DrawClone("colz");
+    c0->cd(5);
+    hWSeq->DrawClone("colz");
+
+    ivs.Draw("Phase space ivs");
+    auto* civs {(TCanvas*)gROOT->GetListOfCanvases()->FindObject("cIvs0")};
+    for(int i = 0; i < 4; i++)
+    {
+        auto* pad {(TPad*)civs->FindObject(TString::Format("cIvs0_%d", i + 1))};
+        if(pad)
+        {
+            pad->cd();
+            pad->Clear();
+            auto* hps {ivs.GetHistosPS()[0][i]};
+            hps->DrawNormalized("hist");
+            auto* hseq {ivsSeq.GetHistosPS()[0][i]};
+            hseq->SetLineColor(kGreen);
+            hseq->DrawNormalized("hist same");
+        }
+    }
 
     // Save results
     auto file {std::make_unique<TFile>("./Outputs/basic_simu.root", "update")};

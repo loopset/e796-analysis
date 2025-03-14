@@ -110,8 +110,8 @@ void apply()
     // Correcting function
     auto* func {new TF1 {"func", "1. - 1. / 180 * x", 0, 180}};
     // auto* func {new TF1 {"func", "1. / (x + 1)", 0, 180}};
-    def = def.Define("weight_trans", [&](double w, double thetapn) { return w * func->Eval(thetapn); },
-                     {"weight", "thetapn"});
+    def = def.Define("weight_trans", [&](double w, double thetapn)
+                     { return w * func->Eval(thetapn); }, {"weight", "thetapn"});
 
     // Book histograms
     auto hpn {def.Histo2D({"hpn", "PN correlation;#theta_{p};#theta_{n}", 300, -180, 180, 300, -180, 180}, "thetap",
@@ -142,6 +142,9 @@ void apply()
     auto hExAfter {def.Histo1D({"hEx", "Ex;E_{x} [MeV];Counts", 300, -20, 20}, "Eex", "weight_trans")};
     hExAfter->SetTitle("After");
 
+    // Weight investigation with thetaCM
+    auto hExW {def.Histo2D({"hExW", "Ex vs w;E_{x} [MeV];w", 200, -20, 20, 600, 0, 1}, "Eex", "weight")};
+
     // Snapshot
     def.Snapshot("SimulationTTree", "./Outputs/d_breakup_trans.root", {"Eex", "EVertex", "weight", "weight_trans"});
 
@@ -169,7 +172,7 @@ void apply()
 
     // CM canvas
     auto* c1 {new TCanvas {"c1", "CM Canvas"}};
-    c1->DivideSquare(4);
+    c1->DivideSquare(6);
     c1->cd(1);
     hpncm->DrawClone("colz");
     c1->cd(2);
@@ -178,4 +181,6 @@ void apply()
     hpnwtranscm->DrawClone("colz");
     c1->cd(4);
     hkincm->DrawClone("colz");
+    c1->cd(5);
+    hExW->DrawClone("colz");
 }

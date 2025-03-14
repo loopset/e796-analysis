@@ -5,6 +5,7 @@
 #include "TGraphErrors.h"
 #include "TMath.h"
 #include "TString.h"
+#include "TStyle.h"
 #include "TVirtualPad.h"
 
 #include "AngDifferentialXS.h"
@@ -52,7 +53,7 @@ void phase()
     Interpolators::Efficiency eff {"ps0", "../../../Simulation/Outputs/juan_RPx/tree_20O_2H_2H_0.00_nPS_-1_pPS_0.root"};
     eff.Draw();
     // Get counts for intervals in Ex
-    std::vector<std::pair<double, double>> exs {{-8, -5}, {-5, -3}, {-3, -1.}, {8.5, 10.5}};
+    std::vector<std::pair<double, double>> exs {{-10, -5}, {-5, -3}, {-3, -1.}, {8.5, 10.5}};
     std::vector<TGraphErrors*> counts {};
     std::vector<TGraphErrors*> xss {};
     for(const auto& pair : exs)
@@ -73,10 +74,17 @@ void phase()
         out->GetXaxis()->SetTitle("cos(#theta_{CM})");
         for(int p = 0; p < out->GetN(); p++)
             out->SetPointX(p, TMath::Cos(out->GetPointX(p) * TMath::DegToRad()));
+        // And also Y axis
+        out->GetYaxis()->SetTitle("d#sigma/d#Omega #times #Delta#Omega [mb]");
+        for(int p = 0; p < out->GetN(); p++)
+        {
+            auto cs {out->GetPointY(p)};
+            auto omega {ivs->GetOmega(p)};
+            out->SetPointY(p, cs * omega);
+        }
         out->SetTitle(TString::Format("E_{x} #in [%.1f, %.1f] MeV", pair.first, pair.second));
         xss.push_back(out);
     }
-
 
 
     // Fit to cos!
@@ -86,6 +94,7 @@ void phase()
         // auto* fit {new TF1 {"fit", "[0] + [1] * TMath::Cos(x * TMath::DegToRad())", 10, 40}};
         auto* fit {new TF1 {"fit", "[0] + [1] * x", 0, 1}};
         fit->SetParameters(1, 1);
+        fit->SetParNames("Offset", "Slope");
         g->Fit(fit, "0QM+");
         fits.push_back(fit);
     }
@@ -107,6 +116,7 @@ void phase()
     }
 
     // Draw
+    gStyle->SetOptFit(true);
     auto* c0 {new TCanvas {"c0", "d-breakup canvas"}};
     c0->DivideSquare(ps.size());
     for(int i = 0; i < ps.size(); i++)
