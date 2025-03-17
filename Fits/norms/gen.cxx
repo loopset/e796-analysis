@@ -16,7 +16,10 @@ void gen()
     // Nd *= 0.4949;
     // Np *= 0.4949;
     // PROTON normalization
-    Nd *= 0.7344 * 0.95887;
+    // Nd *= 0.7344 * 0.95887;
+    // Np *= 0.7344 * 0.95887;
+    // BOTH normalizations: Np from (p,p) and Nd from (d,d)
+    Nd *= 0.7344 * 0.95887 * 0.703;
     Np *= 0.7344 * 0.95887;
     // Exact targets depend on the actual length of ACTAR
     // considered in the analysis, accesible in the gSelector
