@@ -49,7 +49,7 @@ z = 8
 n = a - z
 
 ## EM dataset
-labels = [r"$2_{1}^{+}$", r"$2_{2}^{+}$", r"$3_{1}^{+}$"]
+labels = [r"$2_{1}^{+}$", r"$2_{2}^{+}$", r"$3_{1}^{-}$"]
 ls = [2, 2, 3]
 em = [un.ufloat(5.9, 0.2), un.ufloat(1.3, 0.2), np.nan]
 em = [BEL_to_beta(be, z, a, l, False) for be, l in zip(em, ls)]

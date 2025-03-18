@@ -19,6 +19,8 @@ class ExpeState:
 
     def get_best(self) -> tuple:
         # Very important of ordeR: float has to be 1st element in tuple of list expression
+        if not len(self.Chis):
+            return (0, 0, 0)
         lowest, idx = min((chi, i) for i, chi in enumerate(self.Chis))
         return (self.Models[idx], self.SFs[idx], lowest)
 

@@ -405,6 +405,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     auto hThetaLabNormal {std::make_unique<TH2D>("hThetaLabNormal",
                                                  "Theta in sil corr;#theta_{Lab} [#circ];#theta_{Normal Si} [#circ]",
                                                  250, 0, 90, 250, 0, 90)};
+    // Phi efficiency
+    auto hPhiAll {std::make_unique<TH1D>("hPhiAll", "#phi eff;#phi [#circ];", 400, 0, 360)};
+    auto hPhiLab {std::make_unique<TH1D>("hPhiLab", "#phi eff;#phi [#circ];", 400, 0, 360)};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -553,6 +556,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         hThetaCMAll->Fill(thetaCMEff * TMath::RadToDeg());
         double theta3LabEff {theta3Lab}; // before implementing resolution in angle
         hThetaLabAll->Fill(theta3LabEff * TMath::RadToDeg());
+        hPhiAll->Fill(phi3Lab * TMath::RadToDeg());
 
         // 4-> Include thetaLab resolution to compute thetaCM and Ex afterwards
         if(thetaResolution)
@@ -714,6 +718,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             // Besides, this could cause errors when making the division: passed counts > 0 / all counts == 0!!
             hThetaCM->Fill(thetaCMEff * TMath::RadToDeg());
             hThetaLab->Fill(theta3LabEff * TMath::RadToDeg());
+            hPhiLab->Fill(phi3Lab * TMath::RadToDeg());
 
             // Save lorentz vectors
             lor_tree.clear();
@@ -745,12 +750,15 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     eff->SetNameTitle("eff", TString::Format("#theta_{CM} eff E_{x} = %.2f MeV", Ex));
     auto* effLab {new TEfficiency(*hThetaLab, *hThetaLabAll)};
     effLab->SetNameTitle("effLab", TString::Format("#theta_{Lab} eff E_{x} = %.2f MeV", Ex));
+    auto* effPhi {new TEfficiency(*hPhiLab, *hPhiAll)};
+    effPhi->SetNameTitle("effPhi", TString::Format("#phi_{Lab} eff E_{x} = %.2f MeV", Ex));
 
     // SAVING
     outFile->cd();
     outTree->Write();
     eff->Write();
     effLab->Write();
+    effPhi->Write();
     hSP->Write("hSP");
     hRP->Write("hRP");
     outFile->Close();
@@ -803,7 +811,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         eff->Draw("apl");
         c1->cd(5);
         // hSPTheta->DrawClone("colz");
-        effLab->Draw("apl");
+        // effLab->Draw("apl");
+        effPhi->Draw("apl");
         c1->cd(6);
         hDeltaE->DrawClone("colz");
 
