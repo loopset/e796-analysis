@@ -9,7 +9,7 @@
 void before()
 {
     ActRoot::DataManager datman {"../../configs/data.conf", ActRoot::ModeType::EMerge};
-    datman.SetRuns(155, 175);
+    datman.SetRuns(155, 165);
     auto chain {datman.GetChain()};
     ROOT::RDataFrame df {*chain};
 

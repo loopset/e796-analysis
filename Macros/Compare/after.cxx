@@ -26,18 +26,23 @@ void after()
     auto bef {ReadBefore("./before.dat")};
 
     // Read now
-
     ActRoot::DataManager datman {"../../configs/data.conf", ActRoot::ModeType::EMerge};
-    datman.SetRuns(155, 175);
+    datman.SetRuns(155, 165);
     auto chain {datman.GetChain()};
     ROOT::RDataFrame df {*chain};
+
+    int nbef {};
+    int nnow {};
 
     Map map {};
     df.Foreach(
         [&](ActRoot::MergerData& d)
         {
             if(d.fLightIdx != -1)
+            {
                 map[d.fRun].insert(d.fEntry);
+                nnow++;
+            }
         },
         {"MergerData"});
 
@@ -46,6 +51,7 @@ void after()
     std::ofstream streamer {"diff.dat"};
     for(const auto& [run, set] : bef)
     {
+        nbef += set.size();
         if(map.count(run))
         {
             auto& now {map[run]};
@@ -57,4 +63,22 @@ void after()
         }
     }
     streamer.close();
+    // Added
+    std::ofstream recovered {"recovered.dat"};
+    for(const auto& [run, set] : map)
+    {
+        if(bef.count(run))
+        {
+            auto& old {bef[run]};
+            for(const auto& val : set)
+            {
+                if(old.find(val) == old.end())
+                    recovered << run << " " << val << '\n';
+            }
+        }
+    }
+    recovered.close();
+
+    std::cout << "Before counts : " << nbef << '\n';
+    std::cout << "After counts  : " << nnow << '\n';
 }
