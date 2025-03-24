@@ -33,7 +33,7 @@ void Ang()
     // Init intervals
     double thetaCMMin {18};
     double thetaCMMax {25};
-    double thetaCMStep {2.0};
+    double thetaCMStep {1};
     Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Expp, thetaCMStep, 1};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});

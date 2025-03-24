@@ -80,7 +80,7 @@ void models(bool normalized = false)
     ours.SetGammas(gammas);
     ours.SetSF(sfs);
     ours.SetJp({"5/2+", "1/2+", "(1/2,3/2)-", "(1/2,3/2)-", "(1/2,3/2)-", "1/2+", "(1/2,3/2-)", "(1/2,3/2)-", "?"});
-    ours.SetUniqueColor(gPhysColors->Get(14));
+    ours.SetUniqueColor(gPhysColors->Get(8, "mpl"));
 
     // Paramerers to plot theo models
     double maxEx {18};
@@ -96,7 +96,7 @@ void models(bool normalized = false)
         ysox.SFRelativeToGS();
     PlotUtils::ModelToPlot mysox {"YSOX"};
     mysox.SetFromParser(&ysox);
-    mysox.SetUniqueColor(gPhysColors->Get(5));
+    mysox.SetUniqueColor(gPhysColors->Get(2, "mpl"));
 
     // SFO-tls
     PhysUtils::SMParser sfotls {{"./Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1p.txt",
@@ -108,7 +108,19 @@ void models(bool normalized = false)
         sfotls.SFRelativeToGS();
     PlotUtils::ModelToPlot msfotls {"SFO-tls"};
     msfotls.SetFromParser(&sfotls);
-    msfotls.SetUniqueColor(gPhysColors->Get(14));
+    msfotls.SetUniqueColor(gPhysColors->Get(12, "mpl"));
+
+    // SFO-tls
+    PhysUtils::SMParser sfotls_corr {{"./Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
+                                      "./Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt"}};
+    sfotls_corr.ShiftEx();
+    sfotls_corr.MaskExAbove(maxEx);
+    sfotls_corr.MaskSFBelow(minSF);
+    if(normalized)
+        sfotls_corr.SFRelativeToGS();
+    PlotUtils::ModelToPlot msfotls_corr {"Modified SFO-tls"};
+    msfotls_corr.SetFromParser(&sfotls_corr);
+    msfotls_corr.SetUniqueColor(gPhysColors->Get(13, "mpl"));
 
     // Ramus thesis
     PlotUtils::ModelToPlot mramus {"A. Ramus"};
@@ -130,9 +142,10 @@ void models(bool normalized = false)
     PlotUtils::ModelPlotter mpl {ymin, ymax, nmodels};
     mpl.SetYaxisLabel("E_{x} [MeV]");
     mpl.AddModel(ours);
-    mpl.AddModel(mramus);
+    // mpl.AddModel(mramus);
     mpl.AddModel(mysox);
     mpl.AddModel(msfotls);
+    mpl.AddModel(msfotls_corr);
 
     auto canv = mpl.Draw();
 
