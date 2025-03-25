@@ -56,12 +56,12 @@ em = [un.ufloat(5.9, 0.2), un.ufloat(1.3, 0.2), un.ufloat(1.19e3, 0.10e3)]
 em = [BEL_to_beta(be, p.fZ, p.fA, ls[i], isUp[i]) for i, be in enumerate(em)]
 
 ## (d,d)
-dd = [un.ufloat(0.3164, 0.0068), un.ufloat(0.1819, 0.0051), un.ufloat(0.2442, 0.0069)]
+dd = [un.ufloat(0.48, 0.0068), un.ufloat(0.1828, 0.0051), un.ufloat(0.2445, 0.0069)]
 ppkhan = [un.ufloat(0.55, 0.06), np.nan, un.ufloat(0.35, 0.05)]
 
 ## Results
 mnmp = [bernstein(e, nu, n / z) for e, nu in zip(em, dd)]
-mnmpkhan = [un.ufloat(2.35, 0.37), np.nan, np.nan]
+mnmpkhan = [un.ufloat(2.35, 0.37) * 1.5, np.nan, np.nan]
 
 # Using extended formula
 ext = []

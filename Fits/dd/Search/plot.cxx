@@ -68,7 +68,7 @@ BetaSearch FindBeta(TGraphErrors* g)
     int niter {10000};
     int npoints {g->GetN()};
     auto xmin {TMath::MinElement(g->GetN(), g->GetX())};
-    auto xmax {TMath::MaxElement(g->GetN(), g->GetY())};
+    auto xmax {TMath::MaxElement(g->GetN(), g->GetX())};
     for(int i = 0; i < niter; i++)
     {
         TGraphErrors giter {};

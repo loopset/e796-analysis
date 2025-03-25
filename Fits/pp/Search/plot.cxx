@@ -6,12 +6,15 @@
 #include "TF1.h"
 #include "TFile.h"
 #include "TGraphErrors.h"
+#include "TH1.h"
 #include "TMath.h"
 #include "TPaveText.h"
+#include "TRandom.h"
 #include "TString.h"
 #include "TVirtualPad.h"
 
 #include "AngComparator.h"
+#include "uncertainties.hpp"
 
 #include <filesystem>
 #include <iostream>
@@ -48,6 +51,39 @@ std::map<double, std::string> GetFiles(const std::string& dir)
             }
         }
     }
+    return ret;
+}
+struct BetaSearch
+{
+    TH1D* fHist {};
+    unc::udouble fBeta {};
+};
+
+BetaSearch FindBeta(TGraphErrors* g)
+{
+    BetaSearch ret {};
+    ret.fHist = new TH1D {"hBeta", "Beta estimation", 200, 0, 2};
+    int niter {10000};
+    int npoints {g->GetN()};
+    auto xmin {TMath::MinElement(g->GetN(), g->GetX())};
+    auto xmax {TMath::MaxElement(g->GetN(), g->GetX())};
+    for(int i = 0; i < niter; i++)
+    {
+        TGraphErrors giter {};
+        for(int p = 0; p < npoints; p++)
+        {
+            auto x {g->GetPointX(p)};
+            auto y {g->GetPointY(p)};
+            auto uy {g->GetErrorY(p)};
+            giter.SetPoint(p, x, gRandom->Gaus(y, uy));
+        }
+        // Find zero
+        TF1 func {"func", [&](double* x, double* p) { return giter.Eval(x[0]); }, xmin, xmax, 0};
+        auto root {func.GetX(1, xmin, xmax)};
+        ret.fHist->Fill(root);
+    }
+    // Get results
+    ret.fBeta = {ret.fHist->GetMean(), ret.fHist->GetStdDev()};
     return ret;
 }
 
@@ -117,17 +153,21 @@ void plot()
         pad++;
     }
 
+    std::vector<BetaSearch> res;
     // Find 1 == crossing point
     for(auto& g : gs)
     {
-        auto xmin {TMath::MinElement(g->GetN(), g->GetX())};
-        auto xmax {TMath::MaxElement(g->GetN(), g->GetY())};
-        // Build TF1
-        TF1 func {"func", [&](double* x, double* p) { return g->Eval(x[0], nullptr, "S"); }, xmin, xmax, 0};
-        auto root {func.GetX(1, xmin, xmax)};
-        auto* text {new TPaveText {0.65, 0.7, 0.85, 0.85, "NDC"}};
+        auto r {FindBeta(g)};
+        res.push_back(r);
+
+        // auto xmin {TMath::MinElement(g->GetN(), g->GetX())};
+        // auto xmax {TMath::MaxElement(g->GetN(), g->GetY())};
+        // // Build TF1
+        // TF1 func {"func", [&](double* x, double* p) { return g->Eval(x[0], nullptr, "S"); }, xmin, xmax, 0};
+        // auto root {func.GetX(1, xmin, xmax)};
+        auto* text {new TPaveText {0.55, 0.7, 0.85, 0.85, "NDC"}};
         text->SetBorderSize(0);
-        text->AddText(TString::Format("#beta_{2} = %.3f", root));
+        text->AddText(TString::Format("#beta_{L} = %.4f #pm %.4f", r.fBeta.n(), r.fBeta.s()));
         g->GetListOfFunctions()->Add(text);
     }
 

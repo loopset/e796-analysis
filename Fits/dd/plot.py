@@ -25,9 +25,9 @@ labels = {
     "g1": r"$2^+_1$",
     "g2": r"$2^+_2$",
     "g3": r"$3^-_1$",
-    "g5": r"$2^+_2 \otimes \lambda_2$",
-    "g8": r"$3^-_1 \otimes \lambda_2$",
-    "g9": r"$2^+_2 | 3^-_1 \otimes \lambda_{3|2}$",
+    # "g5": r"$2^+_2 \otimes \lambda_2$",
+    # "g8": r"$3^-_1 \otimes \lambda_2$",
+    # "g9": r"$2^+_2 | 3^-_1 \otimes \lambda_{3|2}$",
 }
 
 # Compute the quotients
@@ -86,7 +86,7 @@ for ev in evib:
     ax.axhline(
         unp.nominal_values(ev),
         ls="dashed",
-        lw=1.25,
+        lw=1.5,
         color="green",
         marker="none",
         zorder=1,
@@ -96,7 +96,7 @@ for ev in evib3:
     ax.axhline(
         unp.nominal_values(ev),
         ls="dashed",
-        lw=1.25,
+        lw=1.5,
         color="orange",
         marker="none",
         zorder=1,
@@ -106,7 +106,7 @@ for er in erot:
     ax.axhline(
         unp.nominal_values(er),
         ls="dotted",
-        lw=1.25,
+        lw=1.5,
         color="blue",
         marker="none",
         zorder=1,
@@ -129,13 +129,13 @@ ax.get_xaxis().set_visible(False)
 # Legend
 entries = [
     mpl.lines.Line2D(
-        [0], [0], lw=1.25, color="green", marker="none", ls="dashed", label="Vibrational L = 2"
+        [0], [0], lw=1.5, color="green", marker="none", ls="dashed", label="Vibrational L = 2"
     ),
     mpl.lines.Line2D(
-        [0], [0], lw=1.25, color="orange", marker="none", ls="dashed", label="Vibrational L = 3"
+        [0], [0], lw=1.5, color="orange", marker="none", ls="dashed", label="Vibrational L = 3"
     ),
     mpl.lines.Line2D(
-        [0], [0], lw=1.25, color="blue", marker="none", ls="dotted", label="Rotational"
+        [0], [0], lw=1.5, color="blue", marker="none", ls="dotted", label="Rotational"
     ),
 ]
 ax.legend(handles=entries, loc="lower left", bbox_to_anchor=(0.05, 1.01), fontsize=14, ncols=2)

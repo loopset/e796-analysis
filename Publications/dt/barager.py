@@ -8,6 +8,7 @@ import uncertainties.unumpy as unp
 import ROOT as r
 
 plt.style.use("../../Python/actroot.mplstyle")
+plt.rcParams["xtick.labelsize"] = 14
 
 import shell_model as sm
 from interfaces import FitInterface
@@ -58,21 +59,29 @@ sfotls = sm.ShellModel(
     ]
 )
 
+# Modified SFO-tls
+mod_sfotls = sm.ShellModel(
+    [
+        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
+        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
+    ]
+)
 # Modify all sms applying the same cuts
-for sm in [rem, ysox, sfotls]:
+for sm in [rem, ysox, sfotls, mod_sfotls]:
     sm.set_max_Ex(10)
     sm.set_min_SF(0.09)
 
-rem.print()
+# rem.print()
+mod_sfotls.print()
 
 # Binding energies
 snadd = r.ActPhysics.Particle("21O").GetSn()
 snrem = r.ActPhysics.Particle("20O").GetSn()
 
 # List all sets of data
-labels = ["p-norm", "d-norm", "YSOX", "SFO-tls"]
-removals = [rem, rem, ysox, sfotls]
-scales = [1, 1.42, 1, 1]
+labels = ["p-norm", "d-norm", "YSOX", "SFO-tls", r"Modified \par SFO-tls"]
+removals = [rem, rem, ysox, sfotls, mod_sfotls]
+scales = [1 / 1.42, 1, 1, 1, 1]
 res = []
 gaps = []
 q52str = []
@@ -91,7 +100,7 @@ for i, zipped in enumerate(zip(removals, scales)):
 
 
 # Plotting
-fig, axs = plt.subplots(1, 2, figsize=(9, 4))
+fig, axs = plt.subplots(1, 2, figsize=(11, 4))
 axs[0].errorbar(
     labels,
     unp.nominal_values(gaps),
@@ -102,12 +111,19 @@ axs[0].errorbar(
     markersize=10,
     capsize=5,
 )
-axs[0].set_xlim(-0.5, 3.5)
-axs[0].set_ylabel("N = 8 gap [MeV]", loc="top")
+axs[0].set_xlim(-0.5, len(removals) - 0.5)
+axs[0].set_ylabel("N = 8 gap [MeV]")
 # Annotation
 annx = 1.5
-axs[0].annotate("", xy=(annx, 7.18), xytext=(annx, 5.75), arrowprops=dict(arrowstyle="<->", color="royalblue"))
-axs[0].annotate(r"$\Delta \sim 1.4$ MeV", xy=(annx + 0.1, 6.47), color="royalblue", fontsize=16)
+axs[0].annotate(
+    "",
+    xy=(annx, 7.18),
+    xytext=(annx, 5.75),
+    arrowprops=dict(arrowstyle="<->", color="royalblue"),
+)
+axs[0].annotate(
+    r"$\Delta \sim 1.4$ MeV", xy=(annx + 0.1, 6.47), color="royalblue", fontsize=16
+)
 
 colors = ["hotpink", "orange"]
 legends = [r"d$_{5/2}$", r"p$_{1/2}$"]
@@ -123,11 +139,13 @@ for i, st in enumerate([q52str, q12str]):
         capsize=5,
         label=legends[i],
     )
-axs[1].set_xlim(-0.5, 3.5)
-axs[1].set_ylabel("Spe. strengths", loc="top")
-axs[1].axhline(y=6, ls="--", lw=2, color=colors[0])
-axs[1].axhline(y=2, ls="--", lw=2, color=colors[1])
-plt.legend(fontsize=16, loc="best", markerscale=0.75)
+axs[1].set_xlim(-0.5, len(removals) - 0.5)
+axs[1].set_ylabel("Spe. strengths")
+axs[1].axhline(y=6, ls="--", lw=2, color=colors[0], marker="none")
+axs[1].axhline(y=2, ls="--", lw=2, color=colors[1], marker="none")
+plt.legend(fontsize=16, loc="best", markerscale=0.75, fancybox=True, shadow=True, frameon=True)
+
 plt.tight_layout()
 plt.savefig("./Outputs/gap.pdf")
+plt.savefig("./Outputs/gap.png", dpi=200)
 plt.show()
