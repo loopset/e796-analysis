@@ -6,6 +6,10 @@ import uncertainties as un
 class Radii:
     def __init__(self, p: Particle):
         self.fPart: Particle = p
+        if self.fPart.fA >= 40:
+            raise ValueError(
+                "Radii implementation only works for A < 40. Check the paper for A >= 40 parametrization"
+            )
         self.fRn: float = self._set_neutron()
         self.fRp: float = self._set_proton()
         return
@@ -36,16 +40,31 @@ class Radii:
 class Diffuseness:
     def __init__(self, p: Particle):
         self.fPart = p
+        if self.fPart.fN >= 28 or self.fPart.fZ >= 28:
+            raise ValueError(
+                "Check eta parameter in _eval_s. Read the paper for further instructions"
+            )
         self.fan = self._set_neutron()
         self.fap = self._set_proton()
         return
 
-    def _eval_s(self, alpha, s1, s2, s3, s4, s5, s6) -> float:
+    def _eval_s(self, type: str, alpha, s1, s2, s3, s4, s5, s6) -> float:
         a = self.fPart.fA
         n = self.fPart.fN
         z = self.fPart.fZ
 
-        eta = 0  ## must be 1 if either N or Z > 28. not the case for our exps
+        ## Eta parameter
+        if type != "n" and type != "p":
+            raise ValueError("type for eta infer must be n or p")
+        value = n if type == "n" else z
+        if value < 29:
+            eta = 0
+        elif 29 <= value <= 50:
+            eta = 1
+        elif 51 <= value <= 82:
+            eta = 2
+        else:
+            raise ValueError("Reached limit of implemented eta values")
 
         return (
             (s1 + s2 * a ** (1 / 3)) * (n / z) ** alpha
@@ -70,8 +89,8 @@ class Diffuseness:
         # in case of odd number of neutrons
         if not (self.fPart.fN % 2 == 0):
             s4 *= -1
-        sn = self._eval_s(alpha, s1, s2, s3, s4, s5, s6)
-        mass = physical_constants["proton mass energy equivalent in MeV"][0]
+        sn = self._eval_s("n", alpha, s1, s2, s3, s4, s5, s6)
+        mass = physical_constants["neutron mass energy equivalent in MeV"][0]
         return self._eval_a(mass, sn)
 
     def _set_proton(self):
@@ -85,8 +104,8 @@ class Diffuseness:
         # in case of odd number of protons
         if not (self.fPart.fZ % 2 == 0):
             s4 *= -1
-        sp = self._eval_s(alpha, s1, s2, s3, s4, s5, s6)
-        mass = physical_constants["neutron mass energy equivalent in MeV"][0]
+        sp = self._eval_s("p", alpha, s1, s2, s3, s4, s5, s6)
+        mass = physical_constants["proton mass energy equivalent in MeV"][0]
         return self._eval_a(mass, sp)
 
     def __str__(self):

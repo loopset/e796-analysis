@@ -6,6 +6,7 @@
 
 #include "AngDifferentialXS.h"
 #include "AngFitter.h"
+#include "AngGlobals.h"
 #include "AngIntervals.h"
 #include "FitInterface.h"
 #include "Interpolators.h"
@@ -18,8 +19,11 @@
 #include "../../Selector/Selector.h"
 #include "../FitHist.h"
 
-void Ang()
+void Ang(bool isLab = false)
 {
+    if(isLab)
+        Angular::ToggleIsLab();
+
     ROOT::EnableImplicitMT();
 
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "2H")};
@@ -32,17 +36,29 @@ void Ang()
     auto hPS {phase.Histo1D(E796Fit::Exdd, "Eex", "weight")};
 
     // Init intervals
-    double thetaCMMin {15};
-    double thetaCMMax {22};
-    double thetaCMStep {1};
-    Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdd, thetaCMStep, 1};
+    double thetaMin {isLab ? 70. : 15};
+    double thetaMax {isLab ? 84. : 22};
+    double thetaStep {isLab ? 2.5 : 1};
+    Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdd, thetaStep, 1};
     // Fill
-    df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
-    phase.Foreach([&](double thetacm, double ex, double w) { ivs.FillPS(0, thetacm, ex, w); },
-                  {"theta3CM", "Eex", "weight"});
+    if(!isLab)
+    {
+        df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
+        phase.Foreach([&](double thetacm, double ex, double w) { ivs.FillPS(0, thetacm, ex, w); },
+                      {"theta3CM", "Eex", "weight"});
+    }
+    else
+    {
+        df.Foreach([&](float thetalab, double ex) { ivs.Fill(thetalab, ex); }, {"fThetaLight", "Ex"});
+        phase.Foreach([&](double thetalab, double ex, double w) { ivs.FillPS(0, thetalab, ex, w); },
+                      {"theta3Lab", "Eex", "weight"});
+    }
     ivs.TreatPS(2);
-    ivs.FitPS("pol4");
-    ivs.ReplacePSWithFit();
+    if(!isLab)
+    {
+        ivs.FitPS("pol4");
+        ivs.ReplacePSWithFit();
+    }
     ivs.Draw();
 
     // Init fitter
@@ -63,7 +79,7 @@ void Ang()
     for(int p = 0; p < peaks.size(); p++)
     {
         const auto& peak {peaks[p]};
-        eff.Add(peak, gSelector->GetSimuFile("20O", "2H", "2H", inter.GetGuess(peak)).Data());
+        eff.Add(peak, gSelector->GetSimuFile("20O", "2H", "2H", inter.GetGuess(peak)).Data(), isLab ? "effLab" : "eff");
     }
     // Draw to check is fine
     eff.Draw();
@@ -74,18 +90,22 @@ void Ang()
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
-    xs.TrimX("g1", 16.75);
-    xs.TrimX("g1", 21, false);
-    xs.TrimX("g2", 16.2);
-    xs.TrimX("g3", 17.8);
-    xs.Write("./Outputs/");
+    if(!isLab)
+    {
+        xs.TrimX("g1", 16.75);
+        xs.TrimX("g1", 21, false);
+        xs.TrimX("g2", 16.2);
+        xs.TrimX("g3", 17.8);
+        xs.Write("./Outputs/");
+    }
 
     // Init comparators!
     for(const auto& peak : peaks)
         inter.AddAngularDistribution(peak, xs.Get(peak));
     inter.ReadCompConfig("./comps.conf");
     inter.DoComp();
-    inter.WriteComp("./Outputs/sfs.root");
+    if(!isLab)
+        inter.WriteComp("./Outputs/sfs.root");
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};
@@ -95,5 +115,6 @@ void Ang()
     c0->cd(2);
     hEx->DrawClone();
 
-    gSelector->SendToWebsite("dd.root", gROOT->GetListOfCanvases());
+    if(!isLab)
+        gSelector->SendToWebsite("dd.root", gROOT->GetListOfCanvases());
 }
