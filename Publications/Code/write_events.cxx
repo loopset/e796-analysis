@@ -13,7 +13,8 @@ void write_events()
 {
     ActRoot::DataManager datman {"../../configs/data.conf"};
     // Which events?
-    std::vector<std::pair<int, int>> events {{155, 38}, {155, 1296}, {157, 46581}, {160, 49121}};
+    // std::vector<std::pair<int, int>> events {{155, 38}, {155, 1296}, {157, 46581}, {160, 49121}};
+    std::vector<std::pair<int, int>> events {{155, 630}};
 
     for(const auto& [run, entry] : events)
     {

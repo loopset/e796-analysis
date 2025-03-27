@@ -8,11 +8,13 @@ import numpy as np
 import ROOT as r
 
 plt.style.use("../../../Python/actroot.mplstyle")
+plt.rcParams["lines.marker"] = ""
+plt.rcParams["savefig.pad_inches"] = 0.15
 
 import util as u
 
 # Read TPC data
-data = u.DataInterface("../Events/run_155_entry_1296.root")
+data = u.DataInterface("../Events/run_155_entry_630.root")
 
 fig = plt.figure(figsize=(9, 6))
 ax = fig.add_subplot(111, projection="3d")
@@ -109,15 +111,20 @@ ax.set_zlabel("Z [time buckets]", labelpad=pad)
 ax.set_xticks([])
 ax.set_yticks([])
 ax.set_zticks([])
-ax.w_xaxis.pane.set_visible(False)
-ax.w_yaxis.pane.set_visible(False)
-ax.w_zaxis.pane.set_visible(False)
-ax.set_frame_on(False)
+ax.xaxis.set_pane_color((1, 1, 1, 0))
+ax.yaxis.set_pane_color((1, 1, 1, 0))
+ax.zaxis.set_pane_color((1, 1, 1, 0))
+# ax.w_xaxis.pane.set_visible(False)
+# ax.w_yaxis.pane.set_visible(False)
+# ax.w_zaxis.pane.set_visible(False)
+# ax.set_frame_on(False)
 ax.grid(False)
 
 # View
-ax.view_init(elev=20, azim=-130)
+# ax.view_init(elev=20, azim=-130)
+ax.view_init(elev=35, azim=-132)
 
 plt.tight_layout()
-plt.savefig(("./Outputs/setup.pdf"))
+# plt.savefig(("./Outputs/setup.pdf"))
+plt.savefig("./Outputs/setup.png")
 plt.show()

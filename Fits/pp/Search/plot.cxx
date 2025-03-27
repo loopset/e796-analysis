@@ -92,6 +92,7 @@ void plot()
     // Set states
     std::vector<std::string> states {"g1_Khan", "g1_BG"};
     std::vector<Angular::Comparator> comps;
+    std::vector<TGraphErrors*> gexps;
     std::vector<TGraphErrors*> gs;
 
     // Open file with experimental xs
@@ -124,6 +125,7 @@ void plot()
             f->ls();
             throw std::runtime_error("Cannot open TGraphErrors for " + state);
         }
+        gexps.push_back(gexp);
         comps.emplace_back(state, gexp);
         auto& comp {comps.back()};
         // Read data
