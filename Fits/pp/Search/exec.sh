@@ -2,7 +2,7 @@
 
 # Read arguments
 if [ "$#" -lt 2 ]; then
-    echo "Usage: $0 <state> <omp> <start> <stop> <step>"
+    echo "Usage: $0 <state> <omp> <start> <stop> <step> <p2 or p3>"
     exit 1
 fi
 
@@ -12,9 +12,11 @@ omp=$2   # omp input dir name
 start="${3:-0.24}"
 end="${4:-0.30}"
 step="${5:-0.01}"
+par="${6:-p2}"
 echo "-> State: $state and OMP: $omp"
-echo "-> Beta2: "
+echo "-> Beta: "
 echo "    [$start, $end], step = $step"
+echo "-> Par : $par"
 
 # Current directory
 pwd=$(pwd)
@@ -46,7 +48,7 @@ for beta2 in $beta2s; do
     dir="beta_$beta2"
     mkdir -p $dir
     # And now search and replace
-    awk -v beta2="$beta2" '{
+    awk -v beta2="$beta2" -v par="$par" '{
     ri = 0
     if (prev ~ /&POT kp=1 type=[12] p\([0-9:]+\)=/){
         split(prev, arr, "p\\([0-9:]+\\)=");
@@ -57,10 +59,10 @@ for beta2 in $beta2s; do
         }
         ri = vals[2] * 20^(1.0/3)
     }
-    if ($0 ~ /&POT kp=1 type=11 p2=/) {
+    if ($0 ~ "&POT kp=1 type=11 " par "=") {
         count++
         if (count == 2 || count == 3 || count == 4) {
-            sub(/p2=[^ ]*/, "p2=" ri * beta2)
+            sub(par"=[^ ]*", par "=" ri * beta2)
         }
     }
     prev = $0
@@ -71,5 +73,4 @@ for beta2 in $beta2s; do
     fresco <fresco.in >fresco.out
     # leave only interesting files
     find . -maxdepth 1 ! -name 'fort.20*' ! -name 'fresco.in' ! -name '*.out' -type f -exec rm -f {} \;
-
 done

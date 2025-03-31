@@ -8,9 +8,9 @@ from scipy.interpolate import CubicSpline
 import sys
 
 sys.path.append("/media/Data/E796v2/Python/")
+plt.style.use("../../Python/actroot.mplstyle")
 
-from parser import parse_txt
-from fit import create_spline3
+import pyphysics as phys
 
 # Read the image
 thesis = plt.imread("./Inputs/khan_thesis.png")
@@ -35,57 +35,55 @@ def convert():
 x_trans, y_trans = convert()
 
 
-# Function to fit
-def fit(exp: np.ndarray, spline: CubicSpline) -> object:
-    # Create model
-    def model_eval(x, sf):
-        return sf * spline(x)
-
-    # Model
-    model = lm.Model(model_eval)
-    res = model.fit(
-        exp[:, 1],
-        x=exp[:, 0],
-        weights=(1.0 / exp[:, 2] ** 2) if exp.shape[1] == 3 else None,
-        sf=1,
-    )
-    print(res.fit_report())
-
-    ## Return fit function
-    def fit_spline(x):
-        return res.params["sf"].value * spline(x)
-
-    return fit_spline, res
-
-
-# ground state
-gs = parse_txt("./Inputs/khan_elastic.dat")
-# Theoretical model
-theo_gs = parse_txt("../../Fits/pp/Inputs/g0_Khan/fort.201")
-gs_spline = create_spline3(theo_gs[:, 0], theo_gs[:, 1])
-gs_fit, gs_res = fit(gs, gs_spline)
+# Ground-state
+gs = phys.parse_txt("./Inputs/khan_elastic.dat")
+gs_comp = phys.Comparator(gs)
+gs_comp.add_model("BG", "../../Fits/pp/Inputs/g0_Khan/fort.201")
+gs_comp.fit()
 
 # 2+ state
-first = parse_txt("./Inputs/khan_inelastic.dat")
-# Theoretical model
-theo_first = parse_txt("../../Fits/pp/Inputs/g1_Khan/fort.202")
-first_spline = create_spline3(theo_first[:, 0], theo_first[:, 1])
-first_fit, first_res = fit(first, first_spline)
+first = phys.parse_txt("./Inputs/khan_inelastic.dat")
+first_comp = phys.Comparator(first)
+first_comp.add_model("BG", "../../Fits/pp/Inputs/g1_Khan/fort.202")
+first_comp.fit()
 
+# 3+ state
+sec = phys.parse_txt("./Inputs/khan_3minus.dat")
+sec_comp = phys.Comparator(sec)
+sec_comp.add_model("BG", "../../Fits/pp/Inputs/g3_Khan/fort.202")
+sec_comp.fit()
 
 fig, ax = plt.subplots(1, 1, figsize=(7, 5))
 ax: plt.Axes
 img = plt.imshow(thesis)
 # X axis
-x_axis = np.linspace(10, 50, 200)
+x_axis = np.linspace(8, 50, 200)
 x_axis_trans = x_trans(x_axis)
 # Ground-state
-gs_y = gs_fit(x_axis)
-ax.plot(x_axis_trans, y_trans(gs_y), lw=2, label="SF = {}".format(gs_res.uvars["sf"].format("%.2uS")))
+gs_y = gs_comp.eval(x_axis)
+ax.plot(
+    x_axis_trans,
+    y_trans(gs_y),
+    lw=2,
+    label=r"Exp = BG $\times$ {}".format(gs_comp.get_sf().format("%.2uS")),
+)
 # First
-first_y = first_fit(x_axis)
-ax.plot(x_axis_trans, y_trans(first_y), lw=2, label="SF = {}".format(first_res.uvars["sf"].format("%.2uS")))
-ax.legend()
+first_y = first_comp.eval(x_axis)
+ax.plot(
+    x_axis_trans,
+    y_trans(first_y),
+    lw=2,
+    label=r"$\beta_2 = 0.581$",
+)
+# Second
+sec_y = sec_comp.eval(x_axis) * 0.1
+ax.plot(
+    x_axis_trans,
+    y_trans(sec_y),
+    lw=2,
+    label=r"$\beta_{3} = 0.331$",
+)
+ax.legend(loc="upper center", fontsize=12)
 ax.set_axis_off()
 # xsp = np.linspace(10, 50, 200)
 # ysp = gs_spline(xsp)

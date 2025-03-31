@@ -90,10 +90,11 @@ BetaSearch FindBeta(TGraphErrors* g)
 void plot()
 {
     // Set states
-    std::vector<std::string> states {"g1_Khan", "g1_BG"};
+    std::vector<std::string> states {"g1_Khan", "g3_Khan", "g1_BG", "g3_BG"};
     std::vector<Angular::Comparator> comps;
     std::vector<TGraphErrors*> gexps;
     std::vector<TGraphErrors*> gs;
+    std::vector<TGraphErrors*> gchis;
 
     // Open file with experimental xs
     auto* f {new TFile {"../Outputs/xs.root"}};
@@ -111,7 +112,10 @@ void plot()
         TGraphErrors* gexp {};
         if(tstr.Contains("khan"))
         {
-            gexp = new TGraphErrors {"./../Reanalysis/inelastic.dat", "%lg %lg"};
+            if(tstr.Contains("g1"))
+                gexp = new TGraphErrors {"./../Reanalysis/inelastic.dat", "%lg %lg"};
+            if(tstr.Contains("g3"))
+                gexp = new TGraphErrors {"./../Reanalysis/3minus.dat", "%lg %lg"};
         }
         else
         {
@@ -142,8 +146,11 @@ void plot()
         gPad->GetListOfPrimitives()->RemoveLast();
         // And add curves
         gs.push_back(new TGraphErrors);
+        gchis.push_back(new TGraphErrors);
         auto& g {gs.back()};
         g->SetTitle((state + ";#beta_{2};Scaling factor").c_str());
+        auto& gc {gchis.back()};
+        gc->SetTitle((state + ";#beta_{2};#chi^{2}").c_str());
         for(const auto& [beta, dir] : dirs)
         {
             std::string str {TString::Format("#beta = %.2f", beta).Data()};
@@ -151,6 +158,8 @@ void plot()
             auto usf {comp.GetuSF(str)};
             g->AddPoint(beta, sf);
             g->SetPointError(g->GetN() - 1, 0, usf);
+            auto res {comp.GetTFitRes(str)};
+            gc->AddPoint(beta, res.Chi2() / res.Ndf());
         }
         pad++;
     }
@@ -173,6 +182,17 @@ void plot()
         g->GetListOfFunctions()->Add(text);
     }
 
+    auto* c1 {new TCanvas {"c1", "Chi2 canvas"}};
+    c1->DivideSquare(gchis.size());
+    for(int i = 0; i < gchis.size(); i++)
+    {
+        c1->cd(i + 1);
+        auto& g {gchis[i]};
+        g->SetMarkerStyle(25);
+        g->SetLineWidth(2);
+        g->SetLineColor(kMagenta);
+        g->Draw("apl");
+    }
     // Draw graphs
     pad = states.size() + 1;
     for(int i = 0; i < states.size(); i++)
