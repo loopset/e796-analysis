@@ -36,16 +36,16 @@ fig, ax = plt.subplots(1, 1, figsize=(6,4))
 ax: plt.Axes
 for i, (key, vals) in enumerate(models.items()):
     ax.plot(vals[:,0], vals[:,1], marker="", lw=1.5)
-ax.errorbar(exp[:,0], exp[:,1], yerr=exp[:,2], ls="None", lw=1.5, marker="s", mew=1.5)
-ax.annotate("", xy=(10, 32), xytext=(10, 1), arrowprops=dict(arrowstyle="->"))
-ax.annotate(r"$\beta_{2} \uparrow$", xy=(13, 30), fontsize=16, ha="center", va="center")
+# ax.errorbar(exp[:,0], exp[:,1], yerr=exp[:,2], ls="None", lw=1.5, marker="s", mew=1.5)
+ax.annotate("", xy=(15, 32), xytext=(15, 0.5), arrowprops=dict(arrowstyle="->"))
+ax.annotate(r"$\beta_{2} \uparrow$", xy=(18, 27), fontsize=16, ha="center", va="center")
 # Axis settings
 ax.set_xlim(5, 50)
 ax.set_xlabel(r"$\theta_{\mathrm{CM}} [^{\circ}]$")
 ax.set_ylabel(r"$\mathrm{d}\sigma / \mathrm{d}\Omega [\mathrm{mb} / \mathrm{sr}]$")
 
 fig.tight_layout()
-plt.savefig("./Pictures/beta2_illustration.png")
+plt.savefig("./Pictures/beta2_illustration.png", dpi=200)
 plt.show()
 
 # model = parse_two_column("./g1_BG/beta_0.200/fort.202")
