@@ -17,6 +17,7 @@
 #include "uncertainties.hpp"
 
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
 #include <string>
@@ -162,6 +163,12 @@ void plot()
             gc->AddPoint(beta, res.Chi2() / res.Ndf());
         }
         pad++;
+        // Save interpolation to txt
+        std::ofstream streamer {TString::Format("./Outputs/inter_%s.dat", state.c_str())};
+        for(int p = 0; p < gs.back()->GetN(); p++)
+            streamer << gs.back()->GetPointX(p) << " " << gs.back()->GetPointY(p) << " " << gs.back()->GetErrorY(p)
+                     << '\n';
+        streamer.close();
     }
 
     std::vector<BetaSearch> res;
