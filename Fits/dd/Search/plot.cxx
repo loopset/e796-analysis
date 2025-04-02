@@ -19,6 +19,7 @@
 
 #include <filesystem>
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -93,7 +94,7 @@ void plot()
 {
     TH1::AddDirectory(false);
 
-    std::vector<std::string> states {"g1_Daeh", "g2_Daeh", "g3_Daeh"};
+    std::vector<std::string> states {"g1_Daeh", "g2_Daeh", "g3_Daeh", "g1_Haixia", "g2_Haixia", "g3_Haixia"};
     std::vector<Angular::Comparator> comps;
     std::vector<TGraphErrors*> gs;
 
@@ -147,6 +148,8 @@ void plot()
 
     std::vector<BetaSearch> res;
     // Find 1 == crossing point
+    // and store in file
+    std::vector<double> betas, ubetas;
     for(auto& g : gs)
     {
         auto r {FindBeta(g)};
@@ -161,7 +164,14 @@ void plot()
         text->SetBorderSize(0);
         text->AddText(TString::Format("#beta_{L} = %.4f #pm %.4f", r.fBeta.n(), r.fBeta.s()));
         g->GetListOfFunctions()->Add(text);
+        betas.push_back(r.fBeta.n());
+        ubetas.push_back(r.fBeta.s());
     }
+
+    auto outfile {std::make_unique<TFile>("./Outputs/betas.root", "recreate")};
+    outfile->WriteObject(&states, "Names");
+    outfile->WriteObject(&betas, "Betas");
+    outfile->WriteObject(&ubetas, "UBetas");
 
     pad = states.size() + 1;
     for(int i = 0; i < states.size(); i++)
