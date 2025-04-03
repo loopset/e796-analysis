@@ -52,7 +52,7 @@ void Ang(bool isLab = false)
         phase.Foreach([&](double thetalab, double ex, double w) { ivs.FillPS(0, thetalab, ex, w); },
                       {"theta3Lab", "Eex", "weight"});
     }
-    ivs.TreatPS(2);
+    ivs.TreatPS(4);
     // ivs.FitPS("pol6");
     // ivs.ReplacePSWithFit();
     ivs.Draw();
@@ -64,7 +64,6 @@ void Ang(bool isLab = false)
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
     fitter.Draw();
-    fitter.ComputeIntegrals(2);
     fitter.DrawCounts();
     if(!isLab)
         fitter.Write("./Outputs/fitter.root");

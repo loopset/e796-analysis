@@ -21,8 +21,10 @@ void gen()
     // BOTH normalizations: Np from (p,p) and Nd from (d,d)
     // Nd *= 0.492293 * 0.4767;
     // Nd *= 0.69332 * 0.3374;
-    Nd *= 0.705004 * 0.334;
-    Np *= 0.705004;
+    // Nd *= 0.705004 * 0.334;
+    double factor {1.};
+    Nd *= 0.705004 * 0.585 * factor;
+    Np *= 0.705004 * 0.585 * factor;
     // Np *= 0.705004 * 0.5897;
     // Exact targets depend on the actual length of ACTAR
     // considered in the analysis, accesible in the gSelector

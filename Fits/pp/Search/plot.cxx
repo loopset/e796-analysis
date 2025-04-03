@@ -173,6 +173,7 @@ void plot()
 
     std::vector<BetaSearch> res;
     // Find 1 == crossing point
+    std::vector<double> betas, ubetas;
     for(auto& g : gs)
     {
         auto r {FindBeta(g)};
@@ -187,7 +188,13 @@ void plot()
         text->SetBorderSize(0);
         text->AddText(TString::Format("#beta_{L} = %.4f #pm %.4f", r.fBeta.n(), r.fBeta.s()));
         g->GetListOfFunctions()->Add(text);
+        betas.push_back(r.fBeta.n());
+        ubetas.push_back(r.fBeta.s());
     }
+    auto outfile {std::make_unique<TFile>("./Outputs/betas.root", "recreate")};
+    outfile->WriteObject(&states, "Names");
+    outfile->WriteObject(&betas, "Betas");
+    outfile->WriteObject(&ubetas, "UBetas");
 
     auto* c1 {new TCanvas {"c1", "Chi2 canvas"}};
     c1->DivideSquare(gchis.size());

@@ -4,7 +4,6 @@ import matplotlib.axes as mplaxes
 import matplotlib.patches as mplpat
 import matplotlib.pyplot as plt
 import ROOT as r
-from scipy.constants import alpha, year
 import uncertainties as un
 import uncertainties.unumpy as unp
 import pyphysics as phys

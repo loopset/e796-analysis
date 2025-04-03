@@ -14,6 +14,24 @@ labels = [
     r"(d,t)$_{\mathrm{g.s}}$ SF",
 ]
 
+# Using pp uncertainty: fill_between
+pplow = [
+    un.ufloat_fromstr("0.7699(99)"),
+    un.ufloat_fromstr("1.573(66)"),
+    un.ufloat_fromstr("3.044(67)"),
+]
+ppcenter = [
+    un.ufloat_fromstr("0.932(12)"),
+    un.ufloat_fromstr("1.846(74)"),
+    un.ufloat_fromstr("3.687(81)"),
+]
+ppup = [
+    un.ufloat_fromstr("1.193(15)"),
+    un.ufloat_fromstr("2.256(84)"),
+    un.ufloat_fromstr("4.72(10)"),
+]
+
+
 values = {
     "No condition": [
         un.ufloat_fromstr("0.4922(64)"),
@@ -30,14 +48,15 @@ values = {
         un.ufloat_fromstr("1.956(77)"),
         un.ufloat_fromstr("3.954(87)"),
     ],
-    r"$M_{n}/M_{p} =$ E. Khan": [
+    r"$M_{n}/M_{p}$ (p,p) = E. Khan": ppcenter,
+    r"$M_{n}/M_{p}$ (d,d) = E. Khan": [
         un.ufloat_fromstr("2.090(27)"),
         un.ufloat_fromstr("3.44(12)"),
         un.ufloat_fromstr("8.26(18)"),
     ],
 }
 
-fig, ax = plt.subplots(1, 1, figsize=(7, 4))  # type: ignore
+fig, ax = plt.subplots(1, 1, figsize=(8, 4))  # type: ignore
 ax: mplaxes.Axes
 entries1 = []
 for key, vals in values.items():
@@ -50,13 +69,24 @@ for key, vals in values.items():
         label=key,
     )
     entries1.append(eb)
+# Filled region
+entries1.append(
+    ax.fill_between(
+        labels,
+        unp.nominal_values(pplow),
+        unp.nominal_values(ppup),
+        color=entries1[3].lines[0].get_color(),
+        alpha=0.15,
+        label=r"d-breakup systematic"
+    )
+)
 
 # Accepted regions
 # Khan Mn/Mp
 khan = un.ufloat(3.43, 0.42)
 # A. Ramus SF
 ramus = un.ufloat(4.70, 0.94) / 1.3  # type: ignore
-names = [fr"E. Khan $M_{{n}}/M_{{p}} = $ {khan:%.2uS}", f"A. Ramus SF = {ramus:%.2uS}"]
+names = [rf"E. Khan $M_{{n}}/M_{{p}} = $ {khan:%.2uS}", f"A. Ramus SF = {ramus:%.2uS}"]
 colors = iter(plt.cm.Accent.colors[:2])  # type: ignore
 entries2 = []
 for i, (x, val) in enumerate(zip([1, 2], [khan, ramus])):
