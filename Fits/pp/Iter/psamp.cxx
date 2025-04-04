@@ -114,6 +114,7 @@ void psamp()
     // Save to file!
     auto file {std::make_unique<TFile>("./Outputs/psamp.root", "recreate")};
     file->WriteObject(&factors, "Factors");
+    mg0->Write("mgGS");
     mg1->Write("mgFirst");
 
     // Draw

@@ -28,7 +28,8 @@ void Ang(bool isLab = false)
 
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "1H", "1H")};
     // Phase space deuton breakup
-    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
+    // ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
+    ROOT::RDataFrame phase {"SimulationTTree", "../../Simulation/Macros/Breakup/Outputs/d_breakup_trans.root"};
 
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
@@ -36,7 +37,7 @@ void Ang(bool isLab = false)
 
     // Init intervals
     double thetaMin {isLab ? 75. : 18};
-    double thetaMax {isLab ? 82. : 25};
+    double thetaMax {isLab ? 82. : 24};
     double thetaStep {isLab ? 1. : 1};
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Expp, thetaStep, 1};
     // Fill
@@ -44,13 +45,13 @@ void Ang(bool isLab = false)
     {
         df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
         phase.Foreach([&](double thetacm, double ex, double w) { ivs.FillPS(0, thetacm, ex, w); },
-                      {"theta3CM", "Eex", "weight"});
+                      {"theta3CM", "Eex", "weight_trans"});
     }
     else
     {
         df.Foreach([&](float thetalab, double ex) { ivs.Fill(thetalab, ex); }, {"fThetaLight", "Ex"});
         phase.Foreach([&](double thetalab, double ex, double w) { ivs.FillPS(0, thetalab, ex, w); },
-                      {"theta3Lab", "Eex", "weight"});
+                      {"theta3Lab", "Eex", "weight_trans"});
     }
     ivs.TreatPS(4);
     // ivs.FitPS("pol6");
@@ -61,6 +62,11 @@ void Ang(bool isLab = false)
 
     // Init fitter
     Angular::Fitter fitter {&ivs};
+    fitter.SetManualRange(-5, 12);
+    // fitter.SetAllowFreeMean(true);
+    // fitter.SetFreeMeanRange(0.1);
+    // fitter.SetAllowFreeSigma(true);
+    // fitter.SetFreeSigmaRange(0.25);
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
     fitter.Draw();

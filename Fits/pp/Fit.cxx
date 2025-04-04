@@ -26,9 +26,9 @@ void Fit()
     // Phase space deuton breakup
     // ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
     ROOT::RDataFrame phase {"SimulationTTree", "../../Simulation/Macros/Breakup/Outputs/d_breakup_trans.root"};
-    auto hPS {phase.Histo1D(E796Fit::Expp, "Eex", "weight")};
+    auto hPS {phase.Histo1D(E796Fit::Expp, "Eex", "weight_trans")};
     Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr(), 0);
-    Fitters::FitPS(hPS.GetPtr(), "pol8", false, true);
+    Fitters::FitPS(hPS.GetPtr(), "pol8", false, false);
 
     // Sigmas
     Interpolators::Sigmas sigmas;
@@ -60,7 +60,7 @@ void Fit()
     Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS}, inter.GetCte()};
 
     // Fitting range
-    double exmin {-10};
+    double exmin {-15};
     double exmax {12};
 
     // Run!
