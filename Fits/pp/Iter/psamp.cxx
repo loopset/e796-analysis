@@ -79,6 +79,7 @@ void psamp()
 
         // Fitter
         Angular::Fitter itfitter {&ivs};
+        // itfitter.SetManualRange(-4, 12);
         itfitter.SetFixAmpPS(0, itamps);
         itfitter.Configure(TString::Format("../Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
         itfitter.Run();

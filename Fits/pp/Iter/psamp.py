@@ -156,5 +156,5 @@ ax.set_ylabel("Factor needed in xs")
 
 
 fig.tight_layout()
-fig.savefig("./Pictures/psmnmp.png", dpi=200)
+# fig.savefig("./Pictures/psmnmp.png", dpi=200)
 plt.show()

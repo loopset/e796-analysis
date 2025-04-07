@@ -15,21 +15,38 @@ labels = [
 ]
 
 # Using pp uncertainty: fill_between
+# Updated at 07/04/2025
 pplow = [
-    un.ufloat_fromstr("0.7699(99)"),
-    un.ufloat_fromstr("1.573(66)"),
-    un.ufloat_fromstr("3.044(67)"),
+    un.ufloat_fromstr("0.6862(99)"),
+    un.ufloat_fromstr("1.420(63)"),
+    un.ufloat_fromstr("2.714(60)"),
 ]
 ppcenter = [
-    un.ufloat_fromstr("0.932(12)"),
-    un.ufloat_fromstr("1.846(74)"),
-    un.ufloat_fromstr("3.687(81)"),
+    un.ufloat_fromstr("0.894(12)"),
+    un.ufloat_fromstr("1.784(71)"),
+    un.ufloat_fromstr("3.535(78)"),
 ]
 ppup = [
-    un.ufloat_fromstr("1.193(15)"),
-    un.ufloat_fromstr("2.256(84)"),
-    un.ufloat_fromstr("4.72(10)"),
+    un.ufloat_fromstr("1.269(16)"),
+    un.ufloat_fromstr("2.363(88)"),
+    un.ufloat_fromstr("5.02(11)"),
 ]
+# OVERESTIMATION due to having considered custom weighting in xs
+# pplow = [
+#     un.ufloat_fromstr("0.686(89)"),
+#     un.ufloat_fromstr("1.419(63)"),
+#     un.ufloat_fromstr("2.712(60)"),
+# ]
+# ppcenter = [
+#     un.ufloat_fromstr("0.911(12)"),
+#     un.ufloat_fromstr("1.811(72)"),
+#     un.ufloat_fromstr("3.602(77)"),
+# ]
+# ppup = [
+#     un.ufloat_fromstr("1.326(17)"),
+#     un.ufloat_fromstr("2.446(90)"),
+#     un.ufloat_fromstr("5.24(12)"),
+# ]
 
 
 values = {
@@ -74,10 +91,10 @@ entries1.append(
     ax.fill_between(
         labels,
         unp.nominal_values(pplow),
-        unp.nominal_values(ppup),
+        unp.nominal_values(ppup),  # type: ignore
         color=entries1[3].lines[0].get_color(),
         alpha=0.15,
-        label=r"d-breakup systematic"
+        label=r"d-breakup systematic",
     )
 )
 
@@ -122,5 +139,5 @@ leg2 = ax.legend(
 )
 ax.add_artist(leg1)
 fig.tight_layout()
-fig.savefig("./Outputs/compare_norms.png", dpi=200)
+fig.savefig("./Outputs/compare_norms_updated.png", dpi=200)
 plt.show()

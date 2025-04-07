@@ -16,11 +16,47 @@
 #include "FitUtils.h"
 #include "Interpolators.h"
 
+#include <iostream>
 #include <string>
 #include <vector>
 
 #include "../../../Selector/Selector.h"
 #include "/media/Data/E796v2/Fits/FitHist.h"
+
+struct GlobalRes
+{
+    double fChi2red {};
+    TGraph* fGlobal {};
+    TH1D* hPS {};
+};
+
+GlobalRes DoGlobalFit(const Fitters::Interface& inter, TH1D* hEx, TH1D* hPS, double exmin, double exmax)
+{
+    // Model
+    Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS}, inter.GetCte()};
+    // Init data
+    Fitters::Data data {*hEx, exmin, exmax};
+    // Init runner
+    Fitters::Runner runner {data, model};
+    runner.GetObjective().SetUseDivisions(true);
+    // And initial parameters
+    runner.SetInitial(inter.GetInitial());
+    runner.SetBounds(inter.GetBounds());
+    runner.SetFixed(inter.GetFixed());
+    // Run
+    runner.Fit();
+
+    // Get fit result
+    auto res {runner.GetFitResult()};
+    // Plotter
+    Fitters::Plotter plot {&data, &model, &res};
+    auto* gfit {plot.GetGlobalFit()};
+    auto hfits {plot.GetIndividualHists()};
+    auto fit {hfits["ps0"]};
+    fit->SetLineWidth(2);
+    fit->SetLineColor(8);
+    return {.fChi2red = res.Chi2() / res.Ndf(), .fGlobal = gfit, .hPS = fit};
+}
 
 void pscorr()
 {
@@ -59,7 +95,7 @@ void pscorr()
     double exmax {15};
 
     std::vector<double> cutoffs {};
-    for(double c = 100; c <= 200; c += 5)
+    for(double c = 100; c <= 250; c += 10)
         cutoffs.push_back(c);
 
     std::vector<TH1D*> hpss {};
@@ -80,7 +116,7 @@ void pscorr()
                                       if(deltap > cutoff)
                                           return 0.;
                                       else
-                                          return w * TMath::Power(1 - deltap / cutoff, 1);
+                                          return w * TMath::Power(1 - TMath::Power(deltap / cutoff, 1), 1);
                                   },
                                   {"weight", "DeltaPCM"})};
         auto hPS {node.Histo1D(E796Fit::Expp, "Eex", "weight_trans")};
@@ -91,32 +127,10 @@ void pscorr()
         hpss.back()->SetTitle(TString::Format("Cutoff = %.2f", cutoff));
         stack->Add(hpss.back());
 
-        // Model
-        Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS}, inter.GetCte()};
-        // Init data
-        Fitters::Data data {*hEx, exmin, exmax};
-        // Init runner
-        Fitters::Runner runner {data, model};
-        runner.GetObjective().SetUseDivisions(true);
-        // And initial parameters
-        runner.SetInitial(inter.GetInitial());
-        runner.SetBounds(inter.GetBounds());
-        runner.SetFixed(inter.GetFixed());
-        // Run
-        runner.Fit();
-
-        // Get fit result
-        auto res {runner.GetFitResult()};
-        gchi->AddPoint(cutoff, res.Chi2() * res.Ndf());
-        // Plotter
-        Fitters::Plotter plot {&data, &model, &res};
-        auto* gfit {plot.GetGlobalFit()};
-        gglobals.push_back(gfit);
-        auto hfits {plot.GetIndividualHists()};
-        auto fit {hfits["ps0"]};
-        fit->SetLineWidth(2);
-        fit->SetLineColor(8);
-        hfitpss.push_back(fit);
+        auto [chi, global, fitps] {DoGlobalFit(inter, hEx.GetPtr(), hPS.GetPtr(), exmin, exmax)};
+        gchi->AddPoint(cutoff, chi);
+        gglobals.push_back(global);
+        hfitpss.push_back(fitps);
         auto* clone {(TH1D*)hEx->Clone()};
         clone->SetTitle(TString::Format("Cutoff = %.2f", cutoff));
         hfitex.push_back(clone);
@@ -126,6 +140,7 @@ void pscorr()
     TF1 fchi {"fchi", [&](double* x, double* p) { return gchi->Eval(x[0], nullptr, "S"); }, cutoffs.front(),
               cutoffs.back(), 0};
     auto min {fchi.GetMinimumX()};
+    std::cout << "Cutoff : " << min << " chi2red : " << fchi.Eval(min) << '\n';
     auto* text {new TPaveText {0.6, 0.6, 0.9, 0.9, "ndc"}};
     text->AddText(TString::Format("Min = %.2f", min));
     gchi->GetListOfFunctions()->Add(text);

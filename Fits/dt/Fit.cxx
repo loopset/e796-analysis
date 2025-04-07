@@ -72,7 +72,7 @@ void Fit()
 
     // Fitting range
     double exmin {-5};
-    double exmax {25};
+    double exmax {22};
     // Model
     Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS, *hPS2, *hCont}};
     // Run!

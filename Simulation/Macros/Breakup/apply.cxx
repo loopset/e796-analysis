@@ -130,8 +130,8 @@ void apply()
                   .Define("DeltaPCM", [](const std::vector<CMKin>& v) { return std::abs(v.front().fP - v.back().fP); },
                           {"CM"})};
     // Correcting function
-    auto* func {new TF1 {"func", "1. - 1. / 180 * x", 0, 180}};
-    double cutoff {137.13};
+    // auto* func {new TF1 {"func", "1. - 1. / 180 * x", 0, 180}};
+    double cutoff {137.1};
     auto corr {
         [&](double w, double deltap)
         {

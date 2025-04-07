@@ -44,7 +44,7 @@ void Ang(bool isLab = false)
     // Init intervals
     double thetaMin {isLab ? 14 : 5.5};
     double thetaMax {isLab ? 32. : 14.};
-    double thetaStep {isLab ? 4 : 1.5};
+    double thetaStep {isLab ? 4 : 2.};
     int nps {2 + 1}; // 2 nps + 1 contamination
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdt, thetaStep, nps};
     // Fill
@@ -65,6 +65,8 @@ void Ang(bool isLab = false)
 
     // Fitter
     Angular::Fitter fitter {&ivs};
+    fitter.SetAllowFreeMean(true, {"v5"});
+    fitter.SetAllowFreeSigma(true, {"g0"});
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
     fitter.Draw();

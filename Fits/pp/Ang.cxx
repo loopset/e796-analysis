@@ -1,6 +1,7 @@
 #include "ROOT/RDataFrame.hxx"
 
 #include "TCanvas.h"
+#include "TGraphErrors.h"
 #include "TROOT.h"
 #include "TString.h"
 
@@ -28,8 +29,8 @@ void Ang(bool isLab = false)
 
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "1H", "1H")};
     // Phase space deuton breakup
-    // ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
-    ROOT::RDataFrame phase {"SimulationTTree", "../../Simulation/Macros/Breakup/Outputs/d_breakup_trans.root"};
+    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
+    // ROOT::RDataFrame phase {"SimulationTTree", "../../Simulation/Macros/Breakup/Outputs/d_breakup_trans.root"};
 
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
@@ -45,13 +46,13 @@ void Ang(bool isLab = false)
     {
         df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
         phase.Foreach([&](double thetacm, double ex, double w) { ivs.FillPS(0, thetacm, ex, w); },
-                      {"theta3CM", "Eex", "weight_trans"});
+                      {"theta3CM", "Eex", "weight"});
     }
     else
     {
         df.Foreach([&](float thetalab, double ex) { ivs.Fill(thetalab, ex); }, {"fThetaLight", "Ex"});
         phase.Foreach([&](double thetalab, double ex, double w) { ivs.FillPS(0, thetalab, ex, w); },
-                      {"theta3Lab", "Eex", "weight_trans"});
+                      {"theta3Lab", "Eex", "weight"});
     }
     ivs.TreatPS(4);
     // ivs.FitPS("pol6");
@@ -62,11 +63,11 @@ void Ang(bool isLab = false)
 
     // Init fitter
     Angular::Fitter fitter {&ivs};
-    fitter.SetManualRange(-5, 12);
-    // fitter.SetAllowFreeMean(true);
+    fitter.SetManualRange(-4, 12);
+    // fitter.SetAllowFreeMean(true, {"g0"});
     // fitter.SetFreeMeanRange(0.1);
-    // fitter.SetAllowFreeSigma(true);
-    // fitter.SetFreeSigmaRange(0.25);
+    // fitter.SetAllowFreeSigma(true, {"g0"});
+    // fitter.SetFreeSigmaRange(0.1);
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
     fitter.Draw();
@@ -74,9 +75,20 @@ void Ang(bool isLab = false)
     if(!isLab)
         fitter.Write("./Outputs/fitter.root");
 
+    // Sigma graph for g.s
+    auto* gsigma {new TGraphErrors};
+    gsigma->SetTitle("g.s #sigma with #theta_{CM};#theta_{CM} [#circ];sigma g.s [MeV]");
+    for(int i = 0; i < ivs.GetSize(); i++)
+    {
+        auto x {ivs.GetCenter(i)};
+        auto y {fitter.GetTFitResults()[i].Parameter(2)};
+        auto uy {fitter.GetTFitResults()[i].Error(2)};
+        gsigma->AddPoint(x, y);
+    }
+
     Fitters::Interface inter;
     inter.Read("./Outputs/interface.root");
-    inter.Print();
+    // inter.Print();
     auto peaks {inter.GetKeys()};
 
     // Efficiency
@@ -104,17 +116,21 @@ void Ang(bool isLab = false)
         inter.AddAngularDistribution(peak, xs.Get(peak));
     inter.ReadCompConfig("./comps.conf");
     inter.DoComp();
-    inter.GetComp("g0")->ScaleToExp("CH89", &exp, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
+    inter.GetComp("g0")->ScaleToExp("BG", &exp, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
     if(!isLab)
         inter.WriteComp("./Outputs/sfs.root");
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};
-    c0->DivideSquare(2);
+    c0->DivideSquare(4);
     c0->cd(1);
     hCM->DrawClone("colz");
     c0->cd(2);
     hEx->DrawClone();
+    c0->cd(3);
+    gsigma->SetLineWidth(2);
+    gsigma->SetMarkerStyle(24);
+    gsigma->Draw("apl");
 
     if(!isLab)
         gSelector->SendToWebsite("pp.root", gROOT->GetListOfCanvases());
