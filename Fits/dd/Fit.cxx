@@ -56,6 +56,7 @@ void Fit()
     // Sigma from interpolator
     inter.EvalSigma(sigmas.GetGraph());
     inter.SetFixAll(2, true);
+    inter.SetFix("g0", 2, false);
     // Save to be used later
     inter.Write("./Outputs/interface.root");
 
@@ -63,8 +64,8 @@ void Fit()
     Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS}};
 
     // Fitting range
-    double exmin {-5};
-    double exmax {25};
+    double exmin {-4};
+    double exmax {23};
 
     // Run!
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(),

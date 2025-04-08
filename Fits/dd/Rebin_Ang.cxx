@@ -34,7 +34,7 @@ void Rebin_Ang()
     // Init intervals
     double thetaCMMin {15};
     double thetaCMMax {22};
-    double thetaCMStep {2.5};
+    double thetaCMStep {2};
     Angular::Intervals ivs {thetaCMMin, thetaCMMax, E796Fit::Exdd, thetaCMStep, 1};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
@@ -47,6 +47,7 @@ void Rebin_Ang()
 
     // Init fitter
     Angular::Fitter fitter {&ivs};
+    fitter.SetAllowFreeMean(true);
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
     fitter.Draw();

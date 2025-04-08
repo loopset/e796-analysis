@@ -63,10 +63,11 @@ void Ang(bool isLab = false)
 
     // Init fitter
     Angular::Fitter fitter {&ivs};
+    fitter.SetAllowFreeMean(true);
+    // fitter.SetFreeMeanRange(0.1);
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
     fitter.Draw();
-    fitter.ComputeIntegrals(2);
     fitter.DrawCounts();
 
     // Interface

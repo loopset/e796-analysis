@@ -44,7 +44,7 @@ void Ang(bool isLab = false)
     // Init intervals
     double thetaMin {isLab ? 14 : 5.5};
     double thetaMax {isLab ? 32. : 14.};
-    double thetaStep {isLab ? 4 : 2.};
+    double thetaStep {isLab ? 4 : 1.};
     int nps {2 + 1}; // 2 nps + 1 contamination
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdt, thetaStep, nps};
     // Fill
