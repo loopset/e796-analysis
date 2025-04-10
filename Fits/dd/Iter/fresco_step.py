@@ -58,7 +58,7 @@ for i, (k, c) in enumerate(comps.items()):
         ax.set_ylim(-2, 10)
         leg = ax.get_legend()
         if isinstance(leg, Legend):
-            leg.set_loc("upper left")
+            leg.set_loc("upper left")  # type: ignore
 
 fig.tight_layout()
 fig.savefig("./Outputs/fresco_step.png", dpi=200)
