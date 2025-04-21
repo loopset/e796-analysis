@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from numpy import pad
 import pandas as pd
+import uncertainties as un
+import math
 
 
 class App:
@@ -13,7 +15,7 @@ class App:
         self.status = [True, False]
 
         # First unlabelled entry
-        self.index = df[df["type"] == ""].index.min()
+        self.index = df[df["type"].isna() | (df["type"] == "")].index.min()
         if pd.isna(self.index):
             self.index = 0  # start from the beginning
 
@@ -129,23 +131,24 @@ class App:
         # Binary events
         binary = self.df[self.df["type"] == "Binary"]
         ok_binary = binary[binary["status"] == True]
-        ratio_ok = len(ok_binary) / len(binary) if len(binary) > 0 else -1
+        n = un.ufloat(len(ok_binary), math.sqrt(len(ok_binary)))
+        ratio_ok = n / len(binary) if len(binary) > 0 else -1 #type: ignore
         ratio_ok *= 100
         ratio_bin = len(binary) / len(self.df)
         ratio_bin *= 100
         # Set stats
         self.stats_val.set(
-            " % Binaries {0:.2f} %, ok reconstruted {1:.2f} %".format(
-                ratio_bin, ratio_ok
-            )
+            f"OK binaries {len(ok_binary)},  eff : {ratio_ok:.2uS} %\nProcessed {self.index}\nTotal {len(self.df)},  {self.index / len(self.df) * 100:.2f} %"
         )
 
     def _exit_app(self) -> None:
+        # Save df!
+        self.df.to_csv(self.file, index=False)
         self.root.quit()
 
 
 def main() -> None:
-    file = "./twosils.csv"
+    file = "./sidesil.csv"
 
     ## Dataframe
     df = pd.read_csv(file, dtype={"type": str})

@@ -48,21 +48,26 @@ void side_paper()
                           return false;
                       },
                       {"SilData", "ModularData"})
-                    .Define("E0", [](ActRoot::SilData& data) { return data.fSiE["l0"].front(); }, {"SilData"})};
+                    .Define("E0", [](ActRoot::SilData& data) { return data.fSiE["l0"].front(); }, {"SilData"})
+                    .Define("N0", [](ActRoot::SilData& data) { return data.fSiN["l0"].front(); }, {"SilData"})};
 
     // Book histograms
     auto hPID {gated.Histo1D("E0")};
     // Cuts
     std::pair<double, double> esil {0, 100};
-    // Write entries
-    std::ofstream streamer {"./sidesil.dat"};
-    gated.Foreach(
-        [&](float e0, ActRoot::MergerData& d)
+    auto silGated {gated.Filter(
+        [&](float e0)
         {
             if(esil.first <= e0 && e0 <= esil.second)
-                d.Stream(streamer);
+                return true;
+            return false;
         },
-        {"E0", "MergerData"});
+        {"E0"})};
+    // Write entries
+    std::ofstream streamer {"./sidesil.dat"};
+    silGated.Foreach([&](float e0, ActRoot::MergerData& d) { d.Stream(streamer); }, {"E0", "MergerData"});
+    // Save to root file
+    silGated.Snapshot("SimpleTree", "./Outputs/sidesil.root", {"fRun", "fEntry", "E0", "N0"});
 
     // plot
     auto* c1 {new TCanvas("c1", "Two sils PID")};

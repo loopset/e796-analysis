@@ -49,21 +49,26 @@ void onesil_paper()
                             return false;
                         },
                         {"SilData", "ModularData"})
-                      .Define("E0", [](ActRoot::SilData& data) { return data.fSiE["f0"].front(); }, {"SilData"})};
+                      .Define("E0", [](ActRoot::SilData& data) { return data.fSiE["f0"].front(); }, {"SilData"})
+                      .Define("N0", [](ActRoot::SilData& data) { return data.fSiN["f0"].front(); }, {"SilData"})};
 
     // Book histograms
     auto hPID {twosils.Histo1D("E0")};
     // Cuts
     std::pair<double, double> esil {6, 8};
-    // Write entries
-    std::ofstream streamer {"./onesil.dat"};
-    twosils.Foreach(
-        [&](float e0, ActRoot::MergerData& d)
+    auto silGated {twosils.Filter(
+        [&](float e0)
         {
             if(esil.first <= e0 && e0 <= esil.second)
-                d.Stream(streamer);
+                return true;
+            return false;
         },
-        {"E0", "MergerData"});
+        {"E0"})};
+    // Write entries
+    std::ofstream streamer {"./onesil.dat"};
+    silGated.Foreach([&](float e0, ActRoot::MergerData& d) { d.Stream(streamer); }, {"E0", "MergerData"});
+    // Save to root file
+    silGated.Snapshot("SimpleTree", "./Outputs/onesil.root", {"fRun", "fEntry", "E0", "N0"});
 
     // plot
     auto* c1 {new TCanvas("c1", "Two sils PID")};
