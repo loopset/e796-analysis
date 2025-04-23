@@ -43,7 +43,7 @@ void onesil_paper()
                             if(ns.size() == 1 && ns.count("f0"))
                             {
                                 if(ns["f0"].size() == 1)
-                                    if(ns["f0"].front() == 8)
+                                    if(ns["f0"].front() == 5)
                                         return true;
                             }
                             return false;

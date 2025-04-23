@@ -132,14 +132,17 @@ class App:
         binary = self.df[self.df["type"] == "Binary"]
         ok_binary = binary[binary["status"] == True]
         n = un.ufloat(len(ok_binary), math.sqrt(len(ok_binary)))
-        ratio_ok = n / len(binary) if len(binary) > 0 else -1 #type: ignore
+        ratio_ok = n / len(binary) if len(binary) > 0 else -1  # type: ignore
         ratio_ok *= 100
         ratio_bin = len(binary) / len(self.df)
         ratio_bin *= 100
         # Set stats
-        self.stats_val.set(
-            f"OK binaries {len(ok_binary)},  eff : {ratio_ok:.2uS} %\nProcessed {self.index}\nTotal {len(self.df)},  {self.index / len(self.df) * 100:.2f} %"
-        )
+        try:
+            self.stats_val.set(
+                f"OK binaries {len(ok_binary)},  eff : {ratio_ok:.2uS} %\nProcessed {self.index}\nTotal {len(self.df)},  {self.index / len(self.df) * 100:.2f} %"
+            )
+        except:
+            return
 
     def _exit_app(self) -> None:
         # Save df!
@@ -148,7 +151,8 @@ class App:
 
 
 def main() -> None:
-    file = "./sidesil.csv"
+    file = "./onesil.csv"
+    print(f"Labelling {file} file...")
 
     ## Dataframe
     df = pd.read_csv(file, dtype={"type": str})

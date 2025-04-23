@@ -1,6 +1,6 @@
 import pandas as pd
 
-name = "sidesil"
+name = "onesil"
 
 file = f"../../../Macros/PID/{name}.dat"
 
