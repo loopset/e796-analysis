@@ -42,7 +42,7 @@ void Fit()
     // Interface for fitting!
     Fitters::Interface inter;
     double sigma {0.364}; // common guess for all states
-    double offset {0.0}; // != 0 only when using ExLegacy
+    double offset {0.0};  // != 0 only when using ExLegacy
     inter.AddState("g0", {400, 0 - offset, sigma}, "5/2+");
     inter.AddState("g1", {10, 1.4 - offset, sigma}, "1/2+");
     inter.AddState("g2", {110, 3.2 - offset, sigma}, "(1/2,3/2)-");
@@ -51,10 +51,9 @@ void Fit()
     inter.AddState("v2", {60, 7.9 - offset, sigma, 0.1}, "?");
     inter.AddState("v3", {60, 8.9 - offset, sigma, 0.1}, "?");
     inter.AddState("v4", {60, 11 - offset, sigma, 0.1}, "?");
-    // inter.AddState("v5", {5, 12.8, sigma, 0.1}, "?");
-    inter.AddState("v5", {20, 14.9 - offset, sigma, 0.1}, "?");
-    // inter.AddState("v6", {10, 16 - offset, sigma, 0.1}, "?");
-    // inter.AddState("v8", {10, 17.5, sigma, 0.1}, "cont");
+    inter.AddState("v5", {40, 12.2 - offset, sigma, 0.1}, "?");
+    inter.AddState("v6", {40, 13.8 - offset, sigma, 0.1}, "?");
+    inter.AddState("v7", {20, 14.9 - offset, sigma, 0.1}, "?");
     inter.AddState("ps0", {0.1});
     inter.AddState("ps1", {0.1});
     inter.AddState("ps2", {0.1});
@@ -68,6 +67,8 @@ void Fit()
     inter.SetFixAll(2, true);
     inter.SetBounds("v2", 3, {0, 0.1});
     inter.SetBounds("v3", 3, {0, 0.1});
+    inter.SetBounds("v5", 3, {0, 0.2});
+    inter.SetBounds("v6", 3, {0, 0.1});
     inter.Write("./Outputs/interface.root");
 
     // Fitting range
