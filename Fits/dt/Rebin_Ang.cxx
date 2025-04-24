@@ -35,7 +35,7 @@ void Rebin_Ang()
     double thetaMin {5.5};
     double thetaMax {14.};
     double thetaStep {2};
-    int nps {2 + 1}; // 2 nps + 1 contamination
+    int nps {2 + 0}; // 2 nps + 1 contamination
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdt, thetaStep, nps};
     // Fill
     df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
@@ -44,19 +44,21 @@ void Rebin_Ang()
                   {"theta3CM", "Eex", "weight"});
     phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
                    {"theta3CM", "Eex", "weight"});
-    cont.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(2, thetacm, ex, weight); },
-                 {"theta3CM", "Eex", "weight"});
+    // cont.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(2, thetacm, ex, weight); },
+    //              {"theta3CM", "Eex", "weight"});
     ivs.TreatPS(10, 0.2, {0, 1}); // disable smoothing for contamination ps
+    ivs.Write("./Outputs/rebin/ivs.root");
 
     // Fitter
     Angular::Fitter fitter {&ivs};
-    fitter.SetAllowFreeMean(true, {"v5"});
+    fitter.SetAllowFreeMean(true, {"v7", "v8"});
     fitter.SetAllowFreeSigma(true, {"g0"});
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
     fitter.Draw();
     fitter.ComputeIntegrals(2);
     fitter.DrawCounts(true);
+    fitter.Write("./Outputs/rebin/counts.root");
 
     // Interface
     Fitters::Interface inter;
@@ -83,6 +85,7 @@ void Rebin_Ang()
     xs.TrimX("v5", 11.75, false);
     // xs.TrimX("v4", 13.5, false);
     // xs.TrimX("v7", 7.5);
+    xs.Write("./Outputs/rebin/");
 
     // Comparators!
     for(const auto& peak : peaks)

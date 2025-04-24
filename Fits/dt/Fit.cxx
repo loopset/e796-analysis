@@ -54,13 +54,14 @@ void Fit()
     inter.AddState("v5", {40, 12.2 - offset, sigma, 0.1}, "?");
     inter.AddState("v6", {40, 13.8 - offset, sigma, 0.1}, "?");
     inter.AddState("v7", {20, 14.9 - offset, sigma, 0.1}, "?");
+    inter.AddState("v8", {20, 16.2 - offset, sigma, 0.1}, "?");
     inter.AddState("ps0", {0.1});
     inter.AddState("ps1", {0.1});
-    inter.AddState("ps2", {0.1});
+    // inter.AddState("ps2", {0.1});
     inter.EndAddingStates();
     // Wider mean margin
     inter.SetOffsetMeanBounds(0.5);
-    inter.ReadPreviousFit("./Outputs/fit_" + gSelector->GetFlag() + ".root");
+    // inter.ReadPreviousFit("./Outputs/fit_" + gSelector->GetFlag() + ".root");
     // Eval correct sigma
     inter.EvalSigma(sigmas.GetGraph());
     // Fix all sigmas (3rd parameter, 2nd index of vector)
@@ -75,7 +76,7 @@ void Fit()
     double exmin {-5};
     double exmax {22};
     // Model
-    Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS, *hPS2, *hCont}};
+    Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS, *hPS2}};
     // Run!
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,t)");

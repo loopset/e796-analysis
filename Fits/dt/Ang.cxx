@@ -45,7 +45,7 @@ void Ang(bool isLab = false)
     double thetaMin {isLab ? 14 : 5.5};
     double thetaMax {isLab ? 32. : 14.};
     double thetaStep {isLab ? 4 : 1.};
-    int nps {2 + 1}; // 2 nps + 1 contamination
+    int nps {2 + 0}; // 2 nps + 1 contamination
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdt, thetaStep, nps};
     // Fill
     if(isLab)
@@ -57,15 +57,15 @@ void Ang(bool isLab = false)
                   {"theta3CM", "Eex", "weight"});
     phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
                    {"theta3CM", "Eex", "weight"});
-    cont.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(2, thetacm, ex, weight); },
-                 {"theta3CM", "Eex", "weight"});
+    // cont.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(2, thetacm, ex, weight); },
+    //              {"theta3CM", "Eex", "weight"});
     ivs.TreatPS(10, 0.2, {0, 1}); // disable smoothing for contamination ps
     if(!isLab)
         ivs.Write("./Outputs/ivs.root");
 
     // Fitter
     Angular::Fitter fitter {&ivs};
-    fitter.SetAllowFreeMean(true, {"v5"});
+    fitter.SetAllowFreeMean(true, {"v7"});
     fitter.SetAllowFreeSigma(true, {"g0"});
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
@@ -100,6 +100,8 @@ void Ang(bool isLab = false)
         xs.TrimX("v4", 7.5);
         xs.TrimX("v4", 13.5, false);
         xs.TrimX("v7", 7);
+        xs.TrimX("v8", 6.5);
+        xs.TrimX("v8", 11.5, false);
         xs.Write("./Outputs/");
     }
 
