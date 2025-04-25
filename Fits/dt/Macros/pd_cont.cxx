@@ -1,10 +1,13 @@
 #include "ActKinematics.h"
 
 #include "TCanvas.h"
+#include "TF1.h"
 #include "TFile.h"
 #include "TGraph.h"
 #include "TGraphErrors.h"
+#include "TMath.h"
 #include "TROOT.h"
+#include "TStyle.h"
 
 #include "AngComparator.h"
 #include "AngDifferentialXS.h"
@@ -14,11 +17,14 @@
 #include "PhysExperiment.h"
 
 #include <memory>
+#include <vector>
 
 #include "../../../PostAnalysis/HistConfig.h"
 #include "../../../Selector/Selector.h"
+
 void pd_cont()
 {
+    gStyle->SetOptFit();
     // Transform kinematics
     double Ex {16.20}; // in (d,t) channel
     ActPhysics::Kinematics dt {"20O(d,t)@700|16.2"};
@@ -60,6 +66,8 @@ void pd_cont()
         auto cmpd {ginvpd->Eval(t)};
         gtrans->AddPoint(cmdt, cmpd);
     }
+    gtrans->Fit("pol1", "0QM");
+    gtrans->GetFunction("pol1")->ResetBit(TF1::kNotDraw);
 
     // Reconstruct xs from counts
     // Counts
@@ -72,10 +80,25 @@ void pd_cont()
         gcounts->SetPointX(p, gtrans->Eval(gcounts->GetPointX(p)));
     }
     // ThetaCM intervals following our transformation
+    auto* fOmega {new TF1 {"fOmega", "TMath::TwoPi() * TMath::Sin(x)", 0, TMath::Pi()}};
+    std::vector<std::pair<double, double>> ranges;
+    std::vector<double> omegas {};
     auto thetaMin {gcounts->GetPointX(0)};
     auto thetaStep {gcounts->GetPointX(1) - thetaMin};
+    for(int p = 0; p < gcounts->GetN(); p++)
+    {
+        auto x {gcounts->GetPointX(p)};
+        auto low {x - thetaStep / 2};
+        auto up {x + thetaStep / 2};
+        ranges.push_back({low, up});
+        auto integral {fOmega->Integral(low * TMath::DegToRad(), up * TMath::DegToRad())};
+        omegas.push_back(integral);
+    }
     thetaMin -= thetaStep / 2;
     Angular::Intervals ivs {thetaMin, thetaMin + thetaStep * (gcounts->GetN() - 1), HistConfig::Ex, thetaStep};
+    // But overwrite with manual ranges
+    ivs.SetRanges(ranges);
+    ivs.SetOmegas(omegas);
     PhysUtils::Experiment exp {"../../norms/d_target.dat"};
     // But EFFICIENCY from (p,d) gs!!
     Interpolators::Efficiency eff;
@@ -88,6 +111,8 @@ void pd_cont()
     // Comparator
     Angular::Comparator comp {"v8 as (p,d) gs", gxs};
     comp.Add("l = 0", "../../pd/Inputs/g0_FRESCO/fort.202");
+    comp.Add("l = 1", "../../pd/Inputs/g0_FRESCO/fort.203");
+    comp.Add("l = 2", "../../pd/Inputs/g0_FRESCO/fort.204");
     comp.Fit();
     comp.Draw();
 
@@ -103,6 +128,8 @@ void pd_cont()
     gcounts->Draw("apl");
     c0->cd(5);
     gxs->Draw("apl");
+    c0->cd(6);
+    fOmega->Draw();
     // gclone->Draw("pl");
     // gxs->Draw("ap");
     // gtransxs->Draw("p");
