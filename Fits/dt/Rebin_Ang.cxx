@@ -34,7 +34,7 @@ void Rebin_Ang()
     // Init intervals
     double thetaMin {5.5};
     double thetaMax {14.};
-    double thetaStep {2};
+    double thetaStep {1.5};
     int nps {2 + 0}; // 2 nps + 1 contamination
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdt, thetaStep, nps};
     // Fill
@@ -51,7 +51,7 @@ void Rebin_Ang()
 
     // Fitter
     Angular::Fitter fitter {&ivs};
-    fitter.SetAllowFreeMean(true, {"v7", "v8"});
+    // fitter.SetAllowFreeMean(true, {"v5", "v6", "v7", "v8"});
     fitter.SetAllowFreeSigma(true, {"g0"});
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
@@ -83,6 +83,11 @@ void Rebin_Ang()
     xs.TrimX("v3", 13.5, false);
     xs.TrimX("v4", 7);
     xs.TrimX("v5", 11.75, false);
+    for(const auto& state : {"v7", "v8"})
+    {
+        xs.TrimX(state, 8);
+        xs.TrimX(state, 12.5, false);
+    }
     // xs.TrimX("v4", 13.5, false);
     // xs.TrimX("v7", 7.5);
     xs.Write("./Outputs/rebin/");

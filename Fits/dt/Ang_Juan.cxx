@@ -71,6 +71,7 @@ void Ang_Juan()
 
     // Fitter
     Angular::Fitter fitter {&ivs};
+    fitter.SetAllowFreeMean(true, {"v6"});
     fitter.Configure("./Outputs/fit_juan.root");
     fitter.Run();
     fitter.Draw();

@@ -70,11 +70,13 @@ void Fit()
     inter.SetBounds("v3", 3, {0, 0.1});
     inter.SetBounds("v5", 3, {0, 0.2});
     inter.SetBounds("v6", 3, {0, 0.1});
+    inter.SetBounds("v7", 3, {0, 0.1});
+    inter.SetBounds("v8", 3, {0, 0.1});
     inter.Write("./Outputs/interface.root");
 
     // Fitting range
     double exmin {-5};
-    double exmax {22};
+    double exmax {25};
     // Model
     Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS, *hPS2}};
     // Run!

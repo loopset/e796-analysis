@@ -68,7 +68,7 @@ void Fit_Juan()
     inter.AddState("v4", {60, 11, sigma, 0.1}, "?");
     // inter.AddState("v5", {5, 12.8, sigma, 0.1}, "?");
     inter.AddState("v5", {20, 14.9, sigma, 0.1}, "?");
-    inter.AddState("v6", {10, 16, sigma, 0.1}, "?");
+    inter.AddState("v6", {10, 16.2, sigma, 0.1}, "?");
     // inter.AddState("v8", {10, 17.5, sigma, 0.1}, "cont");
     inter.AddState("ps0", {0.1});
     inter.AddState("ps1", {0.1});
