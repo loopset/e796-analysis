@@ -114,7 +114,7 @@ void pd_cont()
     comp.Add("l = 1", "../../pd/Inputs/g0_FRESCO/fort.203");
     comp.Add("l = 2", "../../pd/Inputs/g0_FRESCO/fort.204");
     comp.Fit();
-    comp.Draw();
+    comp.Draw("pd cont comp", false, true, 3, nullptr, true);
 
     auto* c0 {new TCanvas {"c0", "Contamination canvas"}};
     c0->DivideSquare(6);

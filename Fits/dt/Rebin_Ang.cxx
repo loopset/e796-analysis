@@ -48,10 +48,11 @@ void Rebin_Ang()
     //              {"theta3CM", "Eex", "weight"});
     ivs.TreatPS(10, 0.2, {0, 1}); // disable smoothing for contamination ps
     ivs.Write("./Outputs/rebin/ivs.root");
+    // ivs.Draw();
 
     // Fitter
     Angular::Fitter fitter {&ivs};
-    // fitter.SetAllowFreeMean(true, {"v5", "v6", "v7", "v8"});
+    fitter.SetAllowFreeMean(true, {"v5", "v6", "v7", "v8"});
     fitter.SetAllowFreeSigma(true, {"g0"});
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
@@ -79,10 +80,11 @@ void Rebin_Ang()
     xs.DoFor(peaks);
     xs.TrimX("v0", 12, false);
     xs.TrimX("v2", 12, false);
-    // xs.TrimX("v3", 7.5);
+    xs.TrimX("v3", 7);
     xs.TrimX("v3", 13.5, false);
-    xs.TrimX("v4", 7);
-    xs.TrimX("v5", 11.75, false);
+    xs.TrimX("v4", 8);
+    // xs.TrimX("v5", 11.75, false);
+    xs.TrimX("v6", 12.5, false);
     for(const auto& state : {"v7", "v8"})
     {
         xs.TrimX(state, 8);

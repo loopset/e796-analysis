@@ -13,10 +13,10 @@ r.PyConfig.DisableRootLogon = True  # type: ignore
 
 # Styles
 styles = {
-    phys.QuantumNumbers.from_str("1p1/2"): dict(fc="none", ec="purple", hatch=r"\\"),
-    phys.QuantumNumbers.from_str("1p3/2"): dict(fc="none", ec="crimson", hatch="//"),
+    phys.QuantumNumbers.from_str("1p1/2"): dict(fc="none", ec="green", hatch=r"--"),
+    phys.QuantumNumbers.from_str("1p3/2"): dict(fc="none", ec="dimgray", hatch="//"),
     phys.QuantumNumbers.from_str("1d5/2"): dict(fc="none", ec="dodgerblue", hatch=".."),
-    phys.QuantumNumbers.from_str("2s1/2"): dict(fc="none", ec="darkgreen", hatch="--"),
+    phys.QuantumNumbers.from_str("2s1/2"): dict(fc="none", ec="crimson", hatch=r"\\"),
 }
 
 
@@ -42,7 +42,8 @@ assignments = {
     "v3": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
     "v4": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
     "v5": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
-    "v7": (rebin, phys.QuantumNumbers.from_str("2s1/2")),
+    "v6": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
+    "v7": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
 }  # skip v6
 # Equivalences
 equiv = {
@@ -101,8 +102,17 @@ def normalize_to_gs(data: dict) -> None:
                 val.sf /= gs.sf
 
 
-for df in [exp, mod, plain]:
-    normalize_to_gs(df)
+# for df in [exp, mod, plain]:
+#     normalize_to_gs(df)
+
+
+## Strengths
+def get_strength(q: phys.QuantumNumbers, data: dict) -> float | un.UFloat | None:
+    if q in data:
+        ste = sum(e.sf for e in data[q])
+        return ste
+    else:
+        return None
 
 
 # Function to plot
@@ -149,8 +159,61 @@ for i, a in enumerate(axs.flatten()):
         fontsize=14,
     )
     a.legend(ncol=2, fontsize=12)
-fig.suptitle(r"Normalised C$^2$S for ${}^{19}$O", fontsize=18)
+fig.suptitle(r"Not normalised C$^2$S for ${}^{19}$O", fontsize=18)
 fig.tight_layout()
 fig.savefig("./Outputs/barplot.png", dpi=200)
 fig.savefig("./Outputs/barplot.pdf")
+
+## Additional information
+fig, axs = plt.subplots(1, 3, figsize=(11, 5))
+# Strengths
+ax: mplaxes.Axes = axs[0]
+for i, d in enumerate([exp, mod, plain]):
+    x = []
+    stes = []
+    for q in exp.keys():
+        ste = get_strength(q, d)
+        if ste is not None:
+            x.append(q.format())
+            stes.append(ste)
+    ax.errorbar(
+        x,
+        unp.nominal_values(stes),
+        yerr=unp.std_devs(stes),
+        marker="s",
+        label=labels[i],
+    )
+ax.legend()
+ax.set_xlabel("nlj")
+ax.set_ylabel("Spe. strength")
+
+# States based on others
+ax = axs[1]
+based = exp
+for q, vals in based.items():
+    vals[:] = [v for v in vals if unp.nominal_values(v.ex) > 10.5]
+based = {k: v for k, v in based.items() if len(v) > 0}
+based_ref = based[phys.QuantumNumbers.from_str("1p3/2")][0]
+based_norm = copy.deepcopy(based)
+for q, vals in based_norm.items():
+    for v in vals:
+        v.sf /= based_ref.sf
+style_plot(based, ax=ax)
+ax.set_ylabel(r"C$^2$S")
+
+# Same but normalized to first
+ax = axs[2]
+style_plot(based_norm, ax=ax)
+ax.set_ylabel(r"C$^2$S / C$^2$S$_{\mathrm{11 MeV}}$")
+
+for ax in axs[1:]:
+    ax.locator_params(axis="x", nbins=10)
+    ax.grid(True, which="both", axis="y")
+    ax.set_xlabel(r"E$_{x}$ [MeV]")
+    ax.legend()
+
+fig.tight_layout()
+fig.savefig("./Outputs/extra_bar.png", dpi=200)
+fig.savefig("./Outputs/extra_bar.pdf")
+
 plt.show()

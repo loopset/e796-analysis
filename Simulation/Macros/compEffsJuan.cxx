@@ -43,7 +43,7 @@ void compEffsJuan()
     // effspd.Draw();
 
     Interpolators::Efficiency effsdt;
-    effsdt.Add("Ours", "/media/Data/E796v2/Simulation/Outputs/juan_RPx/tree_20O_2H_3H_14.90_nPS_0_pPS_0.root");
-    effsdt.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_2H_to_3H_NumN_0_NumP_0_Ex14.9_Date_2025_4_8_Time_9_21.root");
+    effsdt.Add("Ours", "/media/Data/E796v2/Simulation/Outputs/juan_RPx/tree_20O_2H_3H_16.20_nPS_0_pPS_0.root");
+    effsdt.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_2H_to_3H_NumN_0_NumP_0_Ex16.199999999999999_Date_2025_4_29_Time_11_16.root");
     effsdt.Draw();
 }

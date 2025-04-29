@@ -65,7 +65,7 @@ void Ang(bool isLab = false)
 
     // Fitter
     Angular::Fitter fitter {&ivs};
-    fitter.SetAllowFreeMean(true, {"v7"});
+    fitter.SetAllowFreeMean(true, {"v5", "v7", "v8"});
     fitter.SetAllowFreeSigma(true, {"g0"});
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
