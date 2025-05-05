@@ -1,29 +1,26 @@
-import cmath
+import pyphysics as phys
 import uproot
 import awkward as ak
 import hist
-import matplotlib as mpl
 import matplotlib.pyplot as plt
 import ROOT as r
 import numpy as np
 
-plt.style.use("../../Python/actroot.mplstyle")
 
 # Read files
 files = ["./Inputs/pid_front.root", "./Inputs/pid_side.root"]
 arrays = []
 for file in files:
     root = uproot.open(f"{file}:PID_Tree")
-    arrays.append(root.arrays())
+    arrays.append(root.arrays())  # type: ignore
 
 # Init histograms
 hists = []
 for _ in files:
     hists.append(
-        hist.Hist(
-            hist.axis.Regular(400, 0, 40, name="ESil"),
-            hist.axis.Regular(800, 0, 2000, name="Qave"),
-        )
+        hist.Hist.new.Reg(400, 0, 40, name="ESil", label=r"E$_{\mathrm{Sil}}$ [MeV]")
+        .Reg(800, 0, 2000, name="Qave", label=r"$\bar{Q}_{\mathrm{ave}}$")
+        .Double()
     )
 
 for i, array in enumerate(arrays):
@@ -68,16 +65,23 @@ fig, axs = plt.subplots(1, 2, figsize=(12, 6))
 for i, h in enumerate(hists):
     ax = axs[i]
     h.plot2d(ax=ax, cmap="managua_r", cmin=1, flow=None, rasterized=True)
-    ax.set_xlabel(r"E$_{\textrm{\normalsize Sil}}$ [MeV]", loc="right")
-    ax.set_ylabel(r"$\bar{Q}$ [mm$^{-1}$]", loc="top")
     if i == 1:  # side plot
-        ax.set_xlim(0, 20)
-        ax.set_ylim(0, 900)
+        ax.set_xlim(0, 18)
+        ax.set_ylim(0, 800)
 ## annotations
 # front
 ax = axs[0]
 # Axis
-ax.annotate(r"\textbf{Transfer}", xy=(0.8, 0.85), xycoords="axes fraction", ha="center", va="center", fontsize=16)
+ax.annotate(
+    r"\textbf{Transfer}",
+    xy=(0.8, 0.85),
+    xycoords="axes fraction",
+    ha="center",
+    va="center",
+    fontsize=16,
+)
+
+
 # Bananas
 def annotate(label: str, pos: tuple, l: float, a: float):
     xt = pos[0] + l * np.cos(np.radians(a))
@@ -92,6 +96,7 @@ def annotate(label: str, pos: tuple, l: float, a: float):
         arrowprops=dict(arrowstyle="-"),
     )
 
+
 labels = ["p", "d", "t", "3He", r"$\alpha$"]
 poss = [(7.4, 190), (9.77, 261), (11.1, 336), (24, 590), (30.5, 615)]
 d = 20
@@ -103,7 +108,14 @@ for i, l in enumerate(labels):
 
 # side
 ax = axs[1]
-ax.annotate(r"\textbf{(In)elastic}", xy=(0.8, 0.85), xycoords="axes fraction", ha="center", va="center", fontsize=16)
+ax.annotate(
+    r"\textbf{(In)elastic}",
+    xy=(0.8, 0.85),
+    xycoords="axes fraction",
+    ha="center",
+    va="center",
+    fontsize=16,
+)
 
 # Bananas
 labels = ["p", "d"]
@@ -113,6 +125,7 @@ a = -75
 for l, p in zip(labels, poss):
     annotate(l, p, d, a)
 
-plt.tight_layout()
-plt.savefig("./Outputs/pid.pdf", dpi=200)
+fig.tight_layout()
+fig.savefig("./Outputs/pid.pdf", dpi=200)
+fig.savefig("./Outputs/pid.eps", dpi=200)
 plt.show()

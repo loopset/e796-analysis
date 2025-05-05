@@ -74,6 +74,7 @@ void simu(const std::string& beam, const std::string& target, const std::string&
     auto* hGas0 {new TH2D {"hGas0", "PID gas vs 0;#DeltaE_{Sil0} [MeV];#DeltaE_{gas} [MeV]", 600, 0, 40, 800, 0, 2}};
     auto* hdE01 {
         new TH2D {"hdE01", "#Delta E 0 to 1;#DeltaE_{Sil0} [MeV];#DeltaE_{Sil1} [MeV]", 300, 0, 40, 300, 0, 40}};
+    auto* hRec {new TH2D {"hRec", "Rec initial energy;Simu;SRIM", 400, 0, 100, 400, 0, 100}};
 
 
     // Saving in file
@@ -179,6 +180,13 @@ void simu(const std::string& beam, const std::string& target, const std::string&
             hKinIn->Fill(theta3Lab * TMath::RadToDeg(), T3);
             hThetaCMIn->Fill(thetaCM * TMath::RadToDeg());
         }
+        if(T3After1 > 0)
+        {
+            auto rec {srim->EvalInitialEnergyFromDeltaE("lightInSil", eLoss1,
+                                                        sils.GetLayer("f1").GetUnit().GetThickness(), thetaSil)};
+            hRec->Fill(T3At1, rec);
+            hKinIn->Fill(theta3Lab * TMath::RadToDeg(), T3);
+        }
         hGas0->Fill(eLoss0, eGas);
         hdE01->Fill(eLoss0, eLoss1);
         // Fill tree
@@ -202,7 +210,7 @@ void simu(const std::string& beam, const std::string& target, const std::string&
 
     // Draw
     auto* c0 {new TCanvas {"c0", "Simu canvas 0"}};
-    c0->DivideSquare(6);
+    c0->DivideSquare(8);
     c0->cd(1);
     hRP->Draw("colz");
     c0->cd(2);
@@ -218,5 +226,7 @@ void simu(const std::string& beam, const std::string& target, const std::string&
     hGas0->Draw("colz");
     c0->cd(6);
     hdE01->Draw("colz");
+    c0->cd(7);
+    hRec->Draw("colz");
 }
 #endif
