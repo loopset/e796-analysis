@@ -35,6 +35,7 @@ void Fit()
     auto hCont {cont.Histo1D(E796Fit::Exdt, "Eex", "weight")};
     hCont->SetNameTitle("hCont", "20O(p,d) gs cont");
     Fitters::TreatPS(hEx.GetPtr(), hCont.GetPtr(), 0);
+    Fitters::FitPS(hPS2.GetPtr(), "pol6", false, true);
 
     // Sigma interpolators
     Interpolators::Sigmas sigmas {gSelector->GetSigmasFile("2H", "3H").Data()};

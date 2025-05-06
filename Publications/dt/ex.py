@@ -4,10 +4,16 @@ import hist
 import matplotlib.axes as mplaxes
 import matplotlib.pyplot as plt
 import ROOT as r  # type: ignore
+import sys
+
+sys.path.append("../")
+from styling import styles
 
 exp = uproot.open(
     "../../PostAnalysis/RootFiles/Pipe3/tree_20O_2H_3H_front_juan_RPx.root:Sel_Tree"
-).arrays(["Ex"])  # type: ignore
+).arrays(  # type: ignore
+    ["Ex"]
+)
 
 # Ex histogram
 nbins = 100
@@ -37,33 +43,9 @@ inter.fFuncs["g0"] = (lambda old_f: lambda x: [gsfactor * y for y in old_f(x)])(
 fig, ax = plt.subplots(1, 1, figsize=(11, 5))
 ax: mplaxes.Axes
 # Ex histograms in two regions
-hExgs[:gsbin].plot(
-    histtype="errorbar",
-    yerr=True,
-    lw=1,
-    color="black",
-    flow=None,
-    marker="none",
-    xerr=True,
-    capsize=0,
-    label="Exp."
-)  # type: ignore
-hEx[gsbin:].plot(
-    histtype="errorbar",
-    yerr=True,
-    lw=1,
-    color="black",
-    flow=None,
-    marker="none",
-    xerr=True,
-    capsize=0,
-)  # type: ignore
+hExgs[:gsbin].plot(label="Experiment", **styles["ex"])  # type: ignore
+hEx[gsbin:].plot(**styles["ex"])  # type: ignore
 ax.set_ylabel(f"Counts / {(exmax - exmin) / nbins * 1000:.0f} keV")
-
-# Indivual fits
-color = "dodgerblue"
-for state in inter.fEx.keys():
-    inter.plot_func(state, nbins, exmin, exmax, lw=1, color=color)
 
 # Global fit in two regions
 if inter.fGlobal is not None:
@@ -74,36 +56,61 @@ if inter.fGlobal is not None:
         ax.plot(
             data[:, 0],
             data[:, 1],
-            color="red",
-            lw=1.5,
             label="Global fit" if i == 0 else None,
+            **styles["global"],
         )
+
+# Indivual fits
+color = "dodgerblue"
+for i, state in enumerate(inter.fEx.keys()):
+    if state == "v8":  # exclude peak at 16 MeV if there
+        continue
+    if i < 7:
+        ls = "solid"
+    else:
+        ls = "dashed"
+    label = None
+    if i == 0:
+        label = r"T = 3/2"
+    elif i == 7:
+        label = r"T = 5/2"
+    inter.plot_func(state, nbins, exmin, exmax, lw=1, color=color, ls=ls, label=label)
 
 # Phase spaces
 inter.fHistPS["ps0"].plot(
-    yerr=False,
-    lw=1,
-    color="orange",
-    flow="none",
-    label="1n phase space",
-    hatch=r"\\"
+    label="1n phase space", color="orange", hatch="\\\\", **styles["ps"]
 )
 ## 2n PS has null amplitude
+inter.fHistPS["ps1"].plot(
+    label="2n phase space", color="green", hatch="//", **styles["ps"]
+)
+# (p,d) contamination
+inter.plot_func(
+    "v8",
+    nbins,
+    exmin,
+    exmax,
+    label="(p,d) background",
+    color="grey",
+    hatch="xx",
+    **styles["ps"],
+)
 
 # Sn
 p = r.ActPhysics.Particle("19O")  # type: ignore
-ax.axvline(p.GetSn(), label=r"S$_{\mathrm{n}}$", color="purple", lw=2)
-ax.axvline(p.GetS2n(), label=r"S$_{\mathrm{2n}}$", color="pink", lw=2)
+ax.axvline(p.GetSn(), color="purple", **styles["sn"])
+ax.axvline(p.GetS2n(), color="hotpink", **styles["sn"])
 
 
 # Annotations
-ax.annotate(rf"g.s $\times$ {gsfactor:.2f}", xy=(1, 400), fontsize=14)
+ax.annotate(rf"g.s $\times$ {gsfactor:.2f}", xy=(0.75, 400), fontsize=14)
 
 # Legend
-ax.legend(fontsize=14)
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(handles=[handles[-1]] + handles[:-1], labels=[labels[-1]] + labels[:-1])
 
 # Limits
-ax.set_xlim(-3, 27)
+ax.set_xlim(-3, 25)
 fig.tight_layout()
 fig.savefig("./Outputs/ex.pdf")
 fig.savefig("./Outputs/ex.eps")

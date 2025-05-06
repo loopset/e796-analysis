@@ -138,7 +138,8 @@ style_plot(exp, ax=ax)
 # Modified SFO-tls
 ax = axs[1]
 style_plot(mod, ax)
-ax.set_ylabel(r"C$^2$S / C$^2$S$_{\mathrm{gs}}$")
+# ax.set_ylabel(r"C$^2$S / C$^2$S$_{\mathrm{gs}}$")
+ax.set_ylabel(r"C$^2$S")
 
 # Plain SFO-tls
 ax = axs[2]
@@ -159,7 +160,7 @@ for i, a in enumerate(axs.flatten()):
         fontsize=14,
     )
     a.legend(ncol=2, fontsize=12)
-fig.suptitle(r"Not normalised C$^2$S for ${}^{19}$O", fontsize=18)
+fig.suptitle(r"Absolute ${}^{19}$O C$^2$S", fontsize=18)
 fig.tight_layout()
 fig.savefig("./Outputs/barplot.png", dpi=200)
 fig.savefig("./Outputs/barplot.pdf")

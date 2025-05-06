@@ -18,8 +18,8 @@ for file in files:
 hists = []
 for _ in files:
     hists.append(
-        hist.Hist.new.Reg(400, 0, 40, name="ESil", label=r"E$_{\mathrm{Sil}}$ [MeV]")
-        .Reg(800, 0, 2000, name="Qave", label=r"$\bar{Q}_{\mathrm{ave}}$")
+        hist.Hist.new.Reg(400, 0, 40, name="ESil", label=r"E [MeV]")
+        .Reg(800, 0, 2000, name="Qave", label=r"$\Delta$E [arb. unit]")
         .Double()
     )
 
@@ -71,15 +71,15 @@ for i, h in enumerate(hists):
 ## annotations
 # front
 ax = axs[0]
-# Axis
-ax.annotate(
-    r"\textbf{Transfer}",
-    xy=(0.8, 0.85),
-    xycoords="axes fraction",
-    ha="center",
-    va="center",
-    fontsize=16,
-)
+# # Axis
+# ax.annotate(
+#     r"\textbf{Transfer}",
+#     xy=(0.8, 0.85),
+#     xycoords="axes fraction",
+#     ha="center",
+#     va="center",
+#     fontsize=16,
+# )
 
 
 # Bananas
@@ -108,14 +108,14 @@ for i, l in enumerate(labels):
 
 # side
 ax = axs[1]
-ax.annotate(
-    r"\textbf{(In)elastic}",
-    xy=(0.8, 0.85),
-    xycoords="axes fraction",
-    ha="center",
-    va="center",
-    fontsize=16,
-)
+# ax.annotate(
+#     r"\textbf{(In)elastic}",
+#     xy=(0.8, 0.85),
+#     xycoords="axes fraction",
+#     ha="center",
+#     va="center",
+#     fontsize=16,
+# )
 
 # Bananas
 labels = ["p", "d"]

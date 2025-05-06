@@ -1,58 +1,46 @@
-import sys
-
-sys.path.append("/media/Data/E796v2/Python/")
-
+import pyphysics as phys
 import matplotlib.pyplot as plt
 import uncertainties as unc
 import uncertainties.unumpy as unp
 import ROOT as r
 
-plt.style.use("../../Python/actroot.mplstyle")
-plt.rcParams["xtick.labelsize"] = 14
-
-import shell_model as sm
-from interfaces import FitInterface
-from physics import Barager
-
-path = "/media/Data/E796v2/Fits/dt/"
-
 # Experimental dt data
-inter = FitInterface(
-    path + "Outputs/interface.root",
-    path + "Outputs/fit_juan_RPx.root",
-    path + "Outputs/sfs.root",
-)
-# Add systematic 25% error
-inter.add_systematic()
+fit = phys.FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
+sfs = phys.SFInterface("../../Fits/dt/Outputs/sfs.root")
 
 # Declare quantumm numbers
-q52 = sm.QuantumNumbers(0, 2, 2.5)
-q12 = sm.QuantumNumbers(0, 1, 0.5)
+q52 = phys.QuantumNumbers(0, 2, 2.5)
+q12 = phys.QuantumNumbers(0, 1, 0.5)
 
-# Removal reactions
-rem = inter.map(
-    {
-        q52: ["g0"],
-        q12: ["g2", "v0", "v1", "v4"],
-    }
-)
-
+# Map to quantum numbers
+rem = phys.ShellModel()
+assignments = {q52: ["g0"], q12: ["g2", "v0"]}
+for q, states in assignments.items():
+    rem.data[q] = [
+        phys.ShellModelData(
+            fit.get(state)[0], best.fSF if (best := sfs.get_best(state)) else 0
+        )
+        for state in states
+    ]
 # Adding reactions: B. Fernández-Domínguez PRC 84 (2011)
-add = sm.ShellModel()
-add.data = {q52: [sm.ShellModelData(unc.ufloat(0, 0), unc.ufloat(0.34, 0.03))], q12: []}
+add = phys.ShellModel()
+add.data = {
+    q52: [phys.ShellModelData(0, unc.ufloat(0.34, 0.03))],
+    q12: [],
+}
 
+# Path to theoretical files
+path = "../../Fits/dt/"
 # YSOX
-ysox = sm.ShellModel(
-    (
-        [
-            path + "Inputs/SM/log_O20_O19_ysox_tr_j0p_m1p.txt",
-            path + "Inputs/SM/log_O20_O19_ysox_tr_j0p_m1n.txt",
-        ]
-    )
+ysox = phys.ShellModel(
+    [
+        path + "Inputs/SM/log_O20_O19_ysox_tr_j0p_m1p.txt",
+        path + "Inputs/SM/log_O20_O19_ysox_tr_j0p_m1n.txt",
+    ]
 )
 
 # SFO-tls
-sfotls = sm.ShellModel(
+sfotls = phys.ShellModel(
     [
         "../../Fits/dt/Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1p.txt",
         "../../Fits/dt/Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1n.txt",
@@ -60,7 +48,7 @@ sfotls = sm.ShellModel(
 )
 
 # Modified SFO-tls
-mod_sfotls = sm.ShellModel(
+mod_sfotls = phys.ShellModel(
     [
         "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
         "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
@@ -72,32 +60,40 @@ for sm in [rem, ysox, sfotls, mod_sfotls]:
     sm.set_min_SF(0.09)
 
 # rem.print()
-mod_sfotls.print()
+# mod_sfotls.print()
 
 # Binding energies
-snadd = r.ActPhysics.Particle("21O").GetSn()
-snrem = r.ActPhysics.Particle("20O").GetSn()
+snadd = r.ActPhysics.Particle("21O").GetSn()  # type: ignore
+snrem = r.ActPhysics.Particle("20O").GetSn()  # type: ignore
 
 # List all sets of data
-labels = ["p-norm", "d-norm", "YSOX", "SFO-tls", r"Modified \par SFO-tls"]
-removals = [rem, rem, ysox, sfotls, mod_sfotls]
-scales = [1 / 1.42, 1, 1, 1, 1]
-res = []
+labels = ["Exp", "YSOX", "SFO-tls", r"Modified \par SFO-tls"]
+removals = [rem, ysox, sfotls, mod_sfotls]
+scales = [1, 1, 1, 1]
+bs = []
 gaps = []
 q52str = []
 q12str = []
 for i, zipped in enumerate(zip(removals, scales)):
     removal, scale = zipped
-    b = Barager()
+    b = phys.Barager()
     b.set_removal(removal, snrem, scale)
     b.set_adding(add, snadd)
     b.do_for([q52, q12])
     gaps.append(b.get_gap(q52, q12))
     q52str.append(b.Results[q52].DenRem)
     q12str.append(b.Results[q12].DenRem)
+    bs.append(b)
     # print(labels[i]," : ", gaps[-1])
-    # b.print()
+    # b.print()a
 
+# Write to file
+with open("./Inputs/o19_barager.txt", "w") as f:
+    for label, b in zip(labels, bs):
+        res = ""
+        for q, br in b.Results.items():
+            res += f"    {q.format_simple()}    {br.ESPE:.4f}"
+        f.write(f"{label}    {res}\n")
 
 # Plotting
 fig, axs = plt.subplots(1, 2, figsize=(11, 4))
@@ -143,9 +139,11 @@ axs[1].set_xlim(-0.5, len(removals) - 0.5)
 axs[1].set_ylabel("Spe. strengths")
 axs[1].axhline(y=6, ls="--", lw=2, color=colors[0], marker="none")
 axs[1].axhline(y=2, ls="--", lw=2, color=colors[1], marker="none")
-plt.legend(fontsize=16, loc="best", markerscale=0.75, fancybox=True, shadow=True, frameon=True)
+plt.legend(
+    fontsize=16, loc="best", markerscale=0.75, fancybox=True, shadow=True, frameon=True
+)
 
-plt.tight_layout()
+fig.tight_layout()
 plt.savefig("./Outputs/gap.pdf")
 plt.savefig("./Outputs/gap.png", dpi=200)
 plt.show()
