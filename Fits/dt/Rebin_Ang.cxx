@@ -28,8 +28,6 @@ void Rebin_Ang()
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
     ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
-    // Contamination of 20O(p,d) gs
-    ROOT::RDataFrame cont {"SimulationTTree", gSelector->GetSimuFile("20O", "1H", "2H", 0, -3, 0)};
 
     // Init intervals
     double thetaMin {5.5};
@@ -44,15 +42,13 @@ void Rebin_Ang()
                   {"theta3CM", "Eex", "weight"});
     phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
                    {"theta3CM", "Eex", "weight"});
-    // cont.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(2, thetacm, ex, weight); },
-    //              {"theta3CM", "Eex", "weight"});
     ivs.TreatPS(10, 0.2, {0, 1}); // disable smoothing for contamination ps
     ivs.Write("./Outputs/rebin/ivs.root");
     // ivs.Draw();
 
     // Fitter
     Angular::Fitter fitter {&ivs};
-    fitter.SetAllowFreeMean(true, {"v5", "v6", "v7", "v8"});
+    fitter.SetAllowFreeMean(true, {"v5", "v6", "v7"});
     fitter.SetAllowFreeSigma(true, {"g0"});
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
@@ -65,6 +61,9 @@ void Rebin_Ang()
     Fitters::Interface inter;
     inter.Read("./Outputs/interface.root");
     auto peaks {inter.GetPeaks()};
+    // Remove contamination
+    for(const auto& s : {"v8", "v9", "v10"})
+        peaks.erase(std::remove(peaks.begin(), peaks.end(), s), peaks.end());
 
     // Efficiency
     Interpolators::Efficiency eff;
@@ -83,9 +82,9 @@ void Rebin_Ang()
     xs.TrimX("v3", 7);
     xs.TrimX("v3", 13.5, false);
     xs.TrimX("v4", 8);
-    // xs.TrimX("v5", 11.75, false);
+    xs.TrimX("v5", 8);
     xs.TrimX("v6", 12.5, false);
-    for(const auto& state : {"v7", "v8"})
+    for(const auto& state : {"v7"})
     {
         xs.TrimX(state, 8);
         xs.TrimX(state, 12.5, false);

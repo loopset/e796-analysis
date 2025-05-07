@@ -8,6 +8,7 @@ import sys
 
 sys.path.append("../")
 from styling import styles
+from histos import mExdt
 
 exp = uproot.open(
     "../../PostAnalysis/RootFiles/Pipe3/tree_20O_2H_3H_front_juan_RPx.root:Sel_Tree"
@@ -16,13 +17,13 @@ exp = uproot.open(
 )
 
 # Ex histogram
-nbins = 100
-exmin = -5
-exmax = 25
+nbins = mExdt[0]
+exmin = mExdt[1]
+exmax = mExdt[2]
 # Ground-state
 gscut = 1
 gsfactor = 0.5
-hExgs = hist.Hist.new.Reg(nbins, exmin, exmax, label=r"E$_{\mathrm{x}}$ [MeV]").Double()
+hExgs = hist.Hist.new.Reg(*mExdt, label=r"E$_{\mathrm{x}}$ [MeV]").Double()
 gsbin = hExgs.axes[0].index(gscut)
 hExgs.fill(exp[exp.Ex < gscut].Ex)
 hExgs *= gsfactor
@@ -63,7 +64,7 @@ if inter.fGlobal is not None:
 # Indivual fits
 color = "dodgerblue"
 for i, state in enumerate(inter.fEx.keys()):
-    if state == "v8":  # exclude peak at 16 MeV if there
+    if state in ["v8", "v9", "v10"]:  # exclude peaks at >16 MeV
         continue
     if i < 7:
         ls = "solid"
@@ -80,26 +81,29 @@ for i, state in enumerate(inter.fEx.keys()):
 inter.fHistPS["ps0"].plot(
     label="1n phase space", color="orange", hatch="\\\\", **styles["ps"]
 )
-## 2n PS has null amplitude
-inter.fHistPS["ps1"].plot(
-    label="2n phase space", color="green", hatch="//", **styles["ps"]
-)
+# ## 2n PS has null amplitude
+# inter.fHistPS["ps1"].plot(
+#     label="2n phase space", color="green", hatch="//", **styles["ps"]
+# )
 # (p,d) contamination
-inter.plot_func(
-    "v8",
-    nbins,
-    exmin,
-    exmax,
-    label="(p,d) background",
-    color="grey",
-    hatch="xx",
-    **styles["ps"],
-)
+for i, state in enumerate(["v8", "v9", "v10"]):
+    inter.plot_func(
+        state,
+        nbins,
+        exmin,
+        exmax,
+        label="(p,d) background" if i == 0 else None,
+        color="grey",
+        hatch="xx",
+        **styles["ps"],
+    )
 
 # Sn
 p = r.ActPhysics.Particle("19O")  # type: ignore
 ax.axvline(p.GetSn(), color="purple", **styles["sn"])
+ax.annotate(fr"S$_{{\mathrm{{n}}}} =$ {p.GetSn():.2f} MeV", xy=(p.GetSn() + 0.5, 400), fontsize=14)
 ax.axvline(p.GetS2n(), color="hotpink", **styles["sn"])
+ax.annotate(fr"S$_{{\mathrm{{2n}}}} =$ {p.GetS2n():.2f} MeV", xy=(p.GetS2n() + 0.5, 400), fontsize=14)
 
 
 # Annotations

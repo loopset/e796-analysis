@@ -1,5 +1,7 @@
 import cycler
 
+base2d = {"flow": "none", "cmin": 1, "cmap": "managua_r", "rasterized": True}
+
 styles = {
     "ex": {
         "histtype": "errorbar",
@@ -27,6 +29,15 @@ styles = {
     },
 }
 
-colors = {"l0": "#57d1c9", "l1": "#ea5b67", "l2": "#555d89"}
+# colors = {"l0": "#57d1c9", "l1": "#ea5b67", "l2": "#555d89"} # from Juan's thesis
+colors = {
+    "l0": "#a01525",
+    "l1": "#28a83c",
+    "l2": "#5a99d8",
+}  # from Juan's 15C cross-shell states... paper
+ls = {"l0": "--", "l1": "-", "l2": ":"}
 
-cyclers = {"l012": cycler.cycler(color=[colors["l0"], colors["l1"], colors["l2"]])}
+cyclers = {
+    "l012": cycler.cycler(color=[colors["l0"], colors["l1"], colors["l2"]])
+    + cycler.cycler(ls=[ls["l0"], ls["l1"], ls["l2"]]),
+}

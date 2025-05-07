@@ -37,7 +37,7 @@ which = {
 xlims = (4, 17)
 
 fig, axs = plt.subplots(6, 2, sharex=True, figsize=(6, 8))
-dashed = False
+handles = []
 for i, state in enumerate(sfs.fSFs):
     ax: mplaxes.Axes = axs.flatten()[i]
     obj = which.get(state)
@@ -71,7 +71,12 @@ for i, state in enumerate(sfs.fSFs):
         ax.tick_params(axis="x", which="both", bottom=False, top=True)
         ax.spines.bottom.set_visible(False)
         ax.plot([0, 1], [0, 0], transform=ax.transAxes, **abreak) #type: ignore
-    elif 10 <= i <= 11:
+    elif i == 9:
+        ax.tick_params(axis="x", which="both", bottom=True, top=False, labelbottom=True)
+        ax.spines.top.set_visible(False)
+        ax.plot([0], [0], transform=ax.transAxes, **abreak) #type: ignore
+        ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak) #type: ignore
+    elif i == 10:
         ax.tick_params(axis="x", which="both", bottom=True, top=False)
         ax.spines.top.set_visible(False)
         ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak) #type: ignore
@@ -85,10 +90,7 @@ for i, state in enumerate(sfs.fSFs):
     ## Models
     # Set colors
     ax.set_prop_cycle(sty.cyclers["l012"])
-    # And ls
-    if state == "v4":
-        dashed = True
-    models = obj.plot_models(state, ax, ls="dashed" if dashed else "solid")
+    models = obj.plot_models(state, ax)
 
     ## Others
     # Text annotation
@@ -112,8 +114,11 @@ for i, state in enumerate(sfs.fSFs):
     # Axis break
 
     if i == 0:
-        ax.legend(models, [r"$\ell$ = 0", r"$\ell$ = 1", r"$\ell$ = 2"], labelspacing=0.05, borderpad=0.2)
+        handles = models
 
+# Hide last one
+axs.flat[-1].axis("off")
+axs.flat[-1].legend(handles, [r"$\ell$ = 0", r"$\ell$ = 1", r"$\ell$ = 2"], labelspacing=0.05, borderpad=0.2, loc="center left")
 
 # Figure settings
 fig.tight_layout()

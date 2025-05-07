@@ -13,10 +13,10 @@ r.PyConfig.DisableRootLogon = True  # type: ignore
 
 # Styles
 styles = {
-    phys.QuantumNumbers.from_str("1p1/2"): dict(fc="none", ec="green", hatch=r"--"),
-    phys.QuantumNumbers.from_str("1p3/2"): dict(fc="none", ec="dimgray", hatch="//"),
-    phys.QuantumNumbers.from_str("1d5/2"): dict(fc="none", ec="dodgerblue", hatch=".."),
-    phys.QuantumNumbers.from_str("2s1/2"): dict(fc="none", ec="crimson", hatch=r"\\"),
+    phys.QuantumNumbers.from_str("0p1/2"): dict(fc="none", ec="green", hatch=r"--"),
+    phys.QuantumNumbers.from_str("0p3/2"): dict(fc="none", ec="dimgray", hatch="//"),
+    phys.QuantumNumbers.from_str("0d5/2"): dict(fc="none", ec="dodgerblue", hatch=".."),
+    phys.QuantumNumbers.from_str("1s1/2"): dict(fc="none", ec="crimson", hatch=r"\\"),
 }
 
 
@@ -33,29 +33,36 @@ states = phys.FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
 unrebin = phys.SFInterface("../../Fits/dt/Outputs/sfs.root")
 rebin = phys.SFInterface("../../Fits/dt/Outputs/rebin_sfs.root")
 assignments = {
-    "g0": (unrebin, phys.QuantumNumbers.from_str("1d5/2")),
-    "g1": (unrebin, phys.QuantumNumbers.from_str("2s1/2")),
-    "g2": (unrebin, phys.QuantumNumbers.from_str("1p1/2")),
-    "v0": (unrebin, phys.QuantumNumbers.from_str("1p1/2")),
-    "v1": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
-    "v2": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
-    "v3": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
-    "v4": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
-    "v5": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
-    "v6": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
-    "v7": (rebin, phys.QuantumNumbers.from_str("1p3/2")),
+    "g0": (unrebin, phys.QuantumNumbers.from_str("0d5/2")),
+    "g1": (unrebin, phys.QuantumNumbers.from_str("1s1/2")),
+    "g2": (unrebin, phys.QuantumNumbers.from_str("0p1/2")),
+    "v0": (unrebin, phys.QuantumNumbers.from_str("0p1/2")),
+    "v1": (rebin, phys.QuantumNumbers.from_str("0p3/2")),
+    "v2": (rebin, phys.QuantumNumbers.from_str("0p3/2")),
+    "v3": (rebin, phys.QuantumNumbers.from_str("0p3/2")),
+    "v4": (rebin, phys.QuantumNumbers.from_str("0p3/2")),
+    "v5": (rebin, phys.QuantumNumbers.from_str("0p3/2")),
+    "v6": (rebin, phys.QuantumNumbers.from_str("0p3/2")),
+    "v7": (rebin, phys.QuantumNumbers.from_str("0p3/2")),
 }  # skip v6
 # Equivalences
 equiv = {
-    phys.QuantumNumbers.from_str("1p1/2"): "l = 1",
-    phys.QuantumNumbers.from_str("1p3/2"): "l = 1",
-    phys.QuantumNumbers.from_str("1d5/2"): "l = 2",
-    phys.QuantumNumbers.from_str("2s1/2"): "l = 0",
+    phys.QuantumNumbers.from_str("0p1/2"): "l = 1",
+    phys.QuantumNumbers.from_str("0p3/2"): "l = 1",
+    phys.QuantumNumbers.from_str("0d5/2"): "l = 2",
+    phys.QuantumNumbers.from_str("1s1/2"): "l = 0",
 }
+
+useBest = False
+whichBest = ["v5", "v7"]
 exp = defaultdict(list)
 for state, (df, q) in assignments.items():
     ex, sigma = states.get(state)
     sf = next((e for e in df.get(state) if e.fName == equiv[q]), None)
+    if useBest and state in whichBest:
+        sf = df.get_best(state)
+        if sf is not None:
+            q = next((k for k, v in equiv.items() if v == sf.fName), None)
     if sf is not None:
         exp[q].append(Pair(ex, sf.fSF))
 
@@ -83,7 +90,7 @@ def transform(sm: phys.ShellModel) -> dict:
     ret = defaultdict(list)
     for q, vals in sm.data.items():
         corr = q
-        corr.n += 1  ## models start at n = 0
+        # corr.n += 1  ## models start at n = 0
         ret[q] = [Pair(val.Ex, val.SF) for val in vals]
     return ret
 
@@ -117,16 +124,25 @@ def get_strength(q: phys.QuantumNumbers, data: dict) -> float | un.UFloat | None
 
 # Function to plot
 def style_plot(data: dict, ax: mplaxes.Axes, errorbar: bool = False):
-    for q, vals in data.items():
+    aux = copy.deepcopy(data)
+    # Scale gs 
+    factor = 0.5
+    sfval = 0
+    for q, vals in aux.items():
+        if q == phys.QuantumNumbers(0, 2, 2.5):
+            for val in vals:
+                val.sf *= factor
+                sfval = val.sf
         ax.bar(
             unp.nominal_values([e.ex for e in vals]),
             unp.nominal_values([e.sf for e in vals]),
             yerr=unp.std_devs([e.sf for e in vals]) if errorbar else None,
-            width=0.5,
+            width=0.350,
             align="center",
             label=q.format(),
             **(styles[q] if q in styles else {}),
         )
+    ax.annotate(fr"gs $\times$ {factor:.1f}", xy=(0.35, un.nominal_value(sfval) * 0.8), fontsize=14)
 
 
 # Figure
@@ -147,10 +163,10 @@ style_plot(plain, ax=ax)
 ax.set_xlabel(r"E$_{x}$ [MeV]")
 
 # Common axis settings
-labels = ["Exp", "Modified SFO-tls", "Plain SFO-tls"]
+labels = ["Exp", "Modified SFO-tls", "SFO-tls"]
 for i, a in enumerate(axs.flatten()):
     a: mplaxes.Axes
-    a.grid(True, which="both", axis="y")
+    # a.grid(True, which="both", axis="y")
     a.annotate(
         rf"\textbf{{{labels[i]}}}",
         xy=(0.5, 0.875),
@@ -160,7 +176,7 @@ for i, a in enumerate(axs.flatten()):
         fontsize=14,
     )
     a.legend(ncol=2, fontsize=12)
-fig.suptitle(r"Absolute ${}^{19}$O C$^2$S", fontsize=18)
+fig.suptitle(r"${}^{19}$O C$^2$S", fontsize=18)
 fig.tight_layout()
 fig.savefig("./Outputs/barplot.png", dpi=200)
 fig.savefig("./Outputs/barplot.pdf")
@@ -194,7 +210,11 @@ based = exp
 for q, vals in based.items():
     vals[:] = [v for v in vals if unp.nominal_values(v.ex) > 10.5]
 based = {k: v for k, v in based.items() if len(v) > 0}
-based_ref = based[phys.QuantumNumbers.from_str("1p3/2")][0]
+ref = based.get(phys.QuantumNumbers.from_str("0p3/2"))
+if ref is None:
+    plt.show()
+    raise SystemExit
+based_ref = ref[0]
 based_norm = copy.deepcopy(based)
 for q, vals in based_norm.items():
     for v in vals:

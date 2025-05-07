@@ -1,4 +1,5 @@
 #include "ROOT/RDataFrame.hxx"
+#include "ROOT/RResultPtr.hxx"
 #include "Rtypes.h"
 
 #include "TROOT.h"
@@ -11,6 +12,7 @@
 #include "Interpolators.h"
 
 #include <string>
+#include <vector>
 
 #include "/media/Data/E796v2/Fits/FitHist.h"
 #include "/media/Data/E796v2/Selector/Selector.h"
@@ -30,12 +32,18 @@ void Fit()
     auto hPS2 {phase2.Histo1D(E796Fit::Exdt, "Eex", "weight")};
     hPS2->SetNameTitle("hPS2", "2n PS");
     Fitters::TreatPS(hEx.GetPtr(), hPS2.GetPtr());
-    // Contamination of 20O(p,d) gs
-    ROOT::RDataFrame cont {"SimulationTTree", gSelector->GetSimuFile("20O", "1H", "2H", 0, -3, 0)};
-    auto hCont {cont.Histo1D(E796Fit::Exdt, "Eex", "weight")};
-    hCont->SetNameTitle("hCont", "20O(p,d) gs cont");
-    Fitters::TreatPS(hEx.GetPtr(), hCont.GetPtr(), 0);
-    Fitters::FitPS(hPS2.GetPtr(), "pol6", false, true);
+    // // Contamination from 20O(p,d)
+    // std::vector<double> conts {0, 1.4, 3.2, 4.5};
+    // std::vector<ROOT::RDF::RResultPtr<TH1D>> hconts;
+    // for(const auto& cont : conts)
+    // {
+    //     auto file {gSelector->GetApproxSimuFile("20O", "1H", "2H", cont, -3)};
+    //     ROOT::RDataFrame dfc {"SimulationTTree", file};
+    //     auto hCont {dfc.Histo1D(E796Fit::Exdt, "Eex", "weight")};
+    //     hCont->SetNameTitle("hCont", TString::Format("20O(p,d) %.2f cont", cont));
+    //     Fitters::TreatPS(hEx.GetPtr(), hCont.GetPtr(), 0);
+    //     hconts.push_back(hCont);
+    // }
 
     // Sigma interpolators
     Interpolators::Sigmas sigmas {gSelector->GetSigmasFile("2H", "3H").Data()};
@@ -55,14 +63,17 @@ void Fit()
     inter.AddState("v5", {40, 12.2 - offset, sigma, 0.1}, "?");
     inter.AddState("v6", {40, 13.8 - offset, sigma, 0.1}, "?");
     inter.AddState("v7", {20, 14.9 - offset, sigma, 0.1}, "?");
-    inter.AddState("v8", {20, 16.2 - offset, sigma, 0.1}, "?");
+    inter.AddState("v8", {20, 16.26 - offset, sigma, 0.}, "Cont0");
+    inter.AddState("v9", {20, 18.14 - offset, sigma, 0.}, "Cont1");
+    inter.AddState("v10", {20, 20.25 - offset, sigma, 0.}, "Cont2");
     inter.AddState("ps0", {0.1});
     inter.AddState("ps1", {0.1});
-    // inter.AddState("ps2", {0.1});
+    // for(int i = 0; i < conts.size(); i++)
+    //     inter.AddState(TString::Format("ps%d", i + 2).Data(), {0.1});
     inter.EndAddingStates();
     // Wider mean margin
     inter.SetOffsetMeanBounds(0.5);
-    // inter.ReadPreviousFit("./Outputs/fit_" + gSelector->GetFlag() + ".root");
+    inter.ReadPreviousFit("./Outputs/fit_" + gSelector->GetFlag() + ".root");
     // Eval correct sigma
     inter.EvalSigma(sigmas.GetGraph());
     // Fix all sigmas (3rd parameter, 2nd index of vector)
@@ -72,14 +83,21 @@ void Fit()
     inter.SetBounds("v5", 3, {0, 0.2});
     inter.SetBounds("v6", 3, {0, 0.1});
     inter.SetBounds("v7", 3, {0, 0.1});
-    inter.SetBounds("v8", 3, {0, 0.1});
+    for(const auto& s : {"v8", "v9", "v10"})
+    {
+        inter.SetFix(s, 1, true);
+        inter.SetFix(s, 3, true);
+    }
     inter.Write("./Outputs/interface.root");
 
     // Fitting range
     double exmin {-5};
     double exmax {25};
     // Model
-    Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), {*hPS, *hPS2}};
+    std::vector<TH1D> hPSs {*hPS, *hPS2};
+    // for(auto hc : hconts)
+    //     hPSs.push_back(*hc);
+    Fitters::Model model {inter.GetNGauss(), inter.GetNVoigt(), hPSs};
     // Run!
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,t)");

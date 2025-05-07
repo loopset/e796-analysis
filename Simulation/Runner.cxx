@@ -28,9 +28,9 @@ void Runner(TString what = "plot", bool standalone = true)
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
     int neutronPS {0}; // number of neutrons in final state:
     // if -1, break deuteron; if -2, 20O(d,d) 1n PS but rec as 20O(p,d)
-    // if -3, (d,t) contamination for gSelector channel
+    // if -3, (d,t) contamination from gSelector channel
     int protonPS {0}; // number of protons in final state
-    // if -1: (p,d) contamination for gSelector channel
+    // if -1: (p,d) contamination from gSelector channel
     double T1 {35}; // Beam energy: 35 MeV / u
 
     bool isPS {true};
@@ -62,11 +62,18 @@ void Runner(TString what = "plot", bool standalone = true)
         isPS = false;
     }
     else if(neutronPS != 0 && protonPS == 0)
+    {
         Eexs = {0}; // only gs for n phase space
+        if(neutronPS == -3)
+            Eexs = {0., 1.47, 3.24, 4.4, 6.7, 7.9}; // more states to contamination
+    }
     else if(neutronPS == 0 && protonPS != 0)
         Eexs = {0};
     else
         throw std::runtime_error("Simulation::Runner(): No confs with neutronPS and protonPS enabled at the same time");
+    // Correction for isPS
+    if(neutronPS < 0 || protonPS < 0)
+        isPS = false; // is contamination
 
     ROOT::EnableThreadSafety();
     std::vector<std::thread> threads;

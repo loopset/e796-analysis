@@ -132,7 +132,8 @@ void Plotter(const std::vector<double>& Exs, const std::string& beam, const std:
         gtheo->Draw("same");
         // Ex
         cs[i]->cd(2);
-        hsEx[i]->GetXaxis()->SetRangeUser(Exs[i] - range, Exs[i] + range);
+        if(!isPS)
+            hsEx[i]->GetXaxis()->SetRangeUser(Exs[i] - range, Exs[i] + range);
         hsEx[i]->Draw("hist");
         for(auto* o : *(hsEx[i]->GetListOfFunctions()))
             if(o)

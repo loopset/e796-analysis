@@ -267,7 +267,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     else if(dtcont)
     {
         reckin = new ActPhysics::Kinematics {"20O(d,t)@700"};
-        std::cout << BOLDYELLOW << "Simulation_E796(): " << gSelector->GetStr() << " gs as 20O(d,t)" << RESET << '\n';
+        std::cout << BOLDYELLOW << "Simulation_E796(): " << gSelector->GetStr() << " " << Ex << " as 20O(d,t)" << RESET
+                  << '\n';
         light = "3H";
         std::cout << BOLDYELLOW << "Overriding light from " << arglight << " to " << light << RESET << '\n';
     }
@@ -512,7 +513,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             sigmaPercentBeam * T1 * p1.GetAMU())}; // T1 in Mev / u * mass of beam in u = total kinetic energy
         // And slow according to distance travelled
         auto distToVertex {(vertex - start).R()};
+        // If distance is too small, protect from spline faults
+        srim->SetUseSpline(false);
         TBeam = srim->Slow("beam", TBeam, distToVertex);
+        srim->SetUseSpline(true);
 
         // 3-> Run kinematics!
         kingen.SetBeamAndExEnergies(TBeam, Ex);

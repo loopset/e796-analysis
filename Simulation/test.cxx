@@ -1,88 +1,96 @@
-#include "ActKinematicGenerator.h"
 #include "ActSRIM.h"
 
 #include "TCanvas.h"
 #include "TF1.h"
-#include "TGraphErrors.h"
 #include "TH1.h"
-#include "TH2.h"
 #include "TMath.h"
+#include "TRandom.h"
 #include "TString.h"
 #include "TStyle.h"
 
+#include <string>
 #include <vector>
+
+double GetStragg(ActPhysics::SRIM* srim, const std::string& name, double e, double t)
+{
+    std::cout << "=================" << '\n';
+    auto Rini {srim->EvalRange(name, e)};
+    auto uRini {srim->EvalLongStraggling(name, Rini)};
+    std::cout<<"Rini : "<<Rini<<'\n';
+    std::cout << "uRini : " << uRini << '\n';
+    auto Rafter {Rini - t};
+    if(Rafter <= 0)
+        return 0;
+    auto uRafter {srim->EvalLongStraggling(name, Rafter)};
+    std::cout << "uRafter : " << uRafter << '\n';
+    auto udist {TMath::Sqrt(uRini * uRini - uRafter * uRafter)};
+    std::cout<<"dist : "<<t<<'\n';
+    std::cout<<"udist : "<<udist<<'\n';
+    t = gRandom->Gaus(t, udist);
+    std::cout<<"random dist : "<<t<<'\n';
+    return t;
+}
 
 void test()
 {
-    ActSim::KinematicGenerator gen {"11Li", "d", "t", "10Li"};
+    auto* srim {new ActPhysics::SRIM};
+    // srim->ReadTable("d", "../Calibrations/SRIMData/raw/2H_silicon.txt");
+    srim->ReadTable("d", "./ML/Inputs/SRIM/11Li_silicon.txt");
 
-    auto* hKin {new TH2D {"hKin", "Sampled Kin;theta3;T3", 200, 0, 180, 200, 0, 60}};
-    auto* hCM {new TH1D {"hCM", "Sampled CM;thetaCM", 200, 0, 180}};
+    // std::vector<double> es {5, 10, 15, 20};
+    // std::vector<double> es {20, 30, 40, 50, 60};
+    std::vector<double> es {30};
+    auto thick {60.e-3}; // mm
+    auto sigma {1.e-3};  // mm
 
-    for(int i = 0; i < 10000; i++)
+    std::vector<TH1D*> hs, hus;
+    for(const auto& e : es)
     {
-        gen.SetBeamAndExEnergies(81.5, 0);
-        auto w = gen.Generate();
-        auto triton {gen.GetLorentzVector(0)};
-        auto t3 {triton->E() - gen.GetBinaryKinematics()->GetMass(3)};
-        auto theta3 {triton->Theta()};
-        auto cm {gen.GetBinaryKinematics()->ReconstructTheta3CMFromLab(t3, theta3)};
-
-        hKin->Fill(theta3 * TMath::RadToDeg(), t3, w);
-        hCM->Fill(cm * TMath::RadToDeg(), w);
+        auto* hdE {new TH1D {TString::Format("hdE%.0f", e), TString::Format("T_{ini} = %.2f MeV;#DeltaE [MeV]", e), 400,
+                             0, 20}};
+        hs.push_back(hdE);
+        auto* hu {new TH1D {TString::Format("hU%.0f", e), TString::Format("T_{ini} = %.2f MeV;#Delta d [#mum]", e), 200,
+                            0, 2 * thick * 1e3}};
+        hus.push_back(hu);
     }
 
-    auto* c0 {new TCanvas {"c0", "Sampling kinematics"}};
-    c0->DivideSquare(4);
-    c0->cd(1);
-    hKin->Draw("colz");
-    c0->cd(2);
-    hCM->Draw();
-    // TH1::AddDirectory(false);
-    //
-    // auto* srim {new ActPhysics::SRIM};
-    // srim->SetUseSpline();
-    // srim->ReadTable("p", "../Calibrations/SRIMData/raw/1H_952mb_mixture.txt");
-    // srim->Draw();
-    //
-    // auto dist {250}; // mm
-    // std::vector<TH1D*> hs;
-    // auto* gs {new TGraphErrors};
-    // gs->SetTitle("Straggling graph;E;Sigma");
-    // for(double e = 3; e <= 20; e += 0.1)
-    // {
-    //     // Histogram
-    //     auto* h {new TH1D {"h", TString::Format("T_{ini} = %.2f;T_{after} [MeV]", e), 600, 0, 30}};
-    //     // Fill
-    //     for(int i = 0; i < 100000; i++)
-    //     {
-    //         auto after {srim->SlowWithStraggling("p", e, dist)};
-    //         h->Fill(after);
-    //     }
-    //     // Fit
-    //     h->Fit("gaus", "0QM+");
-    //     auto* f {h->GetFunction("gaus")};
-    //     f->ResetBit(TF1::kNotDraw);
-    //     f->SetNpx(1000);
-    //     auto mean {f->GetParameter("Mean")};
-    //     auto sigma {f->GetParameter("Sigma")};
-    //     gs->AddPoint(e, sigma);
-    //
-    //     hs.push_back(h);
-    // }
-    //
-    // // Draw
-    // gStyle->SetOptFit(1);
-    // auto* c0 {new TCanvas {"c0", "Straggling canvas"}};
-    // // c0->DivideSquare(hs.size());
-    // // for(int i = 0; i < hs.size(); i++)
-    // // {
-    // //     c0->cd(i + 1);
-    // //     hs[i]->Draw();
-    // // }
-    //
-    // auto* c1 {new TCanvas {"c1", "Straggling canvas"}};
-    // gs->SetLineWidth(2);
-    // gs->SetMarkerStyle(24);
-    // gs->Draw("apl");
+    int iter {100000};
+    int idx {};
+    for(const auto& e : es)
+    {
+        for(int i = 0; i < iter; i++)
+        {
+            auto unc {GetStragg(srim, "d", e, thick)};
+            // manual computation
+            hus[idx]->Fill(unc * 1e3);
+            // auto t {unc};
+            auto t {gRandom->Gaus(thick, 0.0035 / 2/ 3)};
+            // auto t {thick};
+            auto eafter {srim->Slow("d", e, t)};
+            auto eloss {e - eafter};
+            hs[idx]->Fill(eloss);
+        }
+        idx++;
+    }
+
+    // Draw
+    gStyle->SetOptFit();
+    auto* c0 {new TCanvas {"c0", "test"}};
+    c0->DivideSquare(hs.size());
+    for(int i = 0; i < hs.size(); i++)
+    {
+        c0->cd(i + 1);
+        hs[i]->Fit("gaus", "0Q");
+        auto* func {hs[i]->GetFunction("gaus")};
+        if(func)
+            hs[i]->GetFunction("gaus")->ResetBit(TF1::kNotDraw);
+        hs[i]->Draw();
+    }
+    auto* c1 {new TCanvas {"c1", "straggling"}};
+    c1->DivideSquare(hus.size());
+    for(int i = 0; i < hus.size(); i++)
+    {
+        c1->cd(i + 1);
+        hus[i]->Draw();
+    }
 }

@@ -14,6 +14,7 @@
 #include "Interpolators.h"
 #include "PhysExperiment.h"
 
+#include <algorithm>
 #include <string>
 #include <vector>
 
@@ -38,14 +39,21 @@ void Ang(bool isLab = false)
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
     ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
-    // Contamination of 20O(p,d) gs
-    ROOT::RDataFrame cont {"SimulationTTree", gSelector->GetSimuFile("20O", "1H", "2H", 0, -3, 0)};
+    // // Contamination from 20O(p,d)
+    // std::vector<double> conts {0, 1.4, 3.2, 4.5};
+    std::vector<ROOT::RDataFrame> dfcs;
+    // for(const auto& cont : conts)
+    // {
+    //     auto file {gSelector->GetApproxSimuFile("20O", "1H", "2H", cont, -3)};
+    //     ROOT::RDataFrame dfc {"SimulationTTree", file};
+    //     dfcs.push_back(dfc);
+    // }
 
     // Init intervals
     double thetaMin {isLab ? 14 : 5.5};
     double thetaMax {isLab ? 32. : 14.};
     double thetaStep {isLab ? 4 : 1.};
-    int nps {2 + 0}; // 2 nps + 1 contamination
+    int nps {static_cast<int>(2 + dfcs.size())}; // 2 nps +  contamination
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdt, thetaStep, nps};
     // Fill
     if(isLab)
@@ -57,15 +65,18 @@ void Ang(bool isLab = false)
                   {"theta3CM", "Eex", "weight"});
     phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
                    {"theta3CM", "Eex", "weight"});
-    // cont.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(2, thetacm, ex, weight); },
-    //              {"theta3CM", "Eex", "weight"});
+    for(int i = 0; i < dfcs.size(); i++)
+    {
+        dfcs[i].Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(i + 2, thetacm, ex, weight); },
+                        {"theta3CM", "Eex", "weight"});
+    }
     ivs.TreatPS(10, 0.2, {0, 1}); // disable smoothing for contamination ps
     if(!isLab)
         ivs.Write("./Outputs/ivs.root");
 
     // Fitter
     Angular::Fitter fitter {&ivs};
-    fitter.SetAllowFreeMean(true, {"v5", "v7", "v8"});
+    fitter.SetAllowFreeMean(true, {"v5", "v7"});
     fitter.SetAllowFreeSigma(true, {"g0"});
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
@@ -79,6 +90,9 @@ void Ang(bool isLab = false)
     Fitters::Interface inter;
     inter.Read("./Outputs/interface.root");
     auto peaks {inter.GetPeaks()};
+    // Remove contamination
+    for(const auto& s : {"v8", "v9", "v10"})
+        peaks.erase(std::remove(peaks.begin(), peaks.end(), s), peaks.end());
 
     // Efficiency
     Interpolators::Efficiency eff;
@@ -100,8 +114,8 @@ void Ang(bool isLab = false)
         xs.TrimX("v4", 7.5);
         xs.TrimX("v4", 13.5, false);
         xs.TrimX("v7", 7);
-        xs.TrimX("v8", 6.5);
-        xs.TrimX("v8", 11.5, false);
+        // xs.TrimX("v8", 6.5);
+        // xs.TrimX("v8", 11.5, false);
         xs.Write("./Outputs/");
     }
 
