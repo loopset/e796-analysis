@@ -78,6 +78,7 @@ void Fit()
     inter.EvalSigma(sigmas.GetGraph());
     // Fix all sigmas (3rd parameter, 2nd index of vector)
     inter.SetFixAll(2, true);
+    inter.SetBounds("v1", 3, {0, 0.2});
     inter.SetBounds("v2", 3, {0, 0.1});
     inter.SetBounds("v3", 3, {0, 0.1});
     inter.SetBounds("v5", 3, {0, 0.2});
@@ -92,7 +93,7 @@ void Fit()
 
     // Fitting range
     double exmin {-5};
-    double exmax {25};
+    double exmax {22};
     // Model
     std::vector<TH1D> hPSs {*hPS, *hPS2};
     // for(auto hc : hconts)

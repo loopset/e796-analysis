@@ -77,20 +77,35 @@ void Rebin_Ang()
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
-    xs.TrimX("v0", 12, false);
-    xs.TrimX("v2", 12, false);
-    xs.TrimX("v3", 7);
-    xs.TrimX("v3", 13.5, false);
-    xs.TrimX("v4", 8);
-    xs.TrimX("v5", 8);
-    xs.TrimX("v6", 12.5, false);
-    for(const auto& state : {"v7"})
+    ///////////////////////////////////////
+    // Cocinha para PID grande
+    // xs.TrimX("v0", 12, false);
+    // xs.TrimX("v2", 12, false);
+    // xs.TrimX("v3", 7);
+    // xs.TrimX("v3", 13.5, false);
+    // xs.TrimX("v4", 8);
+    // xs.TrimX("v5", 8);
+    // xs.TrimX("v6", 12.5, false);
+    // for(const auto& state : {"v7"})
+    // {
+    //     xs.TrimX(state, 8);
+    //     xs.TrimX(state, 12.5, false);
+    // }
+    // // xs.TrimX("v4", 13.5, false);
+    // // xs.TrimX("v7", 7.5);
+    //////////////////////////////////////
+    // PID mais pequeno
+    for(const auto& state : {"v0", "v1", "v2", "v3", "v4"})
     {
-        xs.TrimX(state, 8);
         xs.TrimX(state, 12.5, false);
     }
-    // xs.TrimX("v4", 13.5, false);
-    // xs.TrimX("v7", 7.5);
+    xs.TrimX("v3", 6.5);
+    xs.TrimX("v4", 6.5);
+    xs.TrimX("v5", 8);
+    xs.TrimX("v6", 10.5, false);
+    xs.TrimX("v7", 6.5);
+    xs.TrimX("v7", 12, false);
+
     xs.Write("./Outputs/rebin/");
 
     // Comparators!

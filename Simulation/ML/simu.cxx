@@ -35,10 +35,16 @@ XYZPoint SampleVertex(ActRoot::TPCParameters* tpc)
     return {x, y, z};
 }
 
+void ApplySilRes(double& e, double sigma)
+{
+    e = gRandom->Gaus(e, sigma * TMath::Sqrt(e / 5.5));
+}
+
 void simu(const std::string& beam, const std::string& target, const std::string& light, double Tbeam, double Ex)
 {
     // Uncertainties
     double angleSigma {1 / 2.35 * TMath::DegToRad()};
+    double silRes {0.060 / 2.355};
     // Thresholds
     double silThresh {0.5}; // MeV
 
@@ -58,7 +64,8 @@ void simu(const std::string& beam, const std::string& target, const std::string&
     // SRIM
     auto* srim {new ActPhysics::SRIM};
     std::string path {"./Inputs/SRIM/"};
-    std::string filetag {"_900mb_CF4_90-10.txt"};
+    // std::string filetag {"_900mb_CF4_90-10.txt"};
+    std::string filetag {"_mixture_900mbar.txt"};
     srim->ReadTable("beam", path + beam + filetag);
     srim->ReadTable("light", path + light + filetag);
     srim->ReadTable("lightInSil", path + light + "_silicon.txt");
@@ -75,6 +82,7 @@ void simu(const std::string& beam, const std::string& target, const std::string&
     auto* hdE01 {
         new TH2D {"hdE01", "#Delta E 0 to 1;#DeltaE_{Sil0} [MeV];#DeltaE_{Sil1} [MeV]", 300, 0, 40, 300, 0, 40}};
     auto* hRec {new TH2D {"hRec", "Rec initial energy;Simu;SRIM", 400, 0, 100, 400, 0, 100}};
+    auto* hRecKin {new TH2D {"hRecKin", "Rec kin;#theta_{Lab} [#circ];T_{Lab} [MeV]", 400, 0, 90, 400, 0, 60}};
 
 
     // Saving in file
@@ -99,7 +107,7 @@ void simu(const std::string& beam, const std::string& target, const std::string&
 
 
     // Number of iterations
-    const auto iter {static_cast<int>(5e6)};
+    const auto iter {static_cast<int>(2e6)};
 
     for(int i = 0; i < iter; i++)
     {
@@ -129,9 +137,9 @@ void simu(const std::string& beam, const std::string& target, const std::string&
         auto [silIdx, silPoint0] {sils.FindSPInLayer("f0", vertex, dir)};
         if(silIdx == -1) // no impact on silicon
             continue;
-        hSP->Fill(silPoint0.Y(), silPoint0.Z());
 
         // 4-> Propagation to silicon0
+        auto distSil0 {(silPoint0 - vertex).R()};
         auto T3At0 {srim->SlowWithStraggling("light", T3, (silPoint0 - vertex).R())};
         auto eGas {T3 - T3At0};
         // And divide by track length inside actar tpc pad plane
@@ -147,6 +155,7 @@ void simu(const std::string& beam, const std::string& target, const std::string&
         auto T3After0 {
             srim->SlowWithStraggling("lightInSil", T3At0, sils.GetLayer("f0").GetUnit().GetThickness(), thetaSil)};
         auto eLoss0 {T3At0 - T3After0};
+        ApplySilRes(eLoss0, silRes);
         if(eLoss0 < silThresh)
             continue;
 
@@ -154,38 +163,47 @@ void simu(const std::string& beam, const std::string& target, const std::string&
         double T3At1 {};
         double T3After1 {};
         double eLoss1 {};
+        double distIntergas {};
         if(T3After0 > 0)
         {
             // Propagate
-            auto [_, silPoint1] {sils.FindSPInLayer("f1", vertex, dir)};
-            auto distIntergas {(silPoint1 - silPoint0).R()};
-            T3At1 = srim->SlowWithStraggling("light", T3After0, distIntergas);
-            if(T3At1 > 0)
-            {
-                // ELoss in silicon
-                T3After1 = srim->SlowWithStraggling("lightInSil", T3At1, sils.GetLayer("f1").GetUnit().GetThickness(),
-                                                    thetaSil);
-                eLoss1 = T3At1 - T3After1;
-                if(eLoss1 < silThresh)
-                    continue;
-            }
-            else
-            {
+            auto [silIdx1, silPoint1] {sils.FindSPInLayer("f1", vertex, dir)};
+            if(silIdx1 == -1)
                 continue;
-            }
+            distIntergas = (silPoint1 - silPoint0).R();
+            T3At1 = srim->SlowWithStraggling("light", T3After0, distIntergas);
+            if(T3At1 <= 0)
+                continue;
+            // ELoss in silicon
+            T3After1 =
+                srim->SlowWithStraggling("lightInSil", T3At1, sils.GetLayer("f1").GetUnit().GetThickness(), thetaSil);
+            eLoss1 = T3At1 - T3After1;
+            ApplySilRes(eLoss1, silRes);
+            if(eLoss1 < silThresh)
+                continue;
         }
         // Fill Histograms
-        if(T3After1 <= 0)
+        if(T3After1 <= 0) // No punch in silicon1
         {
+            // Reconstruct energy
+            // 1-> Intergas
+            auto recEAfter0 {srim->EvalInitialEnergy("light", eLoss1, distIntergas)};
+            // 2-> Silicon0
+            auto recEAtSil0 {recEAfter0 + eLoss0};
+            // 3-> Vertex
+            auto recEAtVertex {srim->EvalInitialEnergy("light", recEAtSil0, distSil0)};
+
             hKinIn->Fill(theta3Lab * TMath::RadToDeg(), T3);
+            hRecKin->Fill(theta3Lab * TMath::RadToDeg(), recEAtVertex);
             hThetaCMIn->Fill(thetaCM * TMath::RadToDeg());
+            hSP->Fill(silPoint0.Y(), silPoint0.Z());
         }
         if(T3After1 > 0)
         {
-            auto rec {srim->EvalInitialEnergyFromDeltaE("lightInSil", eLoss1,
-                                                        sils.GetLayer("f1").GetUnit().GetThickness(), thetaSil)};
-            hRec->Fill(T3At1, rec);
-            hKinIn->Fill(theta3Lab * TMath::RadToDeg(), T3);
+            // auto rec {srim->EvalInitialEnergyFromDeltaE("lightInSil", eLoss1,
+            //                                             sils.GetLayer("f1").GetUnit().GetThickness(), thetaSil)};
+            // hRec->Fill(T3At1, rec);
+            // hKinIn->Fill(theta3Lab * TMath::RadToDeg(), T3);
         }
         hGas0->Fill(eLoss0, eGas);
         hdE01->Fill(eLoss0, eLoss1);
@@ -227,6 +245,6 @@ void simu(const std::string& beam, const std::string& target, const std::string&
     c0->cd(6);
     hdE01->Draw("colz");
     c0->cd(7);
-    hRec->Draw("colz");
+    hRecKin->Draw("colz");
 }
 #endif
