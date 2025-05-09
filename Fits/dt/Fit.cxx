@@ -56,16 +56,16 @@ void Fit()
     inter.AddState("g1", {10, 1.4 - offset, sigma}, "1/2+");
     inter.AddState("g2", {110, 3.2 - offset, sigma}, "(1/2,3/2)-");
     inter.AddState("v0", {60, 4.5 - offset, sigma, 0.1}, "3/2-");
-    inter.AddState("v1", {60, 6.7 - offset, sigma, 0.1}, "?");
+    inter.AddState("v1", {60, 6.7 - offset, sigma, 0.845}, "?");
     inter.AddState("v2", {60, 7.9 - offset, sigma, 0.1}, "?");
     inter.AddState("v3", {60, 8.9 - offset, sigma, 0.1}, "?");
     inter.AddState("v4", {60, 11 - offset, sigma, 0.1}, "?");
     inter.AddState("v5", {40, 12.2 - offset, sigma, 0.1}, "?");
     inter.AddState("v6", {40, 13.8 - offset, sigma, 0.1}, "?");
     inter.AddState("v7", {20, 14.9 - offset, sigma, 0.1}, "?");
-    inter.AddState("v8", {20, 16.26 - offset, sigma, 0.}, "Cont0");
-    inter.AddState("v9", {20, 18.14 - offset, sigma, 0.}, "Cont1");
-    inter.AddState("v10", {20, 20.25 - offset, sigma, 0.}, "Cont2");
+    inter.AddState("v8", {20, 16. - offset, sigma, 0.}, "Cont0");
+    // inter.AddState("v9", {20, 17.4 - offset, sigma, 0.}, "Cont1");
+    // inter.AddState("v10", {20, 20.25 - offset, sigma, 0.}, "Cont2");
     inter.AddState("ps0", {0.1});
     inter.AddState("ps1", {0.1});
     // for(int i = 0; i < conts.size(); i++)
@@ -76,17 +76,19 @@ void Fit()
     inter.ReadPreviousFit("./Outputs/fit_" + gSelector->GetFlag() + ".root");
     // Eval correct sigma
     inter.EvalSigma(sigmas.GetGraph());
-    // Fix all sigmas (3rd parameter, 2nd index of vector)
+    // Fix Gamma for v1
+    // inter.SetBounds("v1", 3, {0, 0.2});
+    inter.SetFix("v1", 3, true); // if not fixed, gets larger and disturbs v2
+    // this value has been obtained from the larger PID fit
     inter.SetFixAll(2, true);
-    inter.SetBounds("v1", 3, {0, 0.2});
     inter.SetBounds("v2", 3, {0, 0.1});
     inter.SetBounds("v3", 3, {0, 0.1});
     inter.SetBounds("v5", 3, {0, 0.2});
     inter.SetBounds("v6", 3, {0, 0.1});
     inter.SetBounds("v7", 3, {0, 0.1});
-    for(const auto& s : {"v8", "v9", "v10"})
+    for(const auto& s : {"v8"})
     {
-        inter.SetFix(s, 1, true);
+        // inter.SetFix(s, 1, true);
         inter.SetFix(s, 3, true);
     }
     inter.Write("./Outputs/interface.root");

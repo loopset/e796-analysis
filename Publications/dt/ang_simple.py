@@ -32,6 +32,20 @@ which = {
     "v7": rsfs,
     "v8": rsfs,
 }
+withl0 = {
+    "g0": False,
+    "g1": True,
+    "g2": False,
+    "v0": False,
+    "v1": False,
+    "v2": False,
+    "v3": False,
+    "v4": False,
+    "v5": True,
+    "v6": True,
+    "v7": True,
+    "v8": True,
+}
 
 # X axis limits
 xlims = (4, 17)
@@ -70,26 +84,32 @@ for i, state in enumerate(sfs.fSFs):
     if 0 <= i <= 1:
         ax.tick_params(axis="x", which="both", bottom=False, top=True)
         ax.spines.bottom.set_visible(False)
-        ax.plot([0, 1], [0, 0], transform=ax.transAxes, **abreak) #type: ignore
+        ax.plot([0, 1], [0, 0], transform=ax.transAxes, **abreak)  # type: ignore
     elif i == 9:
         ax.tick_params(axis="x", which="both", bottom=True, top=False, labelbottom=True)
         ax.spines.top.set_visible(False)
-        ax.plot([0], [0], transform=ax.transAxes, **abreak) #type: ignore
-        ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak) #type: ignore
+        ax.plot([0], [0], transform=ax.transAxes, **abreak)  # type: ignore
+        ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak)  # type: ignore
     elif i == 10:
         ax.tick_params(axis="x", which="both", bottom=True, top=False)
         ax.spines.top.set_visible(False)
-        ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak) #type: ignore
+        ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak)  # type: ignore
     else:
         ax.tick_params(axis="x", which="both", bottom=False, top=False)
         ax.spines.top.set_visible(False)
         ax.spines.bottom.set_visible(False)
-        ax.plot([0, 1], [0, 0], transform=ax.transAxes, **abreak) #type: ignore
-        ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak) #type: ignore
+        ax.plot([0, 1], [0, 0], transform=ax.transAxes, **abreak)  # type: ignore
+        ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak)  # type: ignore
 
     ## Models
-    # Set colors
-    ax.set_prop_cycle(sty.cyclers["l012"])
+    l0 = withl0.get(state)
+    if l0 is None:
+        raise ValueError(f"Must specify withl0 for {state} state")
+    if l0:
+        ax.set_prop_cycle(sty.cyclers["l012"])
+    else:
+        ax.set_prop_cycle(sty.cyclers["l12"])
+        obj.remove_model(state, "l = 0")
     models = obj.plot_models(state, ax)
 
     ## Others
@@ -113,12 +133,18 @@ for i, state in enumerate(sfs.fSFs):
     )
     # Axis break
 
-    if i == 0:
+    if i == 1:
         handles = models
 
 # Hide last one
 axs.flat[-1].axis("off")
-axs.flat[-1].legend(handles, [r"$\ell$ = 0", r"$\ell$ = 1", r"$\ell$ = 2"], labelspacing=0.05, borderpad=0.2, loc="center left")
+axs.flat[-1].legend(
+    handles,
+    [r"$\ell$ = 0", r"$\ell$ = 1", r"$\ell$ = 2"],
+    labelspacing=0.05,
+    borderpad=0.2,
+    loc="center",
+)
 
 # Figure settings
 fig.tight_layout()

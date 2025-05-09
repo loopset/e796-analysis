@@ -88,12 +88,13 @@ for i, zipped in enumerate(zip(removals, scales)):
     # b.print()a
 
 # Write to file
-with open("./Inputs/o19_barager.txt", "w") as f:
-    for label, b in zip(labels, bs):
-        res = ""
-        for q, br in b.Results.items():
-            res += f"    {q.format_simple()}    {br.ESPE:.4f}"
-        f.write(f"{label}    {res}\n")
+bs[0].write("./Inputs/dt_barager.pkl")
+# with open("./Inputs/o19_barager.txt", "w") as f:
+#     for label, b in zip(labels, bs):
+#         res = ""
+#         for q, br in b.Results.items():
+#             res += f"    {q.format_simple()}    {br.ESPE:.4f}"
+#         f.write(f"{label}    {res}\n")
 
 # Plotting
 fig, axs = plt.subplots(1, 2, figsize=(11, 4))

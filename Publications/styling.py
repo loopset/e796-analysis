@@ -2,6 +2,8 @@ import cycler
 
 base2d = {"flow": "none", "cmin": 1, "cmap": "managua_r", "rasterized": True}
 
+errorbar = {"ls": "none", "marker": "s", "capsize": 3}
+
 styles = {
     "ex": {
         "histtype": "errorbar",
@@ -40,4 +42,6 @@ ls = {"l0": "--", "l1": "-", "l2": ":"}
 cyclers = {
     "l012": cycler.cycler(color=[colors["l0"], colors["l1"], colors["l2"]])
     + cycler.cycler(ls=[ls["l0"], ls["l1"], ls["l2"]]),
+    "l12": cycler.cycler(color=[colors["l1"], colors["l2"]])
+    + cycler.cycler(ls=[ls["l1"], ls["l2"]]),
 }
