@@ -72,10 +72,12 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
     if(gSystem->AccessPathName(auxfile))
     {
         std::cout << BOLDGREEN << "Saving PID tree : " << auxfile << RESET << '\n';
-        vetoed.Define("ESil0", "fSilEs.front()").Snapshot(
-            "PID_Tree",
-            TString::Format("/media/Data/E796v2/Publications/pid/Inputs/pid_%s.root", isEl ? "side" : "front").Data(),
-            {"ESil0", "fQave"});
+        vetoed.Define("ESil0", "fSilEs.front()")
+            .Define("NSil0", "fSilNs.front()")
+            .Snapshot("PID_Tree",
+                      TString::Format("/media/Data/E796v2/Publications/pid/Inputs/pid_%s.root", isEl ? "side" : "front")
+                          .Data(),
+                      {"ESil0", "NSil0", "fQave"});
     }
     // // Write entries
     // std::cout << "Writing : " << vetoed.Count().GetValue() << " entries" << '\n';

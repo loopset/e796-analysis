@@ -3,9 +3,20 @@ import uproot
 import awkward as ak
 import hist
 import matplotlib.pyplot as plt
+import matplotlib.axes as mplaxes
+import matplotlib.ticker as mpltic
 import ROOT as r
 import numpy as np
 
+plt.rcParams.update(
+    {
+        "font.size": 20,
+        "axes.titlesize": 22,
+        "axes.labelsize": 22,
+        "xtick.labelsize": 20,
+        "ytick.labelsize": 20,
+    }
+)
 
 # Read files
 files = ["./Inputs/pid_front.root", "./Inputs/pid_side.root"]
@@ -24,7 +35,14 @@ for _ in files:
     )
 
 for i, array in enumerate(arrays):
-    hists[i].fill(array["ESil0"], array["fQave"])
+    if i == 1:
+        mask = ~np.isin(array["NSil0"], [6, 7])  # to avoid double bananas in SIDE LAYER
+        x = array["ESil0"][mask]
+        y = array["fQave"][mask]
+    else:
+        x = array["ESil0"]
+        y = array["fQave"]
+    hists[i].fill(x, y)
 
 # # triton cut
 # with r.TFile("../../PostAnalysis/Cuts/LightPID/pid_2H.root") as f:
@@ -66,20 +84,19 @@ for i, h in enumerate(hists):
     ax = axs[i]
     h.plot2d(ax=ax, cmap="managua_r", cmin=1, flow=None, rasterized=True)
     if i == 1:  # side plot
-        ax.set_xlim(0, 18)
+        ax.set_xlim(0, 15)
         ax.set_ylim(0, 800)
 ## annotations
 # front
-ax = axs[0]
-# # Axis
-# ax.annotate(
-#     r"\textbf{Transfer}",
-#     xy=(0.8, 0.85),
-#     xycoords="axes fraction",
-#     ha="center",
-#     va="center",
-#     fontsize=16,
-# )
+ax: mplaxes.Axes = axs[0]
+# Axis
+ax.annotate(
+    r"\noindent\textbf{a)}\newline\newline\textbf{Front}",
+    xy=(0.8, 0.85),
+    xycoords="axes fraction",
+    ha="center",
+    va="center",
+)
 
 
 # Bananas
@@ -90,7 +107,6 @@ def annotate(label: str, pos: tuple, l: float, a: float):
         label,
         xy=pos,
         xytext=(xt, yt),
-        fontsize=16,
         ha="center",
         va="center",
         arrowprops=dict(arrowstyle="-"),
@@ -98,7 +114,7 @@ def annotate(label: str, pos: tuple, l: float, a: float):
 
 
 labels = ["p", "d", "t", "3He", r"$\alpha$"]
-poss = [(7.4, 190), (9.77, 261), (11.1, 336), (24, 590), (30.5, 615)]
+poss = [(7.4, 190), (9.77, 261), (11.1, 300), (24, 590), (30.5, 615)]
 d = 20
 a = -75
 ds = [d, d, d, 200, 200]
@@ -108,24 +124,30 @@ for i, l in enumerate(labels):
 
 # side
 ax = axs[1]
-# ax.annotate(
-#     r"\textbf{(In)elastic}",
-#     xy=(0.8, 0.85),
-#     xycoords="axes fraction",
-#     ha="center",
-#     va="center",
-#     fontsize=16,
-# )
+ax.annotate(
+    r"\noindent\textbf{b)}\newline\newline\textbf{Side}",
+    xy=(0.8, 0.85),
+    xycoords="axes fraction",
+    ha="center",
+    va="center",
+)
 
 # Bananas
 labels = ["p", "d"]
-poss = [(6.62, 150), (8.8, 240)]
-d = 20
+poss = [(6.62, 175), (8.8, 240)]
+d = 15
 a = -75
 for l, p in zip(labels, poss):
     annotate(l, p, d, a)
 
+ax.xaxis.set_major_locator(mpltic.MaxNLocator(nbins=4, integer=True))
+
+## General settings
+for ax in axs.flat:
+    ax.locator_params(axis="y", nbins=4)
+
 fig.tight_layout()
+fig.subplots_adjust(wspace=0.05)
 fig.savefig("./Outputs/pid.pdf", dpi=200)
 fig.savefig("./Outputs/pid.eps", dpi=200)
 plt.show()
