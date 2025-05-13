@@ -8,12 +8,14 @@
 #include "ActTPCParameters.h"
 #include "ActUtils.h"
 
+#include "TBranchProxy.h"
 #include "TCanvas.h"
 #include "TEfficiency.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TMath.h"
+#include "TProfile.h"
 #include "TRandom.h"
 #include "TString.h"
 #include "TTree.h"
@@ -23,6 +25,7 @@
 
 #include <iostream>
 #include <string>
+#include <vector>
 
 using XYZPoint = ROOT::Math::XYZPoint;
 using XYZVector = ROOT::Math::XYZVector;
@@ -38,6 +41,65 @@ XYZPoint SampleVertex(ActRoot::TPCParameters* tpc)
 void ApplySilRes(double& e, double sigma)
 {
     e = gRandom->Gaus(e, sigma * TMath::Sqrt(e / 5.5));
+}
+
+bool IsInChamber(XYZPoint point, bool inMM = true)
+{
+    if(inMM) // convert to pad units
+        point /= 2;
+    bool a {0 <= point.X() && point.X() <= 128};
+    bool b {0 <= point.Y() && point.Y() <= 128};
+    bool c {0 <= point.Z() && point.Z() <= 128};
+    return a && b && c;
+}
+
+void FillProfile(ActPhysics::SRIM* srim, const std::string& which, double Tini, const XYZPoint& start,
+                 const XYZVector& dir, TProfile* h)
+{
+    h->Reset(); // Always reset profile just in case
+    // Number of iterations to implement noise and uncertainties
+    int iter {10};
+    // Sigma in DeltaE
+    double ueloss {0.05}; // percent of given value!
+    // Eval range from srim
+    auto range {srim->EvalRange(which, Tini)};
+    // Step along range
+    double rstep {0.5}; // mm
+    for(int i = 0; i < iter; i++)
+    {
+        double Eit {Tini};
+        for(double r = 0; r <= range; r += rstep)
+        {
+            // Position
+            auto point {start + r * dir.Unit()};
+            if(!IsInChamber(point))
+                break;
+            // Energy loss
+            auto aux {srim->Slow(which, Eit, rstep)}; // disable straggling for the moment...
+            auto eloss {Eit - aux};
+            // Randomize
+            eloss = gRandom->Gaus(eloss, eloss * ueloss);
+            // Distance to vertex
+            auto dist {(point - start).R()};
+            // Fill histogram
+            h->Fill(dist, eloss);
+            // Prepare for next iteration
+            Eit = aux;
+        }
+    }
+}
+
+void FillProfileVectors(TProfile* p, std::vector<float>& vx, std::vector<float>& vy)
+{
+    vx.clear();
+    vy.clear();
+    for(int b = 1; b <= p->GetNbinsX(); b++)
+    {
+        auto x {p->GetBinCenter(b)};
+        auto y {p->GetBinContent(b)};
+        vx.push_back(x);
+        vy.push_back(y);
+    }
 }
 
 void simu(const std::string& beam, const std::string& target, const std::string& light, double Tbeam, double Ex)
@@ -64,8 +126,8 @@ void simu(const std::string& beam, const std::string& target, const std::string&
     // SRIM
     auto* srim {new ActPhysics::SRIM};
     std::string path {"./Inputs/SRIM/"};
-    // std::string filetag {"_900mb_CF4_90-10.txt"};
-    std::string filetag {"_mixture_900mbar.txt"};
+    std::string filetag {"_900mb_CF4_90-10.txt"};
+    // std::string filetag {"_mixture_900mbar.txt"};
     srim->ReadTable("beam", path + beam + filetag);
     srim->ReadTable("light", path + light + filetag);
     srim->ReadTable("lightInSil", path + light + "_silicon.txt");
@@ -83,6 +145,7 @@ void simu(const std::string& beam, const std::string& target, const std::string&
         new TH2D {"hdE01", "#Delta E 0 to 1;#DeltaE_{Sil0} [MeV];#DeltaE_{Sil1} [MeV]", 300, 0, 40, 300, 0, 40}};
     auto* hRec {new TH2D {"hRec", "Rec initial energy;Simu;SRIM", 400, 0, 100, 400, 0, 100}};
     auto* hRecKin {new TH2D {"hRecKin", "Rec kin;#theta_{Lab} [#circ];T_{Lab} [MeV]", 400, 0, 90, 400, 0, 60}};
+    auto* hProf {new TProfile {"hProf", "Q profile;dist [mm];#DeltaE [MeV]", 400, 0, 300}};
 
 
     // Saving in file
@@ -104,13 +167,17 @@ void simu(const std::string& beam, const std::string& target, const std::string&
     tree->Branch("RPx", &rpx_tree);
     double t3after1_tree {};
     tree->Branch("T3After1", &t3after1_tree);
+    std::vector<float> profx_tree;
+    tree->Branch("profx", &profx_tree);
+    std::vector<float> profy_tree;
+    tree->Branch("profy", &profy_tree);
 
 
     // Number of iterations
-    const auto iter {static_cast<int>(2e6)};
-
+    const auto iter {static_cast<int>(5e5)};
     for(int i = 0; i < iter; i++)
     {
+        std::cout << "\r" << "i : " << i << std::flush;
         // 1-> Sample vertex
         auto vertex {SampleVertex(&tpc)};
         hRP->Fill(vertex.X(), vertex.Y());
@@ -205,6 +272,9 @@ void simu(const std::string& beam, const std::string& target, const std::string&
             // hRec->Fill(T3At1, rec);
             // hKinIn->Fill(theta3Lab * TMath::RadToDeg(), T3);
         }
+        // Fill histograms to ML
+        FillProfile(srim, "light", T3, vertex, dir, hProf);
+        FillProfileVectors(hProf, profx_tree, profy_tree);
         hGas0->Fill(eLoss0, eGas);
         hdE01->Fill(eLoss0, eLoss1);
         // Fill tree
@@ -217,6 +287,7 @@ void simu(const std::string& beam, const std::string& target, const std::string&
         t3after1_tree = T3After1;
         tree->Fill();
     }
+    std::cout << '\n';
 
     // Efficiency
     auto* eff {new TEfficiency {*hThetaCMIn, *hThetaCMAll}};

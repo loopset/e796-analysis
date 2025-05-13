@@ -124,13 +124,15 @@ class DataInterface():
         # Mask NaNs
         ok = ~np.isnan(self.d3)
         x, y, z = np.where(ok)
+        maxq = 2000
         q = self.d3[x, y, z]
+        q = np.clip(q, None, maxq)
         x = x + 0.5
         y = y + 0.5
         z = z + 0.5
         # Get axis
         ax = plt.gca()
-        scat = ax.scatter(x, y, z, c=q, cmap="managua_r", marker="o", s=25, edgecolor="none", linewidth=0.3, alpha=0.85)
+        scat = ax.scatter(x, y, z, c=q, cmap="managua_r", marker="o", s=15, edgecolor="none", linewidth=0.3, alpha=0.75)
         pad = 10
         ax.set_xlabel("X [pads]", labelpad=pad)
         ax.set_ylabel("Y [pads]", labelpad=pad)
