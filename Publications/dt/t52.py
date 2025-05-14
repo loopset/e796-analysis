@@ -69,8 +69,8 @@ fig, axs = plt.subplots(1, 2, figsize=(11, 5))
 ax: mplaxes.Axes = axs[0]
 ax.axis("off")
 ax.table(
-    cellText=dftab.values,
-    colLabels=dftab.columns,
+    cellText=dftab.values, #type: ignore
+    colLabels=dftab.columns, #type: ignore
     cellLoc="center",
     colWidths=[0.2] * len(dftab.columns),
     loc="center",

@@ -1,4 +1,5 @@
 import cycler
+import pyphysics
 
 base2d = {"flow": "none", "cmin": 1, "cmap": "managua_r", "rasterized": True}
 
@@ -44,4 +45,19 @@ cyclers = {
     + cycler.cycler(ls=[ls["l0"], ls["l1"], ls["l2"]]),
     "l12": cycler.cycler(color=[colors["l1"], colors["l2"]])
     + cycler.cycler(ls=[ls["l1"], ls["l2"]]),
+}
+
+barplot = {
+    pyphysics.QuantumNumbers.from_str("0p1/2"): dict(
+        fc="none", ec="green", hatch=r"--"
+    ),
+    pyphysics.QuantumNumbers.from_str("0p3/2"): dict(
+        fc="none", ec="dimgray", hatch="//"
+    ),
+    pyphysics.QuantumNumbers.from_str("0d5/2"): dict(
+        fc="none", ec="dodgerblue", hatch=".."
+    ),
+    pyphysics.QuantumNumbers.from_str("1s1/2"): dict(
+        fc="none", ec="crimson", hatch=r"\\"
+    ),
 }
