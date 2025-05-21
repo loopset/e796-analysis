@@ -58,6 +58,8 @@ fig, axs = plt.subplots(2, 2, figsize=(14, 7))
 ax: mplaxes.Axes = axs[0][0]
 dftab = df.copy()
 dftab = dftab.drop(columns=["name"], axis=1)
+if dftab is None:
+    raise ValueError("None in dftab")
 for column in dftab.columns:
     first = dftab[column][0]
     if isinstance(first, un.UFloat):
