@@ -1,7 +1,8 @@
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import pyphysics as phys
 import pandas as pd
+import uncertainties as un
 
 fit = phys.FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
 unrebin = phys.SFInterface("../../Fits/dt/Outputs/sfs.root")
@@ -27,10 +28,10 @@ assignments = {
     "v1": (rebin, qp32),
     "v2": (rebin, qp32),
     "v3": (rebin, qp32),
-    "v4": (rebin, qp32),
+    "v4": (rebin, qp12),  # start of T=5/2 states
     "v5": (rebin, qp32),
     "v6": (rebin, qp32),
-    "v7": (rebin, qp32),
+    "v7": (rebin, qp12),  # state at 15 MeV. Next are background
 }
 
 
@@ -60,3 +61,15 @@ def build_sm() -> Dict[phys.QuantumNumbers, List[phys.ShellModelData]]:
         data = phys.ShellModelData(ex, sf.fSF)
         ret[q].append(data)
     return ret
+
+
+def split_isospin(df: phys.SMDataDict) -> Tuple[phys.SMDataDict, phys.SMDataDict]:
+    t32 = defaultdict(list)
+    t52 = defaultdict(list)
+    for k, vals in df.items():
+        for val in vals:
+            if un.nominal_value(val.Ex) < 10:
+                t32[k].append(val)
+            else:
+                t52[k].append(val)
+    return (t32, t52)
