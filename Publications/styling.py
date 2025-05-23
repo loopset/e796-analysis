@@ -5,6 +5,15 @@ base2d = {"flow": "none", "cmin": 1, "cmap": "managua_r", "rasterized": True}
 
 errorbar = {"ls": "none", "marker": "s", "capsize": 3}
 
+base1d = {
+    "histtype": "step",
+    "yerr": False,
+    "flow": "none",
+    # "capsize": 0,
+    "lw": 1,
+    # "marker": "none",
+}
+
 styles = {
     "ex": {
         "histtype": "errorbar",

@@ -190,6 +190,7 @@ style_plot(up, ax)
 for ax in [axs[0, 0], axs[0, 1]]:
     ax.set_xlabel(r"E$_{\text{x}}$ [MeV]")
     ax.set_ylabel(r"C$^{2}$S")
+    ax.legend()
 ## Strengths
 # Experimental
 for i, data in enumerate([low, up]):
@@ -202,26 +203,51 @@ for i, data in enumerate([lowSFO, upSFO]):
     ste = get_strengths(data)
     strength_plot(ste, ax, "Mod SFO-tls")
 for ax in [axs[1, 0], axs[1, 1]]:
-    ax.set_ylabel("Spe. strength")
+    ax.set_ylabel(r"$\sum$C$^2$S")
     ax.legend()
 
 fig.tight_layout()
+fig.savefig("./Outputs/bar_strengths.pdf")
 
-fig, axs = plt.subplots(1, 2, figsize=(11, 7))
-ax: mplaxes.Axes = axs[0]
-for i, data in enumerate([low, lowSFO]):
-    spe = get_strengths(data)
-    centroids = get_centroids(data)
-    x = []
-    y = []
-    for q in spe:
-        x.append(centroids[q])
-        y.append(spe[q])
-    ax.errorbar(
-        unp.nominal_values(x), unp.nominal_values(y), yerr=unp.std_devs(y), marker="o"
-    )
+fig, axs = plt.subplots(2, 2, figsize=(11, 7))
+diffs = []
+# First row: centroids and strengths
+for i, pair in enumerate([[low, lowSFO], [up, upSFO]]):
+    ax: mplaxes.Axes = axs[0, i]
+    for j, data in enumerate(pair):
+        spe = get_strengths(data)
+        centroids = get_centroids(data)
+        diff = centroids[dt.qp12]  - centroids[dt.qp32] # type: ignore
+        diffs.append(diff)
+        for q in spe:
+            ax.bar(
+                unp.nominal_values(centroids[q]),
+                unp.nominal_values(spe[q]),
+                # yerr=unp.std_devs([e.SF for e in vals]) if errorbar else None,
+                width=0.350,
+                align="center",
+                label=("" if j == 0 else "_") + q.format(),
+                alpha=1 if j == 0 else 0.5,
+                **sty.barplot.get(q, {}),
+            )
+    # Axis settings
+    ax.legend()
+    ax.set_xlabel(r"E$_{\text{x}}$ centroids [MeV]")
+    ax.set_ylabel(r"$\sum$C$^2$S")
+    ax.annotate("Dimmed: mod SFO-tls", xy=(0.45, 0.85), xycoords="axes fraction", fontsize=14)
+axs[0, 0].set_title("T = 3/2")
+axs[0, 1].set_title("T = 5/2")
+# Second row: differences
+labels = ["Exp", "Mod SFO-tls"]
+ax= axs[1, 0]
+ax.errorbar(range(len(labels)), unp.nominal_values(diffs[:2]), yerr=unp.std_devs(diffs[:2]), marker="s", label="T = 3/2")
+ax.errorbar(range(len(labels)), unp.nominal_values(diffs[2:]), yerr=unp.std_devs(diffs[2:]), marker="s", label="T = 5/2")
+ax.set_xticks(range(len(labels)), labels)
+ax.legend()
+ax.set_ylabel("0p$_{1/2}$ - 0p$_{3/2}$ [MeV]")
 
 fig.tight_layout()
+fig.savefig("./Outputs/bar_centroids.pdf")
 plt.show()
 
 # ## Additional information

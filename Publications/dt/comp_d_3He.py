@@ -1,15 +1,89 @@
+from matplotlib import hatch
+import uproot
 import pyphysics as phys
 import uncertainties as un
 import uncertainties.unumpy as unp
 import matplotlib.pyplot as plt
 import matplotlib.axes as mplaxes
 import pandas as pd
+import hist
 
 import sys
 
 sys.path.append("../")
-import styling as sty
+sys.path.append("./")
 
+import styling as sty
+import dt
+import histos
+
+## Ex comparison
+hjuan = uproot.open("./Inputs/Ex_and_fitted_states_Extended_update.root")["htot"].to_hist()  # type: ignore
+hjuan.axes[0].label = r"E$_{\text{x}}$ [MeV]"
+exdt = uproot.open(
+    "../../PostAnalysis/RootFiles/Pipe3/tree_20O_2H_3H_front_juan_RPx.root:Sel_Tree"
+).arrays(  # type: ignore
+    ["Ex"]
+)
+# Use same binning as Juan
+edges = hjuan.axes[0].edges
+bw = abs(edges[0] - edges[1])
+xmin = -5
+xmax = 40
+nbins = int((xmax - xmin) / bw)
+hdt = hist.Hist.new.Reg(nbins, xmin, xmax, label=r"E$_{\text{x}}$ [MeV]").Double()
+# Scale gs
+excut = 1
+gsfactor = 0.3
+gsbin = hdt.axes[0].index(excut)
+hdt.fill(exdt[exdt.Ex >= excut].Ex)
+# Scale gs
+hgs = hdt.copy()
+hgs.reset()
+hgs.fill(exdt[exdt.Ex < excut].Ex)
+hgs *= gsfactor
+# Transform Juan's to (d,t) by a shift
+bediff = 11.7  # MeV difference
+hdiff = hist.Hist.new.Reg(nbins, xmin, xmax).Double()
+values = hjuan.values()
+for i, value in enumerate(values):
+    center = 0.5 * (edges[i] + edges[i + 1])
+    center += bediff
+    hdiff.fill(center, weight=value)
+# Scaling factor
+jfactor = 0.75
+hdiff *= jfactor
+
+
+# Plot
+fig, axs = plt.subplots(1, 2, figsize=(11, 5))
+ax: mplaxes.Axes = axs[0]
+## (d,t)
+ax.set_title("$^{20}$O(d,t)")
+hgs[:gsbin].plot(ax=ax, label="Exp", color="dodgerblue", **sty.base1d)  # type: ignore
+hdt[gsbin:].plot(ax=ax, color="dodgerblue", **sty.base1d)  # type: ignore
+hdiff.plot(
+    ax=ax, color="orange", hatch="\\\\", label=r"(d,$^3$He) + offset", **sty.base1d
+)
+ax.legend()
+ax.annotate(rf"gs $\times$ {gsfactor:.1f}", xy=(0.5, 335), fontsize=14)
+ax.annotate(
+    f"Offset = BE(19N) - BE(19O)\n = {bediff:.1f} MeV",
+    xy=(0.45, 0.6),
+    xycoords="axes fraction",
+    fontsize=12,
+)
+ax.set_ylabel(f"Counts / {bw * 1e3:.0f} keV")
+## (d, 3He)
+ax = axs[1]
+ax.set_title("$^{20}$O(d,$^3$He)")
+hjuan.plot(ax=ax, color="orange", **sty.base1d)
+ax.set_ylabel(f"Counts / {bw * 1e3:.0f} keV")
+
+fig.tight_layout()
+fig.savefig("./Outputs/ex_dt_d3He.pdf", dpi=200)
+
+## Miscellanea
 # Read data
 fit = phys.FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
 sfs = phys.SFInterface(
@@ -69,8 +143,8 @@ fig, axs = plt.subplots(1, 2, figsize=(11, 5))
 ax: mplaxes.Axes = axs[0]
 ax.axis("off")
 ax.table(
-    cellText=dftab.values, #type: ignore
-    colLabels=dftab.columns, #type: ignore
+    cellText=dftab.values,  # type: ignore
+    colLabels=dftab.columns,  # type: ignore
     cellLoc="center",
     colWidths=[0.2] * len(dftab.columns),
     loc="center",
