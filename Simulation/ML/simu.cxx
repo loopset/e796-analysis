@@ -145,7 +145,7 @@ void simu(const std::string& beam, const std::string& target, const std::string&
         new TH2D {"hdE01", "#Delta E 0 to 1;#DeltaE_{Sil0} [MeV];#DeltaE_{Sil1} [MeV]", 300, 0, 40, 300, 0, 40}};
     auto* hRec {new TH2D {"hRec", "Rec initial energy;Simu;SRIM", 400, 0, 100, 400, 0, 100}};
     auto* hRecKin {new TH2D {"hRecKin", "Rec kin;#theta_{Lab} [#circ];T_{Lab} [MeV]", 400, 0, 90, 400, 0, 60}};
-    auto* hProf {new TProfile {"hProf", "Q profile;dist [mm];#DeltaE [MeV]", 400, 0, 300}};
+    auto* hProf {new TProfile {"hProf", "Q profile;dist [mm];#DeltaE [MeV]", 145, 0, 290}};
 
 
     // Saving in file
