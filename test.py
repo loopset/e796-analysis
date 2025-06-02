@@ -11,4 +11,3 @@ for k in [a, b]:
     ax.plot(x, y, label = f"Ex = {k.Ex}")
 ax.legend()
 plt.show()
-
