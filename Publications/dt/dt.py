@@ -1,12 +1,13 @@
 from collections import defaultdict
 from typing import Dict, List, Tuple
 import pyphysics as phys
+from pyphysics.actroot_interface import FitInterface, SFInterface
 import pandas as pd
 import uncertainties as un
 
-fit = phys.FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
-unrebin = phys.SFInterface("../../Fits/dt/Outputs/sfs.root")
-rebin = phys.SFInterface("../../Fits/dt/Outputs/rebin_sfs.root")
+fit = FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
+unrebin = SFInterface("../../Fits/dt/Outputs/sfs.root")
+rebin = SFInterface("../../Fits/dt/Outputs/rebin_sfs.root")
 
 qp12 = phys.QuantumNumbers(0, 1, 0.5)
 qp32 = phys.QuantumNumbers(0, 1, 1.5)
