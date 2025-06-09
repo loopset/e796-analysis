@@ -44,7 +44,7 @@ hgs.reset()
 hgs.fill(exdt[exdt.Ex < excut].Ex)
 hgs *= gsfactor
 # Transform Juan's to (d,t) by a shift
-bediff = 11.7  # MeV difference
+bediff = 11.  # MeV difference
 hdiff = hist.Hist.new.Reg(nbins, xmin, xmax).Double()
 values = hjuan.values()
 for i, value in enumerate(values):

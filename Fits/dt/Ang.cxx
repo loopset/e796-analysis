@@ -99,6 +99,7 @@ void Ang(bool isLab = false)
     Interpolators::Efficiency eff;
     for(const auto& peak : peaks)
         eff.Add(peak, gSelector->GetApproxSimuFile("20O", "2H", "3H", inter.GetGuess(peak)), isLab ? "effLab" : "eff");
+    eff.Scale(0.95); // Calculated experimental rec efficiency from paper (underestimated)
     eff.Draw()->SaveAs("./Outputs/effs.png");
 
     // Set experiment info

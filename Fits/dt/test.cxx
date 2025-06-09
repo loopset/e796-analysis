@@ -1,6 +1,15 @@
+#include "Interpolators.h"
 #include "PhysSM.h"
 void test()
 {
-    PhysUtils::ModelParser parser {{"./Inputs/SM/log_O20_O19_ysox_tr_j0p_m1p.txt"}};
-    parser.ShiftEx();
+    Interpolators::Efficiency eff;
+    eff.Add("g0", "../../Simulation/Outputs/juan_RPx/tree_20O_2H_3H_0.00_nPS_0_pPS_0.root", "eff");
+
+    Interpolators::Efficiency sca;
+    sca.Add("g0", "../../Simulation/Outputs/juan_RPx/tree_20O_2H_3H_0.00_nPS_0_pPS_0.root", "eff");
+    sca.Scale(0.95);
+
+    eff.GetGraph("g0")->Draw("apl");
+    sca.GetGraph("g0")->Draw("pl");
+
 }

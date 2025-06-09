@@ -69,6 +69,7 @@ void Rebin_Ang()
     Interpolators::Efficiency eff;
     for(const auto& peak : peaks)
         eff.Add(peak, gSelector->GetApproxSimuFile("20O", "2H", "3H", inter.GetGuess(peak)), "eff");
+    eff.Scale(0.95);
     eff.Draw();
 
     // Set experiment info
