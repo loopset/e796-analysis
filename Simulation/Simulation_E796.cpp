@@ -544,7 +544,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             // thetaCM following xs or not
             double thetaCM {};
             if(xs)
-                thetaCM = xs->Sample() * TMath::DegToRad();
+                thetaCM = xs->SampleCDF() * TMath::DegToRad();
             else
                 thetaCM = TMath::ACos(gRandom->Uniform(-1, 1));
             // Ptr to current binary kinematics

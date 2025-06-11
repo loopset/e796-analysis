@@ -19,7 +19,7 @@ bg = fig.add_axes([0, 0, 1, 1], zorder=0)  # type: ignore
 bg.set_axis_off()
 with_grid = False
 if with_grid:
-    for v in np.linspace(0, 1, 11):
+    for v in np.linspace(0, 1, 21):
         bg.axhline(v, color="gray", lw=1, ls="--", zorder=100)
         bg.axvline(v, color="gray", lw=1, ls="--", zorder=100)
 
@@ -69,7 +69,7 @@ right.pcolormesh(
 )
 for spe in right.spines.values():
     spe.set_color("dodgerblue")
-    spe.set_linewidth(1.5)
+    spe.set_linewidth(1.75)
 
 # General sil parameters
 width = 0.9
@@ -91,14 +91,17 @@ cfa = mplpatch.Rectangle(
     cfa_width,
     cfa_height,
     transform=fig.transFigure,
-    lw=1.5,
+    lw=1.75,
     color="seagreen",
     fc="none",
 )
 fig.patches.append(cfa)
 
 # Annotations
-fontsize = 12
+fontsize = 16
+fontweight = "normal"
+fontstyle1 = "normal"
+fontstyle2 = "italic"
 bg.annotate(
     "",
     xy=(0.35, 0.9),
@@ -119,13 +122,44 @@ bg.annotate(
     r"d $\sim$ 10 cm",
     xy=(0.175, 0.8),
     fontsize=fontsize,
+    fontweight=fontweight,
+    fontstyle=fontstyle1,
+    ha="center",
+    va="center",
+)
+bg.annotate(
+    "Left\nsilicons",
+    xy=(0.1, 0.15),
+    fontsize=fontsize,
+    fontweight=fontweight,
+    fontstyle=fontstyle2,
+    ha="center",
+    va="center",
+)
+bg.annotate(
+    "Front\nsilicons",
+    xy=(0.175, 0.925),
+    fontsize=fontsize,
+    fontweight=fontweight,
+    fontstyle=fontstyle2,
     ha="center",
     va="center",
 )
 bg.annotate(
     r"Beam counter",
-    xy=(0.75, cfa_y - cfa_height / 4),
+    xy=(0.775, cfa_y - cfa_height / 4),
     fontsize=fontsize,
+    fontweight=fontweight,
+    fontstyle=fontstyle2,
+    ha="center",
+    va="center",
+)
+bg.annotate(
+    "TPC",
+    xy=(0.325, 0.225),
+    fontsize=fontsize,
+    fontweight=fontweight,
+    fontstyle=fontstyle2,
     ha="center",
     va="center",
 )
@@ -133,12 +167,23 @@ bg.annotate(
     "",
     xy=(0.6, 0.125),
     xytext=(0.6, 0.005),
-    arrowprops=dict(arrowstyle="->", color="crimson", lw=2),
+    arrowprops=dict(
+        arrowstyle="->,head_width=0.5, head_length=0.75", color="crimson", lw=2
+    ),
 )
 bg.annotate(
     r"$^{20}$O @ 35 AMeV",
-    xy=(0.35, 0.06),
+    xy=(0.25, 0.06),
     fontsize=fontsize,
+    fontweight=fontweight,
+    fontstyle=fontstyle1,
+)
+bg.annotate(
+    r"$2.5 \cdot 10^{4}$ pps",
+    xy=(0.65, 0.06),
+    fontsize=fontsize,
+    fontweight=fontweight,
+    fontstyle=fontstyle1,
 )
 
 # Save!
