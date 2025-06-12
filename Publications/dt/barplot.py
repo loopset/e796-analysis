@@ -80,6 +80,19 @@ def get_centroids(
     return ret
 
 
+def get_cdf_strengths(
+    data: phys.SMDataDict,
+) -> Dict[phys.QuantumNumbers, np.ndarray]:
+    ret = {}
+    for q, vals in data.items():
+        sorted(vals, key=lambda val: un.nominal_value(val.Ex))  # type: ignore
+        x = np.array([val.Ex for val in vals])
+        y = np.array([val.SF for val in vals])
+        cdf = np.cumsum(y)
+        ret[q] = np.column_stack((x, cdf))
+    return ret
+
+
 ## T=5/2 isospin treatment
 low, up = dt.split_isospin(exp)
 lowSFO, upSFO = dt.split_isospin(mod.data)
@@ -217,7 +230,7 @@ for i, pair in enumerate([[low, lowSFO], [up, upSFO]]):
     for j, data in enumerate(pair):
         spe = get_strengths(data)
         centroids = get_centroids(data)
-        diff = centroids[dt.qp12]  - centroids[dt.qp32] # type: ignore
+        diff = centroids[dt.qp12] - centroids[dt.qp32]  # type: ignore
         diffs.append(diff)
         for q in spe:
             ax.bar(
@@ -234,20 +247,68 @@ for i, pair in enumerate([[low, lowSFO], [up, upSFO]]):
     ax.legend()
     ax.set_xlabel(r"E$_{\text{x}}$ centroids [MeV]")
     ax.set_ylabel(r"$\sum$C$^2$S")
-    ax.annotate("Dimmed: mod SFO-tls", xy=(0.45, 0.85), xycoords="axes fraction", fontsize=14)
+    ax.annotate(
+        "Dimmed: mod SFO-tls", xy=(0.45, 0.85), xycoords="axes fraction", fontsize=14
+    )
 axs[0, 0].set_title("T = 3/2")
 axs[0, 1].set_title("T = 5/2")
 # Second row: differences
 labels = ["Exp", "Mod SFO-tls"]
-ax= axs[1, 0]
-ax.errorbar(range(len(labels)), unp.nominal_values(diffs[:2]), yerr=unp.std_devs(diffs[:2]), marker="s", label="T = 3/2")
-ax.errorbar(range(len(labels)), unp.nominal_values(diffs[2:]), yerr=unp.std_devs(diffs[2:]), marker="s", label="T = 5/2")
+ax = axs[1, 0]
+ax.errorbar(
+    range(len(labels)),
+    unp.nominal_values(diffs[:2]),
+    yerr=unp.std_devs(diffs[:2]),
+    marker="s",
+    label="T = 3/2",
+)
+ax.errorbar(
+    range(len(labels)),
+    unp.nominal_values(diffs[2:]),
+    yerr=unp.std_devs(diffs[2:]),
+    marker="s",
+    label="T = 5/2",
+)
 ax.set_xticks(range(len(labels)), labels)
 ax.legend()
 ax.set_ylabel("0p$_{1/2}$ - 0p$_{3/2}$ [MeV]")
 
 fig.tight_layout()
 fig.savefig("./Outputs/bar_centroids.pdf")
+
+# plt.close("all")
+fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+for i, data in enumerate([exp, mod.data]):
+    cdf = get_cdf_strengths(data)
+    for q, vals in cdf.items():
+        if q == phys.QuantumNumbers.from_str("0d3/2"):
+            continue
+        ax.errorbar(
+            unp.nominal_values(vals[:, 0]),
+            unp.nominal_values(vals[:, 1]),
+            yerr=unp.std_devs(vals[:, 1]),
+            marker="s",
+            ms=5,
+            alpha=1 if i == 0 else 0.5,
+            color=sty.barplot.get(q, {}).get("ec"),
+            label=q.format() if i == 0 else None,
+        )
+# Draw also limits
+for q in [dt.qd52, dt.qp12, dt.qp32, dt.qs12]:
+    ax.axhline(
+        q.degeneracy(), color=sty.barplot.get(q, {}).get("ec"), ls="--", alpha=0.75
+    )
+ax.set_xlabel(r"E$_{\text{x}}$ [MeV]")
+ax.set_ylabel(r"Cumulative $\sum$C$^2$S")
+# And T isospin line
+ax.axvline(10.5, color="black", alpha=0.75, ls=":")
+# Anotations
+ax.annotate("Dimmed: mod SFO-tls", xy=(0.25, 0.65), xycoords="axes fraction", fontsize=14)
+
+ax.legend()
+fig.tight_layout()
+fig.savefig("./Outputs/bar_cumulative.pdf")
+
 plt.show()
 
 # ## Additional information

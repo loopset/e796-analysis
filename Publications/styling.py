@@ -66,6 +66,9 @@ barplot = {
     pyphysics.QuantumNumbers.from_str("0d5/2"): dict(
         fc="none", ec="dodgerblue", hatch=".."
     ),
+    pyphysics.QuantumNumbers.from_str("0d3/2"): dict(
+        fc="none", ec="lightskyblue", hatch="oo"
+    ),
     pyphysics.QuantumNumbers.from_str("1s1/2"): dict(
         fc="none", ec="crimson", hatch=r"\\"
     ),
