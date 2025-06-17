@@ -6,7 +6,7 @@ import matplotlib.axes as mplaxes
 def eso_splitting(z: int, a: int, t: float, t0: float, isProton: bool = False) -> float:
     eso16O = 6.5  # from G. Mairle paper of 1974 in page 254
     da = -0.6  # MeV
-    db = 3.38
+    db = -3.38
     dc = -0.10 if isProton else 0
     eso = (
         eso16O

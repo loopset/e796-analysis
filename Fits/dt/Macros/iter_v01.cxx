@@ -174,7 +174,7 @@ void iter_v01()
     ROOT::EnableImplicitMT();
 
     std::vector<double> gamma0, gamma1;
-    for(double g = 0; g < 1.4; g += 0.2)
+    for(double g = 0; g < 1.6; g += 0.1)
     {
         gamma0.push_back(g);
         gamma1.push_back(g);
@@ -186,6 +186,13 @@ void iter_v01()
         for(const auto& g1 : gamma1)
         {
             std::cout << "::::::::::::::::::::::::::::::::::::::::::::::::::" << '\n';
+            // If it is already calcualted, skip it
+            auto test {TString::Format("./Outputs/Iter/fit_%.2f_%.2f.root", g0, g1)};
+            if(!gSystem->AccessPathName(test))
+            {
+                std::cout << "Skipping already done (g0, g1) : (" << g0 << ", " << g1 << ")" << '\n';
+                continue;
+            }
             std::cout << "Gamma0 : " << g0 << " Gamma 1 : " << g1 << '\n';
             fit(g0, g1);
             ang(g0, g1, false);
