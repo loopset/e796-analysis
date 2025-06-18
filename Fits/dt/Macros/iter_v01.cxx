@@ -22,17 +22,20 @@
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
 #include "/media/Data/E796v2/Selector/Selector.h"
 
+// Define dfs outside as globals
+
+ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "3H")};
+ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
+ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
+
 void fit(double gamma0, double gamma1)
 {
 
-    ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "3H")};
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
     // Phase spaces
-    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
     auto hPS {phase.Histo1D(E796Fit::Exdt, "Eex", "weight")};
     hPS->SetNameTitle("hPS", "1n PS");
     Fitters::TreatPS(hEx.GetPtr(), hPS.GetPtr());
-    ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
     auto hPS2 {phase2.Histo1D(E796Fit::Exdt, "Eex", "weight")};
     hPS2->SetNameTitle("hPS2", "2n PS");
     Fitters::TreatPS(hEx.GetPtr(), hPS2.GetPtr());
@@ -93,13 +96,6 @@ void fit(double gamma0, double gamma1)
 }
 void ang(double gamma0, double gamma1, bool rebin)
 {
-    ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "3H")};
-    // Book histograms
-    ROOT::RDF::RResultPtr<TH2D> hKin {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
-    auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
-    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
-    ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
-
     // Init intervals
     double thetaMin {5.5};
     double thetaMax {14.};
@@ -171,10 +167,9 @@ void ang(double gamma0, double gamma1, bool rebin)
 void iter_v01()
 {
     gROOT->SetBatch();
-    ROOT::EnableImplicitMT();
 
     std::vector<double> gamma0, gamma1;
-    for(double g = 0; g < 1.6; g += 0.1)
+    for(double g = 0; g < 1.5; g += 0.1)
     {
         gamma0.push_back(g);
         gamma1.push_back(g);
@@ -188,15 +183,15 @@ void iter_v01()
             std::cout << "::::::::::::::::::::::::::::::::::::::::::::::::::" << '\n';
             // If it is already calcualted, skip it
             auto test {TString::Format("./Outputs/Iter/fit_%.2f_%.2f.root", g0, g1)};
-            if(!gSystem->AccessPathName(test))
-            {
-                std::cout << "Skipping already done (g0, g1) : (" << g0 << ", " << g1 << ")" << '\n';
-                continue;
-            }
+            // if(!gSystem->AccessPathName(test))
+            // {
+            //     std::cout << "Skipping already done (g0, g1) : (" << g0 << ", " << g1 << ")" << '\n';
+            //     continue;
+            // }
             std::cout << "Gamma0 : " << g0 << " Gamma 1 : " << g1 << '\n';
             fit(g0, g1);
-            ang(g0, g1, false);
-            ang(g0, g1, true);
+            // ang(g0, g1, false);
+            // ang(g0, g1, true);
         }
     }
 }

@@ -124,11 +124,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
 
     // Set whether is elastic or not
     bool isEl {target == arglight};
-    bool isPS {neutronPS > 0 || protonPS > 0 || neutronPS == -2};
+    bool isPS {neutronPS > 0 || protonPS > 0 || neutronPS == -2 || neutronPS == -4};
 
     // Set different options
     bool deutonbreakup {};
     bool pdphase {};
+    bool dtphase {};
     bool dtcont {};
     bool pdcont {};
     bool ptcont {};
@@ -141,6 +142,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
     if(neutronPS == -3)
         dtcont = true;
+    if(neutronPS == -4)
+    {
+        dtphase = true;
+        isEl = false;
+    }
     if(protonPS == -1)
         pdcont = true;
 
@@ -158,7 +164,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     const double thresholdSi1 {0.5};
 
     // number of iterations
-    const int iterations {static_cast<int>(standalone ? 1e7 : (deutonbreakup || pdphase || isPS ? 3e8 : 1e8))};
+    const int iterations {static_cast<int>(standalone ? 1e7 : (deutonbreakup || isPS ? 3e8 : 1e8))};
 
     // Which parameters will be activated
     bool stragglingInGas {true};
@@ -234,7 +240,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     ActPhysics::Particle p4 {kaux.GetParticle(4)};
     // Binary kinematics generator
     ActSim::KinematicGenerator kingen {
-        p1, p2, p3, p4, (protonPS > 0 ? protonPS : 0), (neutronPS > 0 ? neutronPS : (pdphase ? 1 : 0))};
+        p1, p2, p3, p4, (protonPS > 0 ? protonPS : 0), (neutronPS > 0 ? neutronPS : (pdphase || dtphase ? 1 : 0))};
     kingen.Print();
     // // Allow breakup of deuteron!
     // ActSim::DecayGenerator decaygen;
@@ -263,6 +269,13 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // 20O(d,d) 1n phase space reconstructed as 20O(p,d)
         reckin = new ActPhysics::Kinematics {"20O(p,d)@700"};
         std::cout << BOLDYELLOW << "Simulation_E796(): 20O(d,d) 1n PS as 20O(p,d)" << RESET << '\n';
+    }
+    else if(dtphase)
+    {
+        reckin = new ActPhysics::Kinematics {"20O(d,t)@700"};
+        std::cout << BOLDYELLOW << "Simulation_E796(): 20O(d,d) 1n PS as 20O(d,t)" << RESET << '\n';
+        light = "3H";
+        std::cout << BOLDYELLOW << "Overriding light from " << arglight << " to " << light << RESET << '\n';
     }
     else if(dtcont)
     {
