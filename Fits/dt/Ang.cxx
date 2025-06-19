@@ -24,6 +24,8 @@
 
 void Ang(bool isLab = false)
 {
+    Angular::ToggleHessErrors();
+
     if(isLab)
         Angular::ToggleIsLab();
 
@@ -39,21 +41,13 @@ void Ang(bool isLab = false)
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
     ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
-    // // Contamination from 20O(p,d)
-    // std::vector<double> conts {0, 1.4, 3.2, 4.5};
-    std::vector<ROOT::RDataFrame> dfcs;
-    // for(const auto& cont : conts)
-    // {
-    //     auto file {gSelector->GetApproxSimuFile("20O", "1H", "2H", cont, -3)};
-    //     ROOT::RDataFrame dfc {"SimulationTTree", file};
-    //     dfcs.push_back(dfc);
-    // }
+    ROOT::RDataFrame pd {"Sel_Tree", "./Inputs/Cont/tree_20O_d_d_as_d_t.root"};
 
     // Init intervals
     double thetaMin {isLab ? 14 : 5.5};
     double thetaMax {isLab ? 32. : 14.};
     double thetaStep {isLab ? 4 : 1.};
-    int nps {static_cast<int>(2 + dfcs.size())}; // 2 nps +  contamination
+    int nps {static_cast<int>(2 + 1)}; // 2 nps +  1 contamination
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdt, thetaStep, nps};
     // Fill
     if(isLab)
@@ -65,11 +59,7 @@ void Ang(bool isLab = false)
                   {"theta3CM", "Eex", "weight"});
     phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
                    {"theta3CM", "Eex", "weight"});
-    for(int i = 0; i < dfcs.size(); i++)
-    {
-        dfcs[i].Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(i + 2, thetacm, ex, weight); },
-                        {"theta3CM", "Eex", "weight"});
-    }
+    pd.Foreach([&](double thetaCM, double ex) { ivs.FillPS(2, thetaCM, ex, 1); }, {"ThetaCM", "Ex"});
     ivs.TreatPS(10, 0.2, {0, 1}); // disable smoothing for contamination ps
     if(!isLab)
         ivs.Write("./Outputs/ivs.root");

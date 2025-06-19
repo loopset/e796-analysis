@@ -113,7 +113,7 @@ void Fit()
     model.SetUseSpline(true);
     // Run!
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
-                    ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,t)", {}, false);
+                    ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(d,t)", {}, false, true);
 
     gPad->GetListOfPrimitives()->FindObject("TPave")->Delete();
     // // Draw Sn and S2n lines
