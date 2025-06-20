@@ -82,22 +82,27 @@ for i, state in enumerate(inter.fEx.keys()):
 inter.fHistPS["ps0"].plot(
     label="1n phase space", color="orange", hatch="\\\\", **styles["ps"]
 )
-## 2n PS has null amplitude
-inter.fHistPS["ps1"].plot(
-    label="2n phase space", color="green", hatch="//", **styles["ps"]
+# ## 2n PS has null amplitude
+# inter.fHistPS["ps1"].plot(
+#     label="2n phase space", color="green", hatch="//", **styles["ps"]
+# )
+
+## (p,d) as a phase space - contamination
+inter.fHistPS["ps2"].plot(
+    label="(p,d) background", color="grey", hatch="xx", **styles["ps"]
 )
-# (p,d) contamination
-for i, state in enumerate(["v8", "v9", "v10"]):
-    inter.plot_func(
-        state,
-        nbins,
-        exmin,
-        exmax,
-        label="(p,d) background" if i == 0 else None,
-        color="grey",
-        hatch="xx",
-        **styles["ps"],
-    )
+# # (p,d) contamination
+# for i, state in enumerate(["v8", "v9", "v10"]):
+#     inter.plot_func(
+#         state,
+#         nbins,
+#         exmin,
+#         exmax,
+#         label="(p,d) background" if i == 0 else None,
+#         color="grey",
+#         hatch="xx",
+#         **styles["ps"],
+#     )
 
 # Sn
 p = r.ActPhysics.Particle("19O")  # type: ignore

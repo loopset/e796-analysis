@@ -1,5 +1,5 @@
-from turtle import right
 import pyphysics as phys
+from pyphysics.actroot_interface import FitInterface, SFInterface
 import uproot
 import matplotlib.ticker as mpltick
 import matplotlib.axes as mplaxes
@@ -10,10 +10,10 @@ sys.path.append("../")
 import styling as sty
 
 # Read data
-fit = phys.FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
-sfs = phys.SFInterface("../../Fits/dt/Outputs/sfs.root")
+fit = FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
+sfs = SFInterface("../../Fits/dt/Outputs/sfs.root")
 sfs.remove_model("g0", "l = 2 ZR 2FNR")
-rsfs = phys.SFInterface("../../Fits/dt/Outputs/rebin_sfs.root")
+rsfs = SFInterface("../../Fits/dt/Outputs/rebin_sfs.root")
 
 # List of states per figure
 # states = [["g0", "g1", "g2", "v0"], ["v1", "v2", "v3", "v4"], ["v5", "v6", "v7", "v8"]]

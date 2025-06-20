@@ -26,7 +26,7 @@ void Runner(TString what = "plot", bool standalone = true)
     gSelector->Print();
     // Phase space reactions: when the heavy decays by proton or neutron emission
     // So we have something like: 4He + n + 17N (needs to be simulated to be included as background in fits)
-    int neutronPS {2}; // number of neutrons in final state:
+    int neutronPS {0}; // number of neutrons in final state:
     // if -1, break deuteron; if -2, 20O(d,d) 1n PS but rec as 20O(p,d)
     // if -3, (d,t) contamination from gSelector channel
     // if -4, 20O(d,d) 1n PS but as 20O(d,t)
