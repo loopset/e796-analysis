@@ -1,7 +1,6 @@
 from collections import defaultdict
 from typing import Dict, List, Tuple
 
-from click import style
 import pyphysics as phys
 import matplotlib.pyplot as plt
 import matplotlib.axes as mplaxes
