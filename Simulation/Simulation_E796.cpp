@@ -33,6 +33,7 @@
 
 #include "Math/Point3D.h"
 #include "Math/Vector3D.h"
+#include "Math/Vector3Dfwd.h"
 #include "Math/Vector4D.h"
 
 #include "FitInterface.h"
@@ -322,6 +323,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         specs->GetLayer("l0").ReplaceWithMatrix(sm);
         beamOffset = 7.52; // mm
         // specs->GetLayer("l0").SetPoint({0, 174.425, 0});
+        // auto* aux {E796Utils::GetFrontSilMatrix("3H")};
+        // aux->MoveZTo(silCentre + 2, {3,4});
+        // specs->GetLayer("f0").ReplaceWithMatrix(aux);
+        // INFO: we have verified there are no coincidences l0-f0 due to
+        // the heavy particle impacting on the front layers.
+        // A very tiny proportion for 20O(d,d) 1nPS only, but really negligible
         specs->EraseLayer("f0");
         specs->EraseLayer("f1");
         firstLayer = "l0";
@@ -469,8 +476,11 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Allow multiple threads
     if(thread > 0)
         gSelector->SetTag(std::to_string(thread));
-    auto* outFile {new TFile(gSelector->GetSimuFile(beam, target, arglight, Ex, neutronPS, protonPS), "recreate")};
+    auto* outFile {new TFile(gSelector->GetSimuFile(beam, target, arglight, Ex, neutronPS, protonPS),
+                             standalone ? "read" : "recreate")};
     auto* outTree {new TTree("SimulationTTree", "A TTree containing only our Eex obtained by simulation")};
+    if(standalone)
+        outTree->SetDirectory(nullptr);
     ROOT::Math::XYZPoint sp_tree {};
     outTree->Branch("SP", &sp_tree);
     double theta3CM_tree {};
@@ -506,6 +516,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     int step {iterations / (100 / percentPrint)};
     int nextPrint {step};
     int percent {};
+    int lightIn {};
+    int heavyIn {};
     for(long int reaction = 0; reaction < iterations; reaction++)
     {
         // Print progress
@@ -537,6 +549,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         double theta3Lab {};
         double phi3Lab {};
         double T3Lab {};
+        double theta4Lab {};
+        double phi4Lab {};
         double weight {1};
         if(isPS || deutonbreakup)
         {
@@ -549,6 +563,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
                 T3Lab = PLight->Energy() - ActPhysics::Constants::kpMass;
             else
                 T3Lab = PLight->Energy() - p3.GetMass();
+            if(!deutonbreakup)// for deutonbreakup doesnt apply cause they go to l0
+            {
+                auto* PHeavy {kingen.GetLorentzVector(1)};
+                theta4Lab = PHeavy->Theta();
+                phi4Lab = PHeavy->Phi();
+            }
         }
         else
         {
@@ -567,6 +587,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             theta3Lab = simkin->GetTheta3Lab();
             phi3Lab = phiCM;
             T3Lab = simkin->GetT3Lab();
+            theta4Lab = simkin->GetTheta4Lab();
+            phi4Lab = phiCM;
         }
         // Simulated thetaCM, to be used for efficiency computation
         double thetaCMEff {reckin->ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
@@ -587,10 +609,14 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // And using the angle with the uncertainty already in
         ROOT::Math::XYZVector dirBeamFrame {TMath::Cos(theta3Lab), TMath::Sin(theta3Lab) * TMath::Sin(phi3Lab),
                                             TMath::Sin(theta3Lab) * TMath::Cos(phi3Lab)};
+        ROOT::Math::XYZVector heavyBeamFrame {TMath::Cos(theta4Lab), TMath::Sin(theta4Lab) * TMath::Sin(phi4Lab),
+                                              TMath::Sin(theta4Lab) * TMath::Cos(phi4Lab)};
         // Declare beam direction
         auto beamDir {(vertex - start).Unit()};
         // Rotate to world = geometry frame
         auto dirWorldFrame {runner.RotateToWorldFrame(dirBeamFrame, beamDir)};
+        auto heavyWorldFrame {runner.RotateToWorldFrame(heavyBeamFrame, beamDir)};
+        // Light particle
         auto [silIndex0, silPoint0InMM] {specs->FindSPInLayer(firstLayer, vertex, dirWorldFrame)};
         if(isIterAngle)
         {
@@ -606,6 +632,26 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // skip tracks that doesn't reach silicons or are not in SiliconMatrix indexes
         if(silIndex0 == -1 || !(sm->IsInMatrix(silIndex0)))
             continue;
+        lightIn++;
+
+        // Heavy particle
+        // Only for front reactions, since we have verified that for l0 doesnt apply
+        if(!isEl)
+        {
+            auto [heavyIndex0, heavyPoint0] {specs->FindSPInLayer("f0", vertex, heavyWorldFrame)};
+            if(heavyIndex0 != -1)
+            {
+                // This means we would measure multiplicity two in the layer -> skip event
+                // We do not consider ELosses in gas bc heavy particle has always a large energy
+                // that wont stop it on the gas
+                // std::cout << "=========================" << '\n';
+                // std::cout << "Vertex : " << vertex << '\n';
+                // std::cout << "SP : " << heavyPoint0 << '\n';
+                // std::cout << "Heavy reached layer theta: " << theta4Lab * TMath::RadToDeg() << '\n';
+                heavyIn++;
+                continue;
+            }
+        }
 
         // Apply SilMatrix cut
         if(!sm->IsInside(silIndex0, (isEl ? silPoint0InMM.X() : silPoint0InMM.Y()), silPoint0InMM.Z()))
@@ -761,6 +807,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     std::cout << "\r" << std::string(100 / percentPrint, '|') << 100 << "%";
     std::cout.flush();
     std::cout << RESET << '\n';
+    std::cout << "HeavyIn/LightIn : " << (double)heavyIn / lightIn * 100 << '\n';
 
     // Efficiencies as quotient of histograms in TEfficiency class
     auto* eff {new TEfficiency(*hThetaCM, *hThetaCMAll)};
@@ -771,16 +818,19 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     effPhi->SetNameTitle("effPhi", TString::Format("#phi_{Lab} eff E_{x} = %.2f MeV", Ex));
 
     // SAVING
-    outFile->cd();
-    outTree->Write();
-    eff->Write();
-    effLab->Write();
-    effPhi->Write();
-    hSP->Write("hSP");
-    hRP->Write("hRP");
-    outFile->Close();
-    delete outFile;
-    outFile = nullptr;
+    if(!standalone)
+    {
+        outFile->cd();
+        outTree->Write();
+        eff->Write();
+        effLab->Write();
+        effPhi->Write();
+        hSP->Write("hSP");
+        hRP->Write("hRP");
+        outFile->Close();
+        delete outFile;
+        outFile = nullptr;
+    }
 
     // plotting
     if(standalone)
