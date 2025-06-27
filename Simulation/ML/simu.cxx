@@ -167,6 +167,10 @@ void simu(const std::string& beam, const std::string& target, const std::string&
     tree->Branch("RPx", &rpx_tree);
     double t3after1_tree {};
     tree->Branch("T3After1", &t3after1_tree);
+    double tl_gas0_tree {};
+    tree->Branch("tl_gas0", &tl_gas0_tree);
+    double tl_01_tree {};
+    tree->Branch("tl_01", &tl_01_tree);
     std::vector<float> profx_tree;
     tree->Branch("profx", &profx_tree);
     std::vector<float> profy_tree;
@@ -285,6 +289,8 @@ void simu(const std::string& beam, const std::string& target, const std::string&
         theta3_tree = theta3Lab * TMath::RadToDeg();
         rpx_tree = vertex.X();
         t3after1_tree = T3After1;
+        tl_gas0_tree = distSil0;
+        tl_01_tree = distIntergas;
         tree->Fill();
     }
     std::cout << '\n';
