@@ -41,13 +41,13 @@ void Ang(bool isLab = false)
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
     ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
-    ROOT::RDataFrame pd {"Sel_Tree", "./Inputs/Cont/tree_20O_d_d_as_d_t.root"};
+    // ROOT::RDataFrame pd {"Sel_Tree", "./Inputs/Cont/tree_20O_d_d_as_d_t.root"};
 
     // Init intervals
     double thetaMin {isLab ? 14 : 5.5};
     double thetaMax {isLab ? 32. : 14.};
     double thetaStep {isLab ? 4 : 1.};
-    int nps {static_cast<int>(2 + 1)}; // 2 nps +  1 contamination
+    int nps {static_cast<int>(2 + 0)}; // 2 nps +  0 contamination
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdt, thetaStep, nps};
     // Fill
     if(isLab)
@@ -59,7 +59,7 @@ void Ang(bool isLab = false)
                   {"theta3CM", "Eex", "weight"});
     phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
                    {"theta3CM", "Eex", "weight"});
-    pd.Foreach([&](double thetaCM, double ex) { ivs.FillPS(2, thetaCM, ex, 1); }, {"ThetaCM", "Ex"});
+    // pd.Foreach([&](double thetaCM, double ex) { ivs.FillPS(2, thetaCM, ex, 1); }, {"ThetaCM", "Ex"});
     ivs.TreatPS(10, 0.2, {0, 1}); // disable smoothing for contamination ps
     if(!isLab)
         ivs.Write("./Outputs/ivs.root");
@@ -82,7 +82,7 @@ void Ang(bool isLab = false)
     inter.Read("./Outputs/interface.root");
     auto peaks {inter.GetPeaks()};
     // Remove contamination
-    for(const auto& s : {"v8", "v9", "v10"})
+    for(const auto& s : {"v8", "v9", "v10", "v11"})
         peaks.erase(std::remove(peaks.begin(), peaks.end(), s), peaks.end());
 
     // Efficiency
