@@ -52,9 +52,9 @@ ds = [d, d, d, 200, 200]
 ass = [a, a, a, -90, -90]
 for i, l in enumerate(labels):
     annotate(l, poss[i], ds[i], ass[i])
-# # Draw cuts
-# for cut in cuts:
-#     ax.plot(cut[0], cut[1], lw=1.25)
+# Draw cuts
+for cut in cuts[1:]:
+    ax.plot(cut[0], cut[1], lw=1.25, ls="--", color="crimson", alpha=0.75)
 
 # Axis limits
 # ax.set_xlim(0, 17)
