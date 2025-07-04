@@ -88,21 +88,21 @@ inter.fHistPS["ps0"].plot(
 # )
 
 ## (p,d) as a phase space - contamination
-inter.fHistPS["ps2"].plot(
-    label="(p,d) background", color="grey", hatch="xx", **styles["ps"]
-)
-# # (p,d) contamination
-# for i, state in enumerate(["v8", "v9", "v10"]):
-#     inter.plot_func(
-#         state,
-#         nbins,
-#         exmin,
-#         exmax,
-#         label="(p,d) background" if i == 0 else None,
-#         color="grey",
-#         hatch="xx",
-#         **styles["ps"],
-#     )
+# inter.fHistPS["ps2"].plot(
+#     label="(p,d) background", color="grey", hatch="xx", **styles["ps"]
+# )
+# (p,d) contamination
+for i, state in enumerate(["v8", "v9", "v10", "v11"]):
+    inter.plot_func(
+        state,
+        nbins,
+        exmin,
+        exmax,
+        label="(p,d) background" if i == 0 else None,
+        color="grey",
+        hatch="xx",
+        **styles["ps"],
+    )
 
 # Sn
 p = r.ActPhysics.Particle("19O")  # type: ignore
@@ -125,7 +125,13 @@ ax.annotate(rf"g.s $\times$ {gsfactor:.2f}", xy=(0.3, 900 * gsfactor), fontsize=
 
 # Legend
 handles, labels = ax.get_legend_handles_labels()
-ax.legend(handles=[handles[-1]] + handles[:-1], labels=[labels[-1]] + labels[:-1])
+ax.legend(
+    handles=[handles[-1]] + handles[:-1],
+    labels=[labels[-1]] + labels[:-1],
+    loc="upper right",
+    labelspacing=0.4,
+    borderaxespad=0.3,
+)
 
 # Limits
 ax.set_xlim(-3, 25)
