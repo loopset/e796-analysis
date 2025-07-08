@@ -10,10 +10,10 @@ sys.path.append("./")
 import styling as sty
 import dt
 
-fig = plt.figure(figsize=(4.5, 8))
+fig = plt.figure(figsize=(4.5, 6))
 gs = gridspec.GridSpec(2, 1)
 ax_l2 = fig.add_subplot(gs[0, 0])
-ax_l0 = fig.add_subplot(gs[1, 0])
+ax_l0 = fig.add_subplot(gs[1, 0], sharex=ax_l2)
 
 # l = 2
 # ax_l2.tick_params(axis="y", which="both", right=False)
@@ -21,7 +21,7 @@ dt.unrebin.plot_exp("g0", ax=ax_l2)
 ax_l2.set_prop_cycle(sty.cyclers["l012"])
 dt.unrebin.remove_model("g0", "l = 2 ZR 2FNR")
 dt.unrebin.plot_models("g0", ax=ax_l2)
-ax_l2.legend(loc="center right")
+ax_l2.legend(loc="upper right")
 
 # l = 0
 # ax_l0.yaxis.tick_right()
@@ -39,7 +39,7 @@ for i, ax in enumerate([ax_l2, ax_l0]):
     ex, sf = anns[i]
     ax.annotate(
         f"{ex}" if isinstance(ex, str) else f"{ex.n:.2f} MeV",
-        xy=(0.5, 0.9),
+        xy=(0.5 if i != 0 else 0.4, 0.9),
         xycoords="axes fraction",
         ha="center",
         va="center",
@@ -47,7 +47,7 @@ for i, ax in enumerate([ax_l2, ax_l0]):
     )
     ax.annotate(
         rf"C$^2$S = {sf.fSF:.2uS}",
-        xy=(0.5, 0.825),
+        xy=(0.5 if i != 0 else 0.4, 0.825),
         xycoords="axes fraction",
         ha="center",
         va="center",
@@ -63,10 +63,10 @@ for ax in [ax_l2, ax_l0]:
 fig.supxlabel(r"$\theta_{\text{CM}}$ [$\circ$]", fontsize=18)
 fig.supylabel(r"d$\sigma$/d$\Omega$ [mb/sr]", fontsize=18)
 fig.tight_layout()
-fig.subplots_adjust(left=0.175, bottom=0.075)
-fig.savefig("./Outputs/ang_slide0.pdf")
+fig.subplots_adjust(left=0.175, bottom=0.09, hspace=0)
+fig.savefig("./Outputs/ang_slide0.png", dpi=300)
 
-plt.close("all")
+# plt.close("all")
 
 fig, axs = plt.subplots(3, 2, sharex=True, figsize=(5, 8))
 states = ["g2", "v0", "v1", "v2", "v3"]
@@ -113,5 +113,7 @@ fig.tight_layout()
 fig.supxlabel(r"$\theta_{\text{CM}}$ [$\circ$]", fontsize=18)
 fig.supylabel(r"d$\sigma$/d$\Omega$ [mb/sr]", fontsize=18)
 fig.subplots_adjust(left=0.12, bottom=0.075, wspace=0.0, hspace=0.0)
-fig.savefig("./Outputs/ang_slide1.pdf")
+fig.savefig("./Outputs/ang_slide1.png", dpi=300)
+plt.close(fig)
+
 plt.show()

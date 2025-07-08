@@ -1,6 +1,7 @@
 from re import S
 import pyphysics as phys
 import uncertainties as un
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.axes as mplaxes
 
@@ -28,6 +29,10 @@ sfo = phys.ShellModel(
         "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
     ]
 )
+df = pd.read_excel("../../Fits/dt/Inputs/SM_fited/o19-isospin-ok.xlsx")
+sfo.add_isospin("../../Fits/dt/Inputs/SM_fited/summary_O19_sfotls_mod.txt", df)
+sfo.set_allowed_isospin(1.5)
+
 for model in [plain, sfo]:
     model.set_max_Ex(25)
     model.set_min_SF(0.09)
@@ -100,4 +105,5 @@ ax.set_ylabel(r"E$_{\text{x}}$ [MeV]")
 
 fig.tight_layout()
 fig.savefig("./Outputs/vertical.pdf")
+fig.savefig("./Outputs/vertical.png", dpi=300)
 plt.show()
