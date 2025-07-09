@@ -4,6 +4,7 @@ import uncertainties as un
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.axes as mplaxes
+import copy
 
 import sys
 
@@ -22,6 +23,8 @@ plain = phys.ShellModel(
         "../../Fits/dt/Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1p.txt",
     ]
 )
+# Add isospin
+plain.add_isospin("../../Fits/dt/Inputs/SM/summary_O19_psdmk2_sfotls.txt")
 # Mod SFO-tls
 sfo = phys.ShellModel(
     [
@@ -31,7 +34,20 @@ sfo = phys.ShellModel(
 )
 df = pd.read_excel("../../Fits/dt/Inputs/SM_fited/o19-isospin-ok.xlsx")
 sfo.add_isospin("../../Fits/dt/Inputs/SM_fited/summary_O19_sfotls_mod.txt", df)
-sfo.set_allowed_isospin(1.5)
+
+# Set allowed isospin
+# And copy with isospin 5/2 and mixture (t == -1)
+theot52, theotmix = [], []
+for theo in [plain, sfo]:
+    aux = copy.deepcopy(theo)
+    aux.set_allowed_isospin(2.5)
+    theot52.append(aux)
+    aux = copy.deepcopy(theo)
+    aux.set_allowed_isospin(-1)
+    theotmix.append(aux)
+    # And set allowed isospin
+    theo.set_allowed_isospin(1.5)
+
 
 for model in [plain, sfo]:
     model.set_max_Ex(25)

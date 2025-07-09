@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <thread>
 #include <vector>
@@ -13,6 +14,7 @@
 
 void frontDist()
 {
+    throw std::runtime_error("Error: remember that SilSpecs::fPoint is now in mm units. Adapt the code");
     ROOT::EnableThreadSafety();
 
     // Set particles to run

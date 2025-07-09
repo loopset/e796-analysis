@@ -303,6 +303,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     bool isIterDist {(gSelector->GetFlag() == "iter_front")};
     if(isIterDist)
     {
+        throw std::runtime_error("Error: you're in iterDist and you haven't adapted Point in .conf file to mm units");
         specs->ReadFile("/media/Data/E796v2/configs/simu_silicons.conf");
         std::cout << "Iter f0 point: " << specs->GetLayer("f0").GetPoint() << '\n';
     }
@@ -563,7 +564,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
                 T3Lab = PLight->Energy() - ActPhysics::Constants::kpMass;
             else
                 T3Lab = PLight->Energy() - p3.GetMass();
-            if(!deutonbreakup)// for deutonbreakup doesnt apply cause they go to l0
+            if(!deutonbreakup) // for deutonbreakup doesnt apply cause they go to l0
             {
                 auto* PHeavy {kingen.GetLorentzVector(1)};
                 theta4Lab = PHeavy->Theta();
