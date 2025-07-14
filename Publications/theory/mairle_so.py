@@ -24,11 +24,16 @@ for i, d in enumerate(data):
     plots.append(plot)
 
 # Add OUR EXPERIMENTAL POINT
-exp = 3.8
+exp = 3.8 * 2.0 / 3
 ax.plot(20, exp, marker="*", ms=14, color="dodgerblue")
 ax.annotate(
-    r"$^{20}$O", xy=(20, exp), xytext=(40, exp + 0.75), ha="center", va="center", fontsize=14,
-    arrowprops=dict(arrowstyle="-")
+    r"$^{20}$O",
+    xy=(20, exp),
+    xytext=(40, exp + 1.25),
+    ha="center",
+    va="center",
+    fontsize=14,
+    arrowprops=dict(arrowstyle="-"),
 )
 # Annotation
 ax.annotate(
