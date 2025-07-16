@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import Dict, Tuple
 import numpy as np
 import pyphysics as phys
 from pyphysics.actroot_interface import SFInterface
@@ -36,7 +37,7 @@ files = {
 }
 comp.add_models(files)
 
-fig, axs = plt.subplots(2, 2, figsize=(14, 9))
+fig, axs = plt.subplots(2, 3, figsize=(14, 9))
 
 # Comparator (p,p)
 ax = axs[0, 0]
@@ -65,7 +66,7 @@ for model, res in ppcomp.fSFs.items():
     handle = ax.errorbar("(p,p) gs", val.n, yerr=val.s, marker="o", label=model)
     pp_handles.append(handle)
 
-## (d,d)
+## (d,t)
 ref = comp.get_sf("Daeh+Pang")
 dt_handles = []
 for model, res in comp.fSFs.items():
@@ -129,6 +130,34 @@ for key, vals in exp.items():
 # Scale gs
 exp_sys[dt.qd52][0].SF *= 0.5
 
+# Compute centroids
+cents: Dict[phys.QuantumNumbers, Tuple[un.UFloat, un.UFloat]] = defaultdict(tuple)
+for q, vals in exp_sys.items():
+    ste = sum(val.SF for val in vals)
+    num, dem = 0, 0
+    for val in vals:
+        num += (2 * q.j + 1) * val.SF * val.Ex
+        dem += (2 * q.j + 1) * val.SF
+    cent = num / dem
+    cents[q] = (ste, cent)  # type: ignore
+
+ax = axs[0, 2]
+for q, (ste, cent) in cents.items():
+    ax.bar(
+        x=un.nominal_value(cent),
+        height=un.nominal_value(ste),
+        yerr=un.std_dev(ste),
+        width=0.250,
+        align="center",
+        label=q.format(),
+        alpha=1,
+        **sty.barplot[q],
+    )
+ax.legend()
+ax.set_ylim(0)
+ax.set_xlabel(r"Centroids [MeV]")
+ax.set_ylabel(r"$\sum$C$^2$S")
+
 ax = axs[1, 1]
 style_plot(exp, ax, True)
 for key, vals in exp_sys.items():
@@ -161,5 +190,5 @@ ax.annotate(
 
 
 fig.tight_layout()
-fig.savefig("./Outputs/systematic_unc.pdf")
+# fig.savefig("./Outputs/systematic_unc.pdf")
 plt.show()

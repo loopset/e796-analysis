@@ -1,4 +1,5 @@
 from collections import defaultdict
+import math
 from typing import Dict, List, Tuple
 import pyphysics as phys
 from pyphysics.actroot_interface import FitInterface, SFInterface
@@ -35,8 +36,11 @@ assignments = {
     "v7": (rebin, qp12),  # state at 15 MeV. Next are background
 }
 
+# Systematic uncertainty percent
+percentSys = 0.2
 
-def build_df() -> pd.DataFrame:
+
+def build_df(withSys=False) -> pd.DataFrame:
     table = {"name": [], "ex": [], "sf": [], "model": [], "chi": []}
     for state, (sfs, q) in assignments.items():
         ex, sigma = fit.get(state)
@@ -46,20 +50,28 @@ def build_df() -> pd.DataFrame:
         table["ex"].append(ex)
         if sf is None:
             continue
-        table["sf"].append(sf.fSF)
+        val = sf.fSF
+        if withSys:
+            unc = math.sqrt(val.s**2 + (percentSys * val.n) ** 2)
+            val.std_dev = unc  # type: ignore
+        table["sf"].append(val)
         table["model"].append(str(sf.fName))
         table["chi"].append(sf.fChi)
     return pd.DataFrame(table)
 
 
-def build_sm() -> Dict[phys.QuantumNumbers, List[phys.ShellModelData]]:
+def build_sm(withSys=False) -> Dict[phys.QuantumNumbers, List[phys.ShellModelData]]:
     ret = defaultdict(list)
     for state, (sfs, q) in assignments.items():
         ex, sigma = fit.get(state)
         sf = next((e for e in sfs.get(state) if e.fName == equiv[q]), None)
         if sf is None:
             continue
-        data = phys.ShellModelData(ex, sf.fSF)
+        val = sf.fSF
+        if withSys:
+            unc = math.sqrt(val.s**2 + (percentSys * val.n) ** 2)
+            val.std_dev = unc  # type: ignore
+        data = phys.ShellModelData(ex, val)
         ret[q].append(data)
     return ret
 
