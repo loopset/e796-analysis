@@ -77,7 +77,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
             .Snapshot("PID_Tree",
                       TString::Format("/media/Data/E796v2/Publications/pid/Inputs/pid_%s.root", isEl ? "side" : "front")
                           .Data(),
-                      {"ESil0", "NSil0", "fQave"});
+                      {"ESil0", "NSil0", "fQave", "MergerData"});
     }
     // // Write entries
     // std::cout << "Writing : " << vetoed.Count().GetValue() << " entries" << '\n';
@@ -95,7 +95,7 @@ void Pipe1_PID(const std::string& beam, const std::string& target, const std::st
         pidfile = TString::Format("./Cuts/LightPID/pid_%s_side.root", light.c_str());
     else
         pidfile = TString::Format("./Cuts/LightPID/pid_%s.root", light.c_str());
-    cut.ReadCut(light, pidfile);
+    cut.ReadCut(light, pidfile.Data());
     std::cout << BOLDCYAN << "Reading light PID in : " << pidfile << RESET << '\n';
 
     if(cut.GetCut(light))

@@ -9,8 +9,8 @@ void runner()
 {
     std::string beam {"11Li"};
     std::string target {"2H"};
-    std::vector<std::string> lights {"1H", "2H", "3H"};
-    // std::vector<std::string> lights {"3H"};
+    // std::vector<std::string> lights {"1H", "2H", "3H"};
+    std::vector<std::string> lights {"3H"};
     double Tbeam {81.5};
     double Ex {0};
 
