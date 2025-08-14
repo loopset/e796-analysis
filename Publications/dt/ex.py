@@ -48,6 +48,8 @@ ax: mplaxes.Axes
 hExgs[:gsbin].plot(label="Experiment", **styles["ex"])  # type: ignore
 hEx[gsbin:].plot(**styles["ex"])  # type: ignore
 ax.set_ylabel(f"Counts / {(exmax - exmin) / nbins * 1000:.0f} keV")
+# Limits
+ax.set_xlim(-3, 25)
 
 # Global fit in two regions
 if inter.fGlobal is not None:
@@ -61,22 +63,6 @@ if inter.fGlobal is not None:
             label="Global fit" if i == 0 else None,
             **styles["global"],
         )
-
-# Indivual fits
-color = "dodgerblue"
-for i, state in enumerate(inter.fEx.keys()):
-    if state in ["v8", "v9", "v10"]:  # exclude peaks at >16 MeV
-        continue
-    if i < 7:
-        ls = "solid"
-    else:
-        ls = "dashed"
-    label = None
-    if i == 0:
-        label = r"T = 3/2"
-    elif i == 7:
-        label = r"T = 5/2"
-    inter.plot_func(state, nbins, exmin, exmax, lw=1, color=color, ls=ls, label=label)
 
 # Phase spaces
 inter.fHistPS["ps0"].plot(
@@ -119,9 +105,55 @@ ax.annotate(
     fontsize=12,
 )
 
-
 # Annotations
 ax.annotate(rf"g.s $\times$ {gsfactor:.2f}", xy=(0.3, 900 * gsfactor), fontsize=12)
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(
+    handles=[handles[-1]] + handles[:-1],
+    labels=[labels[-1]] + labels[:-1],
+    loc="upper right",
+    labelspacing=0.4,
+    borderaxespad=0.3,
+)
+fig.tight_layout()
+fig.savefig("./Outputs/ex_0.png")
+
+# Indivual fits
+color = "dodgerblue"
+## T = 3/2
+for i, state in enumerate(inter.fEx.keys()):
+    if state in ["v8", "v9", "v10"]:  # exclude peaks at >16 MeV
+        continue
+    if i >= 7:
+        continue
+    ls = "solid"
+    label = None
+    if i == 0:
+        label = r"T = 3/2"
+    inter.plot_func(state, nbins, exmin, exmax, lw=1, color=color, ls=ls, label=label)
+handles, labels = ax.get_legend_handles_labels()
+ax.legend(
+    handles=[handles[-1]] + handles[:-1],
+    labels=[labels[-1]] + labels[:-1],
+    loc="upper right",
+    labelspacing=0.4,
+    borderaxespad=0.3,
+)
+fig.tight_layout()
+fig.savefig("./Outputs/ex_1.png")
+
+## T = 5/2
+for i, state in enumerate(inter.fEx.keys()):
+    if state in ["v8", "v9", "v10"]:  # exclude peaks at >16 MeV
+        continue
+    if i < 7:
+        continue
+    ls = "dashed"
+    label = None
+
+    if i == 7:
+        label = r"T = 5/2"
+    inter.plot_func(state, nbins, exmin, exmax, lw=1, color=color, ls=ls, label=label)
 
 # Legend
 handles, labels = ax.get_legend_handles_labels()
@@ -133,8 +165,30 @@ ax.legend(
     borderaxespad=0.3,
 )
 
-# Limits
-ax.set_xlim(-3, 25)
+# Juan (d,3He)
+hjuan = uproot.open("./Inputs/Ex_and_fitted_states_Extended_update.root")["htot"].to_hist()  # type: ignore
+hjuan.axes[0].label = r"E$_{\text{x}}$ [MeV]"
+hjuan: hist.BaseHist
+hdiff = hjuan.copy()
+hdiff: hist.BaseHist
+hdiff.reset()
+# Transform Juan's to (d,t) by a shift
+bediff = 10.8  # MeV difference
+for i, value in enumerate(hjuan.values()):
+    center = 0.5 * (hjuan.axes[0].edges[i] + hjuan.axes[0].edges[i + 1])
+    center += bediff
+    hdiff.fill(center, weight=value)
+# Scaling factor
+jfactor = 1.25
+hdiff *= jfactor
+d3he = hdiff.plot(ax=ax, color="magenta", lw=1.25, ls="dashed")
+fig.tight_layout()
+fig.savefig("./Outputs/ex_with_d3he.png")
+
+
+# Disable juan for final plot
+d3he[0].stairs.set_visible(False)
+
 fig.tight_layout()
 fig.savefig("./Outputs/ex.pdf")
 fig.savefig("./Outputs/ex.eps")

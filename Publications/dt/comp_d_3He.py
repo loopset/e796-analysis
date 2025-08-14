@@ -44,7 +44,7 @@ hgs.reset()
 hgs.fill(exdt[exdt.Ex < excut].Ex)
 hgs *= gsfactor
 # Transform Juan's to (d,t) by a shift
-bediff = 11.  # MeV difference
+bediff = 10.8  # MeV difference
 hdiff = hist.Hist.new.Reg(nbins, xmin, xmax).Double()
 values = hjuan.values()
 for i, value in enumerate(values):
@@ -57,37 +57,30 @@ hdiff *= jfactor
 
 
 # Plot
-fig, axs = plt.subplots(1, 2, figsize=(11, 5))
-ax: mplaxes.Axes = axs[0]
+fig, ax = plt.subplots(1, 1, figsize=(6, 5))
+ax: mplaxes.Axes
 ## (d,t)
 ax.set_title("$^{20}$O(d,t)")
 hgs[:gsbin].plot(ax=ax, label="Exp", color="dodgerblue", **sty.base1d)  # type: ignore
 hdt[gsbin:].plot(ax=ax, color="dodgerblue", **sty.base1d)  # type: ignore
-hdiff.plot(
-    ax=ax, color="orange", hatch="\\\\", label=r"(d,$^3$He) + offset", **sty.base1d
-)
-ax.legend()
+hdiff.plot(ax=ax, color="crimson", label=r"(d,$^3$He) + offset", **sty.base1d)
 ax.annotate(rf"gs $\times$ {gsfactor:.1f}", xy=(4.5, 335), fontsize=14, ha="center")
-ax.annotate(
-    f"Offset = BE(19N) - BE(19O)\n = {bediff:.1f} MeV",
-    xy=(0.45, 0.6),
-    xycoords="axes fraction",
-    fontsize=12,
-    ha="center",
-    va="center"
-)
+# ax.legend()
+# ax.annotate(
+#     f"Offset = BE(19N) - BE(19O)\n = {bediff:.1f} MeV",
+#     xy=(0.45, 0.6),
+#     xycoords="axes fraction",
+#     fontsize=12,
+#     ha="center",
+#     va="center"
+# )
 ax.set_ylabel(f"Counts / {bw * 1e3:.0f} keV")
-## (d, 3He)
-ax = axs[1]
-ax.set_title("$^{20}$O(d,$^3$He)")
-hjuan.plot(ax=ax, color="orange", **sty.base1d)
-ax.set_ylabel(f"Counts / {bw * 1e3:.0f} keV")
-# General axis settings
-for ax in axs.flat:
-    ax.xaxis.set_inverted(True)
-fig.tight_layout()
-fig.savefig("./Outputs/ex_dt_d3He.pdf", dpi=200)
-
+ax.set_xlim(-3, 40)
+# # Print line for states
+# df = dt.build_df()
+# for state in ["v4", "v5", "v6", "v7"]:
+#     ex = df[df["name"] == state]["ex"].iloc[0]
+#     ax.axvline(un.nominal_value(ex), 0, 0.75, color="crimson", ls="dashed", lw=1.5)  # type: ignore
 ## Miscellanea
 # Read data
 fit = FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")

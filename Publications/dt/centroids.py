@@ -14,7 +14,7 @@ import dt
 import styling as sty
 
 ## Experimental dataset
-exp = dt.build_sm(False)
+exp = dt.build_sm(True)
 
 ## Modified SFO-tls
 sfo = phys.ShellModel(
