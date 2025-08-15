@@ -47,6 +47,7 @@ ax.legend()
 
 fig.tight_layout()
 fig.savefig("./Outputs/z6_systematics.png", dpi=300)
+plt.close(fig)
 
 # Toy figure
 fig, ax = plt.subplots(figsize=(5, 4))
@@ -55,31 +56,74 @@ ty = unp.nominal_values(y[:2])
 # fit
 fit = np.poly1d(np.polyfit(tx, ty, 1))
 ax.errorbar(tx, ty, marker="s", ms=8)
-ax.errorbar([1, 2], [ty[-1], fit(2)], marker="none", ms=8, ls="--")
+# ax.errorbar([1, 2], [ty[-1], fit(2)], marker="none", ms=8, ls="--")
 ax.set_xlim(-0.5, len(x) - 0.5)
 ax.set_ylim(3, 6.5)
 ax.tick_params(axis="x", labelsize=18)
 ax.set_xticks(list(range(len(x))), labels=x)
 ax.annotate(
-    "Reanalysis of\n(d,t) literature",
-    xy=(0.3, 0.3),
-    xycoords="axes fraction",
+    "$^{16}$O(d,t)",
+    xy=(0, 5.5),
     ha="center",
     va="center",
-    fontsize=16,
+    fontsize=14,
 )
-ax.text(
-    0.5,
-    0.5,
-    "Preliminary",
-    transform=ax.transAxes,
-    fontsize=60,
-    color="gray",
-    alpha=0.5,
+ax.annotate(
+    "K.H.Purser et al.\n NPA 132 (1969)",
+    xy=(0, 5.25),
     ha="center",
     va="center",
-    rotation=30,
+    fontsize=10,
+    style="italic"
 )
+
+ax.annotate(
+    "$^{18}$O(d,t)",
+    xy=(1, 5.),
+    ha="center",
+    va="center",
+    fontsize=14,
+)
+ax.annotate(
+    "G.Mairle et al.\n NPA 280 (1977)",
+    xy=(1., 4.75),
+    ha="center",
+    va="center",
+    fontsize=10,
+    style="italic"
+)
+
+ax.annotate(
+    "$^{20}$O(d,t)",
+    xy=(2, 4.),
+    ha="center",
+    va="center",
+    fontsize=14,
+)
+ax.annotate(
+    "This experiment",
+    xy=(2., 3.75),
+    ha="center",
+    va="center",
+    fontsize=10,
+    style="italic"
+)
+# ax.text(
+#     0.5,
+#     0.5,
+#     "Preliminary",
+#     transform=ax.transAxes,
+#     fontsize=60,
+#     color="gray",
+#     alpha=0.5,
+#     ha="center",
+#     va="center",
+#     rotation=30,
+# )
+
+# Draw span
+ax.axhspan(3, 6.5, xmin=0.70, xmax=0.97, color="purple", alpha=0.25)
+
 ax.set_ylabel(r"$\Delta_{\text{SO}}$ [MeV]")
 fig.tight_layout()
 fig.savefig("./Outputs/z6_systematics_toy.png", dpi=300)

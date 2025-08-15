@@ -62,6 +62,10 @@ for theo in [plain, sfo]:
     # And set allowed isospin
     theo.set_allowed_isospin(1.5)
 
+# Delete some states messing the plot in plain SFO-tls
+plain.data[phys.QuantumNumbers(0, 1, 1.5)].pop(4)
+plain.data[phys.QuantumNumbers(0, 1, 1.5)].pop()
+
 fig, ax = plt.subplots(1, 1)
 
 # Number of models
@@ -147,14 +151,16 @@ plot_bars(
     hatch="/////",
     lw=1.25,
 )
-# Mixture (only for theoretical)
-plot_bars(
-    [theotmix[0].data, theotmix[1].data],
-    ax=ax,
-    fill=False,
-    hatch=r"\\\\",
-    lw=1.25,
-)
+# # Mixture (only for theoretical)
+# plot_bars(
+#     [theotmix[0].data, theotmix[1].data],
+#     ax=ax,
+#     fill=False,
+#     hatch=r"\\\\",
+#     lw=1.25,
+# )
+
+
 # Legends
 main_leg = ax.legend(loc="upper left", bbox_to_anchor=(0.05, 0.8, 1, 0.2), ncols=4)
 # Second with hatch coding
@@ -162,13 +168,10 @@ color = "dimgrey"
 handles_hatch = [
     Patch(fc=color, ec=color, label="T = 3/2"),
     Patch(fc="none", ec=color, hatch="////", label="T = 5/2"),
-    Patch(fc="none", ec=color, hatch=r"\\\\", label="T = mix"),
+    # Patch(fc="none", ec=color, hatch=r"\\\\", label="T = mix"),
 ]
 second_leg = ax.legend(
-    handles=handles_hatch,
-    loc="lower left",
-    fontsize=14,
-    bbox_to_anchor=(0.05, 0.6)
+    handles=handles_hatch, loc="lower left", fontsize=14, bbox_to_anchor=(0.05, 0.6)
 )
 ax.add_artist(main_leg)
 # Tick parameters
@@ -184,4 +187,17 @@ ax.set_ylabel(r"E$_{\text{x}}$ [MeV]")
 fig.tight_layout()
 fig.savefig("./Outputs/vertical.pdf")
 fig.savefig("./Outputs/vertical.png", dpi=300)
+
+## Plot lines separating T states for EuNPC presentation
+ys = [9.7, 15.6, 13.9]
+sepx = []
+sepy = []
+width = 0.75
+for i, y in enumerate(ys):
+    sepx.extend([(i + 0.5) - width / 2, (i + 0.5) + width / 2])
+    sepy.extend([y] * 2)
+ax.plot(sepx, sepy, color="purple", marker="none", ls="dashed", lw=1.25, zorder=0)
+fig.tight_layout()
+fig.savefig("./Outputs/vertical_sep.png", dpi=300)
+
 plt.show()
