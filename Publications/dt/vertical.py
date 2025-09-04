@@ -39,7 +39,17 @@ sfo = phys.ShellModel(
 df = pd.read_excel("../../Fits/dt/Inputs/SM_fited/o19-isospin-ok.xlsx")
 sfo.add_isospin("../../Fits/dt/Inputs/SM_fited/summary_O19_sfotls_mod.txt", df)
 
-for model in [plain, sfo]:
+## Secondly modified SFO-tls
+sfo2 = phys.ShellModel(
+    [
+        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1n.txt",
+        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1p.txt",
+    ]
+)
+df2 = pd.read_excel("../../Fits/dt/Inputs/SFO_tls_2/o19-isospin-ok.xlsx")
+sfo2.add_isospin("../../Fits/dt/Inputs/SFO_tls_2/summary_O19_sfotls_modtsp3015.txt", df2)
+
+for model in [plain, sfo, sfo2]:
     model.set_max_Ex(25)
     model.set_min_SF(0.09)
 
@@ -52,7 +62,7 @@ for key, vals in exp.items():
     expt52[key] = [val for val in vals if un.nominal_value(val.Ex) > 10]
 # And copy with isospin 5/2 and mixture (t == -1)
 theot52, theotmix = [], []
-for theo in [plain, sfo]:
+for theo in [plain, sfo, sfo2]:
     aux = copy.deepcopy(theo)
     aux.set_allowed_isospin(2.5)
     theot52.append(aux)
@@ -69,7 +79,7 @@ plain.data[phys.QuantumNumbers(0, 1, 1.5)].pop()
 fig, ax = plt.subplots(1, 1)
 
 # Number of models
-nmodels = 3
+nmodels = 4
 
 first_call = True
 
@@ -142,10 +152,10 @@ def plot_bars(models: List[phys.SMDataDict], ax, **kwargs) -> None:
 
 
 # T = 3/2
-plot_bars([exp, plain.data, sfo.data], ax=ax)
+plot_bars([exp, plain.data, sfo.data, sfo2.data], ax=ax)
 # T = 5/2
 plot_bars(
-    [expt52, theot52[0].data, theot52[1].data],
+    [expt52, theot52[0].data, theot52[1].data, theot52[2].data],
     ax=ax,
     fill=False,
     hatch="/////",
@@ -175,7 +185,10 @@ second_leg = ax.legend(
 )
 ax.add_artist(main_leg)
 # Tick parameters
-ax.set_xticks([i + 0.5 for i in range(nmodels)], ["Exp", "SFO-tls", "Mod\nSFO-tls"])
+ax.set_xticks(
+    [i + 0.5 for i in range(nmodels)],
+    ["Exp", "SFO-tls", "Mod\nSFO-tls", "Mod2\nSFO-tls"],
+)
 ax.tick_params(axis="x", which="both", bottom=False, top=False, pad=15)
 ax.tick_params(axis="y", which="both", right=False)
 for spine in ["bottom", "top", "right"]:
@@ -189,7 +202,7 @@ fig.savefig("./Outputs/vertical.pdf")
 fig.savefig("./Outputs/vertical.png", dpi=300)
 
 ## Plot lines separating T states for EuNPC presentation
-ys = [9.7, 15.6, 13.9]
+ys = [9.7, 15.6, 13.9, 12.65]
 sepx = []
 sepy = []
 width = 0.75

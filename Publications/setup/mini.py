@@ -56,6 +56,9 @@ for ax in [top, left, right]:
     ax.set_facecolor("none")
 
 # TPC plot
+# Mask pile-up
+ev.fHist[:, :, :56] = 0
+ev.fHist[:, :, 75:] = 0
 proj = ev.fHist.project("X", "Y")  # type: ignore
 vals = proj.values()  # type: ignore
 vals[vals <= 0] = np.nan
@@ -188,4 +191,14 @@ bg.annotate(
 
 # Save!
 plt.savefig("./Outputs/mini_setup.pdf", dpi=300, bbox_inches=None, pad_inches=0.0)
+plt.savefig(
+    "/media/Data/Docs/EuNPC/figures/mini_setup.png",
+    dpi=600,
+    bbox_inches=None,
+    pad_inches=0,
+)
+
+# fig, ax = plt.subplots()
+# h = ev.fHist.project("X", "Z")
+# h.plot(cmin=1)
 plt.show()
