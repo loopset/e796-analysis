@@ -30,7 +30,13 @@ x = list(gaps.keys())
 y = list(gaps.values())
 bary = [bargap] + y[1:]
 ax.errorbar(x, unp.nominal_values(y), marker="s", ms=8, label="Exp. / Reana.")
-ax.errorbar(list(theogaps.keys()), unp.nominal_values(list(theogaps.values())), marker="h", ms=8, label="Mod SFO-tls")
+ax.errorbar(
+    list(theogaps.keys()),
+    unp.nominal_values(list(theogaps.values())),
+    marker="h",
+    ms=8,
+    label="Mod SFO-tls",
+)
 # ax.errorbar(
 #     x,
 #     unp.nominal_values(bary),
@@ -53,60 +59,62 @@ plt.close(fig)
 fig, ax = plt.subplots(figsize=(5, 4))
 tx = [0, 1]
 ty = unp.nominal_values(y[:2])
+# Relative to 16O
+ty = [val / y[0] for val in ty]
 # fit
 fit = np.poly1d(np.polyfit(tx, ty, 1))
 ax.errorbar(tx, ty, marker="s", ms=8)
 # ax.errorbar([1, 2], [ty[-1], fit(2)], marker="none", ms=8, ls="--")
 ax.set_xlim(-0.5, len(x) - 0.5)
-ax.set_ylim(3, 6.5)
+ax.set_ylim(0.5, 1.5)
 ax.tick_params(axis="x", labelsize=18)
 ax.set_xticks(list(range(len(x))), labels=x)
 ax.annotate(
     "$^{16}$O(d,t)",
-    xy=(0, 5.5),
+    xy=(0, 5.5 / y[0]),
     ha="center",
     va="center",
     fontsize=14,
 )
 ax.annotate(
     "K.H.Purser et al.\n NPA 132 (1969)",
-    xy=(0, 5.25),
+    xy=(0, 5.0 / y[0]),
     ha="center",
     va="center",
     fontsize=10,
-    style="italic"
+    style="italic",
 )
 
 ax.annotate(
     "$^{18}$O(d,t)",
-    xy=(1, 5.),
+    xy=(1, 5.0 / y[0]),
     ha="center",
     va="center",
     fontsize=14,
 )
 ax.annotate(
     "G.Mairle et al.\n NPA 280 (1977)",
-    xy=(1., 4.75),
+    xy=(1.0, 4.5 / y[0]),
     ha="center",
     va="center",
     fontsize=10,
-    style="italic"
+    style="italic",
 )
 
 ax.annotate(
     "$^{20}$O(d,t)",
-    xy=(2, 4.),
+    xy=(2, 4.0 / y[0]),
     ha="center",
     va="center",
     fontsize=14,
 )
 ax.annotate(
     "This experiment",
-    xy=(2., 3.75),
+    xy=(2.0, 3.65 / y[0]),
     ha="center",
     va="center",
     fontsize=10,
-    style="italic"
+    style="italic",
 )
 # ax.text(
 #     0.5,
@@ -122,10 +130,14 @@ ax.annotate(
 # )
 
 # Draw span
-ax.axhspan(3, 6.5, xmin=0.70, xmax=0.97, color="purple", alpha=0.25)
+ax.axhspan(0.5, 1.5, xmin=0.70, xmax=0.97, color="purple", alpha=0.25)
 
-ax.set_ylabel(r"$\Delta_{\text{SO}}$ [MeV]")
+# Horizontal line
+ax.axhline(1, ls="dashed", lw=1, color="black")
+
+ax.set_ylabel(r"$\Delta_{\text{SO}}\; {}^{\text{A}}\text{O} / ^{16}\text{O}$")
 fig.tight_layout()
-fig.savefig("./Outputs/z6_systematics_toy.png", dpi=300)
+fig.savefig("./Outputs/z6_systematics_toy.png", dpi=600)
+fig.savefig("/media/Data/Docs/EuNPC/figures/z6_systematics_toy.png", dpi=600)
 
 plt.show()

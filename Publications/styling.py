@@ -73,3 +73,6 @@ barplot = {
         fc="none", ec="crimson", hatch=r"\\"
     ),
 }
+
+# Path of thesis
+thesis = "/media/Data/Thesis/figures/analysis_e796/"

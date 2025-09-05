@@ -1,4 +1,5 @@
 import pyphysics as phys
+import numpy as np
 from pyphysics.actroot_interface import FitInterface
 import uproot
 import hist
@@ -42,7 +43,7 @@ inter.fFuncs["g0"] = (lambda old_f: lambda x: [gsfactor * y for y in old_f(x)])(
 )
 
 # Draw
-fig, ax = plt.subplots(1, 1, figsize=(8, 4))
+fig, ax = plt.subplots(1, 1, figsize=(10, 4))
 ax: mplaxes.Axes
 # Ex histograms in two regions
 hExgs[:gsbin].plot(label="Experiment", **styles["ex"])  # type: ignore
@@ -111,12 +112,13 @@ handles, labels = ax.get_legend_handles_labels()
 ax.legend(
     handles=[handles[-1]] + handles[:-1],
     labels=[labels[-1]] + labels[:-1],
-    loc="upper right",
+    loc="upper left",
     labelspacing=0.4,
     borderaxespad=0.3,
+    bbox_to_anchor=(1.02, 1),
 )
 fig.tight_layout()
-fig.savefig("./Outputs/ex_0.png")
+fig.savefig("/media/Data/Docs/EuNPC/figures/ex_0.png", dpi=600)
 
 # Indivual fits
 color = "dodgerblue"
@@ -135,12 +137,13 @@ handles, labels = ax.get_legend_handles_labels()
 ax.legend(
     handles=[handles[-1]] + handles[:-1],
     labels=[labels[-1]] + labels[:-1],
-    loc="upper right",
+    loc="upper left",
     labelspacing=0.4,
     borderaxespad=0.3,
+    bbox_to_anchor=(1.02, 1),
 )
 fig.tight_layout()
-fig.savefig("./Outputs/ex_1.png")
+fig.savefig("/media/Data/Docs/EuNPC/figures/ex_1.png", dpi=600)
 
 ## T = 5/2
 for i, state in enumerate(inter.fEx.keys()):
@@ -160,36 +163,45 @@ handles, labels = ax.get_legend_handles_labels()
 ax.legend(
     handles=[handles[-1]] + handles[:-1],
     labels=[labels[-1]] + labels[:-1],
-    loc="upper right",
+    loc="upper left",
     labelspacing=0.4,
     borderaxespad=0.3,
+    bbox_to_anchor=(1.02, 1),
 )
 
-# Juan (d,3He)
-hjuan = uproot.open("./Inputs/Ex_and_fitted_states_Extended_update.root")["htot"].to_hist()  # type: ignore
-hjuan.axes[0].label = r"E$_{\text{x}}$ [MeV]"
-hjuan: hist.BaseHist
-hdiff = hjuan.copy()
-hdiff: hist.BaseHist
-hdiff.reset()
-# Transform Juan's to (d,t) by a shift
-bediff = 10.8  # MeV difference
-for i, value in enumerate(hjuan.values()):
-    center = 0.5 * (hjuan.axes[0].edges[i] + hjuan.axes[0].edges[i + 1])
-    center += bediff
-    hdiff.fill(center, weight=value)
-# Scaling factor
-jfactor = 1.25
-hdiff *= jfactor
-d3he = hdiff.plot(ax=ax, color="magenta", lw=1.25, ls="dashed")
+# # Juan (d,3He)
+# hjuan = uproot.open("./Inputs/Ex_and_fitted_states_Extended_update.root")["htot"].to_hist()  # type: ignore
+# hjuan.axes[0].label = r"E$_{\text{x}}$ [MeV]"
+# hjuan: hist.BaseHist
+# hdiff = hjuan.copy()
+# hdiff: hist.BaseHist
+# hdiff.reset()
+# # Transform Juan's to (d,t) by a shift
+# bediff = 10.8  # MeV difference
+# for i, value in enumerate(hjuan.values()):
+#     center = 0.5 * (hjuan.axes[0].edges[i] + hjuan.axes[0].edges[i + 1])
+#     center += bediff
+#     hdiff.fill(center, weight=value)
+# # Scaling factor
+# jfactor = 1.25
+# hdiff *= jfactor
+# d3he = hdiff.plot(ax=ax, color="magenta", lw=1.25, ls="dashed")
+# fig.tight_layout()
+# fig.savefig("./Outputs/ex_with_d3he.png")
+
+
+# # Disable juan for final plot
+# d3he[0].stairs.set_visible(False)
+
+# Spans
+ax.set_ylim(0, 250)
+low = np.linspace(-2, 10, 100)
+ax.fill_between(low, 0, 250, color="lightblue", alpha=0.25)
+up = np.linspace(10, 15.5, 100)
+ax.fill_between(up, 0, 250, color="moccasin", alpha=0.25)
+
 fig.tight_layout()
-fig.savefig("./Outputs/ex_with_d3he.png")
-
-
-# Disable juan for final plot
-d3he[0].stairs.set_visible(False)
-
-fig.tight_layout()
+fig.savefig("/media/Data/Docs/EuNPC/figures/ex.png", dpi=600)
 fig.savefig("./Outputs/ex.pdf")
-fig.savefig("./Outputs/ex.eps")
+# fig.savefig("./Outputs/ex.eps")
 plt.show()
