@@ -1,7 +1,15 @@
 import cycler
 import pyphysics
 
-base2d = {"flow": "none", "cmin": 1, "cmap": "managua_r", "rasterized": True}
+base2d = {
+    "flow": "none",
+    "cmin": 1,
+    "cmap": "managua_r",
+    "rasterized": True,
+    "cbarpad": 0.05,
+    "cbarsize": 0.2,
+    "cbarextend": False,
+}
 
 errorbar = {"ls": "none", "marker": "s", "capsize": 3}
 
