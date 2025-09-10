@@ -10,11 +10,12 @@ void extractHistos()
 
     auto* chain = new TChain("ACTAR_Data");
     chain->Add("../../RootFiles/Data/Data_Run_0417.root");
+    chain->Add("../../RootFiles/Data/Data_Run_0419.root");
     ROOT::RDataFrame df {*chain};
 
     std::map<std::string, std::vector<TH1D*>> hs;
     int nsils {11};
-    for(const auto& layer : {"l0", "f0"})
+    for(const auto& layer : {"l0", "f0", "f1"})
     {
         for(int i = 0; i < nsils; i++)
         {
@@ -58,6 +59,13 @@ void extractHistos()
     fout->mkdir("Raw/F0");
     fout->cd("Raw/F0");
     for(const auto& h : hs["f0"])
+    {
+        h->Write();
+    }
+    // F1
+    fout->mkdir("Raw/F1");
+    fout->cd("Raw/F1");
+    for(const auto& h : hs["f1"])
     {
         h->Write();
     }

@@ -197,4 +197,6 @@ void f0_cal()
     for(auto& [key, funcs] : runners[5].GetFinalSat())
         for(auto& func : funcs)
             func->Write();
+    // Write also resolution plot 
+    gr->Write("res");
 }

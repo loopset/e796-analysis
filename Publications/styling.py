@@ -11,6 +11,7 @@ base2d = {
     "cbarextend": False,
 }
 
+errorbar_line = {"ls": "none", "marker": "o", "ms": 4, "capsize": 3}
 errorbar = {"ls": "none", "marker": "s", "capsize": 3}
 
 base1d = {
