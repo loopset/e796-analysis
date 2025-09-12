@@ -11,7 +11,7 @@ from histos import mPID
 from styling import base2d
 
 
-data = uproot.open("./Inputs/pid_front.root:PID_Tree").arrays()  # type: ignore
+data = uproot.open("./Inputs/pid_front.root:PID_Tree").arrays(["ESil0", "fQave"])  # type: ignore
 
 # Read cuts
 which = ["2H", "3H"]
@@ -61,4 +61,5 @@ for cut in cuts[1:]:
 # ax.set_ylim(0, 950)
 fig.tight_layout()
 fig.savefig("./Outputs/pid_front.pdf")
+fig.savefig("/media/Data/Docs/EuNPC/figures/pid_front.png", dpi=600)
 plt.show()

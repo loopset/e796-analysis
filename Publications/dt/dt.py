@@ -1,6 +1,6 @@
 from collections import defaultdict
 import math
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 import pyphysics as phys
 from pyphysics.actroot_interface import FitInterface, SFInterface
 import pandas as pd
@@ -86,3 +86,29 @@ def split_isospin(df: phys.SMDataDict) -> Tuple[phys.SMDataDict, phys.SMDataDict
             else:
                 t52[k].append(val)
     return (t32, t52)
+
+
+# Strengths
+def get_strengths(
+    data: phys.SMDataDict,
+) -> Dict[phys.QuantumNumbers, Union[float, un.UFloat]]:
+    ret = {}
+    for q, vals in data.items():
+        ret[q] = sum(val.SF for val in data[q])  # type: ignore
+    return ret
+
+
+# Centroids
+def get_centroids(
+    data: phys.SMDataDict,
+) -> Dict[phys.QuantumNumbers, Union[float, un.UFloat]]:
+    zero = 0
+    ret = {}
+    for q, vals in data.items():
+        num = 0
+        den = 0
+        for val in vals:
+            num += (2 * q.j + 1) * val.SF * (val.Ex - zero)  # type: ignore
+            den += (2 * q.j + 1) * val.SF  # type: ignore
+        ret[q] = num / den
+    return ret

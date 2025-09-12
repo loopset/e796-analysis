@@ -36,5 +36,6 @@ for i, kin in enumerate(kins):
 ax.legend()
 ax.yaxis.set_major_locator(mpltick.MaxNLocator(integer=True, nbins=5))
 fig.tight_layout()
-fig.savefig("./Outputs/kin.pdf")
+fig.savefig("./Outputs/kin.pdf", dpi=300)
+fig.savefig("/media/Data/Docs/EuNPC/figures/kin.png", dpi=600)
 plt.show()

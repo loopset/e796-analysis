@@ -38,7 +38,7 @@ exs[:], comps[:] = zip(*sorted_ex)
 # Add theoretical predictions and fit
 for i, comp in enumerate(comps):
     comp.add_model("mairle", f"./Inputs/DaehPang/fort.2{i + 2:02d}")
-    comp.fit()
+    comp.fit(scale_covar=True)
 
 # Add manual states
 exs_man = [11.41, 12.12, 12.76]

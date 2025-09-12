@@ -228,6 +228,6 @@ adjust_text(
 )
 
 fig.tight_layout()
-fig.savefig("./Outputs/shell_model.pdf")
-fig.savefig("./Outputs/shell_model.png")
+fig.savefig("./Outputs/shell_model.pdf", dpi=300)
+fig.savefig("/media/Data/Docs/EuNPC/figures/shell_model.png", dpi=600)
 plt.show()

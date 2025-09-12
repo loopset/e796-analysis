@@ -65,8 +65,9 @@ ty = [val / y[0] for val in ty]
 fit = np.poly1d(np.polyfit(tx, ty, 1))
 ax.errorbar(tx, ty, marker="s", ms=8)
 # ax.errorbar([1, 2], [ty[-1], fit(2)], marker="none", ms=8, ls="--")
+ax.set_ylabel(r"$\Delta_{\text{SO}}\; {}^{\text{A}}\text{O} / ^{16}\text{O}$")
 ax.set_xlim(-0.5, len(x) - 0.5)
-ax.set_ylim(0.5, 1.5)
+ax.set_ylim(0.3, 1.3)
 ax.tick_params(axis="x", labelsize=18)
 ax.set_xticks(list(range(len(x))), labels=x)
 ax.annotate(
@@ -101,14 +102,14 @@ ax.annotate(
     style="italic",
 )
 
-ax.annotate(
+text0 = ax.annotate(
     "$^{20}$O(d,t)",
     xy=(2, 4.0 / y[0]),
     ha="center",
     va="center",
     fontsize=14,
 )
-ax.annotate(
+text1 = ax.annotate(
     "This experiment",
     xy=(2.0, 3.65 / y[0]),
     ha="center",
@@ -130,14 +131,29 @@ ax.annotate(
 # )
 
 # Draw span
-ax.axhspan(0.5, 1.5, xmin=0.70, xmax=0.97, color="purple", alpha=0.25)
+span = ax.axhspan(0.3, 1.3, xmin=0.70, xmax=0.97, color="purple", alpha=0.25)
 
 # Horizontal line
 ax.axhline(1, ls="dashed", lw=1, color="black")
 
-ax.set_ylabel(r"$\Delta_{\text{SO}}\; {}^{\text{A}}\text{O} / ^{16}\text{O}$")
 fig.tight_layout()
 fig.savefig("./Outputs/z6_systematics_toy.png", dpi=600)
 fig.savefig("/media/Data/Docs/EuNPC/figures/z6_systematics_toy.png", dpi=600)
+
+## Add experimental data
+print(f"20O exp reduction: {un.ufloat(3.79, 0.19) / y[0]:.2uS}")#type: ignore
+error = ax.errorbar([1, 2], [ty[1], 3.79 / y[0]], yerr=[0,  0.19 / y[0]], marker="s", ms=8)
+# And theoretical value
+ax.axhline(4.34 / y[0], xmin=0.775, xmax=0.9, color="crimson", lw=1.5, alpha=0.75)
+ax.annotate("Theory", xy=(2, 4.55 / y[0]), ha="center", va="center", fontsize=12, color="crimson")
+
+# Format
+span.remove()
+text0.set_position((2, 3 / y[0]))
+text1.set_position((2, 2.75 / y[0]))
+for text in [text0, text1]:
+    text.set_color(error.lines[0].get_color())
+fig.savefig("/media/Data/Docs/EuNPC/figures/z6_systematics_toy_ours.png", dpi=600)
+
 
 plt.show()

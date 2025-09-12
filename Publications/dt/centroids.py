@@ -17,62 +17,46 @@ import styling as sty
 exp = dt.build_sm(True)
 
 ## Modified SFO-tls
+# sfo = phys.ShellModel(
+#     [
+#         "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
+#         "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
+#     ]
+# )
+
+# Modified2 SFO-tls
 sfo = phys.ShellModel(
     [
-        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
-        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
+        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1n.txt",
+        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1p.txt",
     ]
 )
 
 ## Settings for SFO-tls
 # Sum over all states until T = 5/2 arrives
 ## Ex max determined from vertical.py
-sfo.set_max_Ex(13.5)
+# sfo.set_max_Ex(13.5)
+sfo.set_max_Ex(12.5)
 sfo.set_min_SF(0.05)
 
 ## Isospin
 # T = 3/2
 for key, vals in exp.items():
     vals[:] = [val for val in vals if un.nominal_value(val.Ex) < 10]
-df = pd.read_excel("../../Fits/dt/Inputs/SM_fited/o19-isospin-ok.xlsx")
-sfo.add_isospin("../../Fits/dt/Inputs/SM_fited/summary_O19_sfotls_mod.txt", df)
+# df = pd.read_excel("../../Fits/dt/Inputs/SM_fited/o19-isospin-ok.xlsx")
+# sfo.add_isospin("../../Fits/dt/Inputs/SM_fited/summary_O19_sfotls_mod.txt", df)
+df = pd.read_excel("../../Fits/dt/Inputs/SFO_tls_2/o19-isospin-ok.xlsx")
+sfo.add_isospin("../../Fits/dt/Inputs/SFO_tls_2/summary_O19_sfotls_modtsp3015.txt", df)
 sfo.set_allowed_isospin(1.5)
-
-
-## Strengths
-def get_strengths(
-    data: phys.SMDataDict,
-) -> Dict[phys.QuantumNumbers, Union[float, un.UFloat]]:
-    ret = {}
-    for q, vals in data.items():
-        ret[q] = sum(val.SF for val in data[q])  # type: ignore
-    return ret
 
 
 strens = []
 for d in [exp, sfo.data]:
-    strens.append(get_strengths(d))
-
-
-## Centroids
-def get_centroids(
-    data: phys.SMDataDict,
-) -> Dict[phys.QuantumNumbers, Union[float, un.UFloat]]:
-    zero = 0
-    ret = {}
-    for q, vals in data.items():
-        num = 0
-        den = 0
-        for val in vals:
-            num += (2 * q.j + 1) * val.SF * (val.Ex - zero)  # type: ignore
-            den += (2 * q.j + 1) * val.SF  # type: ignore
-        ret[q] = num / den
-    return ret
-
+    strens.append(dt.get_strengths(d))
 
 cents = []
 for d in [exp, sfo.data]:
-    cents.append(get_centroids(d))
+    cents.append(dt.get_centroids(d))
 
 # Compute directly gaps, assuming no population in (d,p) reactions
 # as Bea's paper proves
@@ -93,6 +77,7 @@ for i, (ste, cent) in enumerate(zip(strens, cents)):
     for q, y in ste.items():
         if q == phys.QuantumNumbers(0, 2, 1.5):
             continue
+        print(f"Centroid {q.format()} = {cent[q]}")
         ax.bar(
             x=un.nominal_value(cent[q]),
             height=un.nominal_value(y),
@@ -108,7 +93,7 @@ ax.set_ylim(0)
 ax.set_xlabel(r"Centroids [MeV]")
 ax.set_ylabel(r"$\sum$C$^2$S")
 ax.annotate(
-    "Dimmed: Mod SFO-tls",
+    "Dimmed: Mod2 SFO-tls",
     xy=(0.4, 0.8),
     xycoords="axes fraction",
     ha="center",
@@ -126,4 +111,5 @@ ax.annotate(
 
 fig.tight_layout()
 fig.savefig("./Outputs/centroids.png", dpi=300)
+fig.savefig("/media/Data/Docs/EuNPC/figures/centroids.png", dpi=600)
 plt.show()
