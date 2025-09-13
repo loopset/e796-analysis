@@ -13,6 +13,7 @@ base2d = {
 
 errorbar_line = {"ls": "-", "marker": "o", "ms": 4, "capsize": 3}
 errorbar = {"ls": "none", "marker": "s", "capsize": 3}
+errorbar_nols = {"marker": "s", "capsize": 3}
 
 base1d = {
     "histtype": "step",

@@ -15,6 +15,10 @@ for file in files:
     data: phys.SMDataDict = {}
     with open(file, "rb") as f:
         data = pickle.load(f)
+    # model = phys.ShellModel()
+    # model.data = data
+    # model.set_max_Ex(12.5)
+    # data = model.data
     # Barager calculus
     bar = phys.Barager()
     bar.set_removal(data, snrem)

@@ -16,70 +16,42 @@ bar = phys.Barager()
 bar.set_removal(rem, phys.Particle("16O").get_sn())
 bar.set_adding(add, phys.Particle("17O").get_sn())
 bar.do_for([qp12, qp32])
-bargap = bar.get_gap(qp12, qp32)
+gap16 = bar.get_gap(qp12, qp32)
 print("0p1/2 ESPE 16O: ", bar.get_ESPE(qp12))
 print("0p3/2 ESPE 16O: ", bar.get_ESPE(qp32))
-print("SO gap 16O: ", bargap)
+print("SO gap 16O: ", gap16)
 
-# Manual SO gaps
 # Define the SO gaps for the other particles
-gaps = {r"$^{16}$O": 6.18, r"$^{18}$O": 5.6, r"$^{20}$O": 3.8}
-theogaps = {r"$^{20}$O": 5.64}
-fig, ax = plt.subplots(figsize=(5, 4))
-x = list(gaps.keys())
-y = list(gaps.values())
-bary = [bargap] + y[1:]
-ax.errorbar(x, unp.nominal_values(y), marker="s", ms=8, label="Exp. / Reana.")
-ax.errorbar(
-    list(theogaps.keys()),
-    unp.nominal_values(list(theogaps.values())),
-    marker="h",
-    ms=8,
-    label="Mod SFO-tls",
-)
-# ax.errorbar(
-#     x,
-#     unp.nominal_values(bary),
-#     marker="*",
-#     ms=8,
-#     ls="--",
-#     alpha=0.75,
-#     label="With 16O(d,p) vacancies",
-# )
-ax.set_ylabel(r"$\nu 0\text{p}_{1/2} - \nu 0\text{p}_{3/2}$ [MeV]")
-ax.set_xlim(-0.5, len(gaps) - 0.5)
-ax.tick_params(axis="x", labelsize=18)
-ax.legend()
+gaps = {r"$^{16}$O": gap16, r"$^{18}$O": un.ufloat(4.75, 0.05), r"$^{20}$O": un.ufloat(3.79, 0.19)}
+theogaps = {r"$^{20}$O": 4.34}  # with Mod2 SFO-tls
 
-fig.tight_layout()
-fig.savefig("./Outputs/z6_systematics.png", dpi=300)
-plt.close(fig)
+labels = [k for k in gaps.keys()]
+idxs = list(range(3))
+exp = [v for v in gaps.values()]
+theo = [theogaps[k] if k in theogaps else 0 for k in gaps.keys()]
 
-# Toy figure
+# In relative to 16O
+relexp = [v / gap16 for v in exp]
+reltheo = [v / gap16 for v in theo]  # type: ignore
+
+# Relative figure
 fig, ax = plt.subplots(figsize=(5, 4))
-tx = [0, 1]
-ty = unp.nominal_values(y[:2])
-# Relative to 16O
-ty = [val / y[0] for val in ty]
-# fit
-fit = np.poly1d(np.polyfit(tx, ty, 1))
-ax.errorbar(tx, ty, marker="s", ms=8)
-# ax.errorbar([1, 2], [ty[-1], fit(2)], marker="none", ms=8, ls="--")
+ax.errorbar(idxs[:2], unp.nominal_values(relexp[:2]), marker="s", ms=8)
 ax.set_ylabel(r"$\Delta_{\text{SO}}\; {}^{\text{A}}\text{O} / ^{16}\text{O}$")
-ax.set_xlim(-0.5, len(x) - 0.5)
+ax.set_xlim(-0.5, len(idxs) - 0.5)
 ax.set_ylim(0.3, 1.3)
 ax.tick_params(axis="x", labelsize=18)
-ax.set_xticks(list(range(len(x))), labels=x)
+ax.set_xticks(list(range(len(idxs))), labels=labels)
 ax.annotate(
     "$^{16}$O(d,t)",
-    xy=(0, 5.5 / y[0]),
+    xy=(0, 5.5 / exp[0]),
     ha="center",
     va="center",
     fontsize=14,
 )
 ax.annotate(
     "K.H.Purser et al.\n NPA 132 (1969)",
-    xy=(0, 5.0 / y[0]),
+    xy=(0, 5.0 / exp[0]),
     ha="center",
     va="center",
     fontsize=10,
@@ -88,14 +60,14 @@ ax.annotate(
 
 ax.annotate(
     "$^{18}$O(d,t)",
-    xy=(1, 5.0 / y[0]),
+    xy=(1, 5.0 / exp[0]),
     ha="center",
     va="center",
     fontsize=14,
 )
 ax.annotate(
     "G.Mairle et al.\n NPA 280 (1977)",
-    xy=(1.0, 4.5 / y[0]),
+    xy=(1.0, 4.5 / exp[0]),
     ha="center",
     va="center",
     fontsize=10,
@@ -104,14 +76,14 @@ ax.annotate(
 
 text0 = ax.annotate(
     "$^{20}$O(d,t)",
-    xy=(2, 4.0 / y[0]),
+    xy=(2, 4.0 / exp[0]),
     ha="center",
     va="center",
     fontsize=14,
 )
 text1 = ax.annotate(
     "This experiment",
-    xy=(2.0, 3.65 / y[0]),
+    xy=(2.0, 3.65 / exp[0]),
     ha="center",
     va="center",
     fontsize=10,
@@ -140,17 +112,32 @@ fig.tight_layout()
 fig.savefig("./Outputs/z6_systematics_toy.png", dpi=600)
 fig.savefig("/media/Data/Docs/EuNPC/figures/z6_systematics_toy.png", dpi=600)
 
-## Add experimental data
-print(f"20O exp reduction: {un.ufloat(3.79, 0.19) / y[0]:.2uS}")#type: ignore
-error = ax.errorbar([1, 2], [ty[1], 3.79 / y[0]], yerr=[0,  0.19 / y[0]], marker="s", ms=8)
+## Add 20 point
+print(f"Gap 20O : {exp[-1]:.2uS}")
+print(f"20O exp reduction: {relexp[-1]:.2uS}")
+error = ax.errorbar(
+    idxs[1:],
+    unp.nominal_values(relexp[1:]),
+    yerr=unp.std_devs(relexp[1:]),
+    marker="s",
+    ms=8,
+)
 # And theoretical value
-ax.axhline(4.34 / y[0], xmin=0.775, xmax=0.9, color="crimson", lw=1.5, alpha=0.75)
-ax.annotate("Theory", xy=(2, 4.55 / y[0]), ha="center", va="center", fontsize=12, color="crimson")
+ax.axhline(reltheo[-1], xmin=0.775, xmax=0.9, color="crimson", lw=1.5, alpha=0.75)
+ax.annotate(
+    "Theory",
+    xy=(2, 4.55 / exp[0]),
+    ha="center",
+    va="center",
+    fontsize=12,
+    color="crimson",
+)
 
 # Format
 span.remove()
-text0.set_position((2, 3 / y[0]))
-text1.set_position((2, 2.75 / y[0]))
+text0.set_position((2, 3 / exp[0]))
+text1.set_position((2, 2.75 / exp[0]))
+
 for text in [text0, text1]:
     text.set_color(error.lines[0].get_color())
 fig.savefig("/media/Data/Docs/EuNPC/figures/z6_systematics_toy_ours.png", dpi=600)
