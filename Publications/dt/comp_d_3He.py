@@ -44,7 +44,7 @@ hgs.reset()
 hgs.fill(exdt[exdt.Ex < excut].Ex)
 hgs *= gsfactor
 # Transform Juan's to (d,t) by a shift
-bediff = 10.8  # MeV difference
+bediff = 11.  # MeV difference
 hdiff = hist.Hist.new.Reg(nbins, xmin, xmax).Double()
 values = hjuan.values()
 for i, value in enumerate(values):
@@ -57,15 +57,15 @@ hdiff *= jfactor
 
 
 # Plot
-fig, ax = plt.subplots(1, 1, figsize=(6, 5))
+fig, ax = plt.subplots(1, 1, figsize=(6, 4))
 ax: mplaxes.Axes
 ## (d,t)
 ax.set_title("$^{20}$O(d,t)")
-hgs[:gsbin].plot(ax=ax, label="Exp", color="dodgerblue", **sty.base1d)  # type: ignore
+hgs[:gsbin].plot(ax=ax, label=r"(d,t)", color="dodgerblue", **sty.base1d)  # type: ignore
 hdt[gsbin:].plot(ax=ax, color="dodgerblue", **sty.base1d)  # type: ignore
-hdiff.plot(ax=ax, color="crimson", label=r"(d,$^3$He) + offset", **sty.base1d)
+hdiff.plot(ax=ax, color="crimson", label=r"(d,$^3$He)", **sty.base1d)
 ax.annotate(rf"gs $\times$ {gsfactor:.1f}", xy=(4.5, 335), fontsize=14, ha="center")
-# ax.legend()
+ax.legend()
 # ax.annotate(
 #     f"Offset = BE(19N) - BE(19O)\n = {bediff:.1f} MeV",
 #     xy=(0.45, 0.6),
@@ -81,6 +81,10 @@ ax.set_xlim(-3, 40)
 # for state in ["v4", "v5", "v6", "v7"]:
 #     ex = df[df["name"] == state]["ex"].iloc[0]
 #     ax.axvline(un.nominal_value(ex), 0, 0.75, color="crimson", ls="dashed", lw=1.5)  # type: ignore
+fig.tight_layout()
+fig.savefig("/media/Data/Docs/EuNPC/figures/d_3He_comparison.png", dpi=300)
+
+
 ## Miscellanea
 # Read data
 fit = FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
@@ -183,4 +187,6 @@ ax.set_ylabel(r"C$^{2}$S")
 
 fig.tight_layout()
 fig.savefig("./Outputs/d_3he_isospin.pdf")
+plt.close(fig)
+
 plt.show()

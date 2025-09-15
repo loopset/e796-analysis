@@ -39,7 +39,7 @@ df = pd.read_excel("../../Fits/dt/Inputs/SFO_tls_2/o19-isospin-ok.xlsx")
 theo.add_isospin("../../Fits/dt/Inputs/SFO_tls_2/summary_O19_sfotls_modtsp3015.txt", df)
 
 
-theo.set_max_Ex(25)
+theo.set_max_Ex(12.5)
 theo.set_min_SF(0.09)
 
 # Set allowed isospin
@@ -182,7 +182,7 @@ ax.tick_params(axis="y", which="both", right=False)
 for spine in ["bottom", "top", "right"]:
     ax.spines[spine].set_visible(False)
 ax.set_xlim(0, nmodels)
-ax.set_ylim(-0.25, 20)
+ax.set_ylim(-0.25, 17.5)
 ax.set_ylabel(r"E$_{\text{x}}$ [MeV]")
 
 fig.tight_layout()
@@ -194,7 +194,7 @@ fig.savefig("/media/Data/Docs/EuNPC/figures/vertical_1.png", dpi=300)
 # Highlight second region
 ymin = 5.75
 ymax0 = 10
-ymax1 = 14
+ymax1 = 12.5
 xs = [0, 1, 1, 2]
 span1 = ax.fill_between(
     xs, [ymin] * len(xs), [ymax0, ymax0, ymax1, ymax1], color="orange", alpha=0.25
