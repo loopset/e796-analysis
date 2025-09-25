@@ -167,6 +167,5 @@ fig.text(
     va="center",
     fontsize=18,
 )
-fig.savefig("./Outputs/ang_simple.pdf")
-fig.savefig("./Outputs/ang_simple.eps")
+fig.savefig("./Outputs/ang_simple.pdf", dpi=300)
 plt.show()

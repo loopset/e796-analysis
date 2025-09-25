@@ -187,6 +187,6 @@ ax.set_ylabel(r"C$^{2}$S")
 
 fig.tight_layout()
 fig.savefig("./Outputs/d_3he_isospin.pdf")
-plt.close(fig)
+# plt.close(fig)
 
 plt.show()
