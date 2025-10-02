@@ -9,8 +9,8 @@ def noisy_gaussian(x):
     amp = 4000
     mean = 50
     sigma = 5
-    baseline = 100
-    noise = 50
+    baseline = 20
+    noise = 10
     gaussian = (amp * np.sqrt(np.pi) * sigma) * norm.pdf(x, loc=mean, scale=sigma)
     noise = np.random.uniform(baseline - noise, baseline + noise, size=len(x))
     return gaussian + noise
@@ -23,7 +23,7 @@ fig, ax = plt.subplots(1, 1, figsize=(4.5, 4.5))
 ax: mplaxes.Axes
 ax.plot(x, y, color="black", lw=1.25)
 ax.set_xlabel("Time bucket")
-ax.set_ylabel("Pulse height [fC]")
+ax.set_ylabel("Pulse height [channel]")
 # Axis settings
 ax.spines["top"].set_visible(False)
 ax.spines["right"].set_visible(False)
@@ -47,6 +47,6 @@ ax.annotate(
 ax.annotate("Q of voxel", xy=(0, ymax), xytext=(5, 2e3), **arrow)
 
 fig.tight_layout()
-fig.savefig("./Outputs/signal.pdf")
+fig.savefig("./Outputs/signal.pdf", dpi=300)
 
 plt.show()
