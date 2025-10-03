@@ -30,6 +30,28 @@ mairle: phys.SMDataDict = {}
 with open("../../Fits/dt/Mairle_18Odt/Outputs/mairle.pkl", "rb") as f:
     mairle = pickle.load(f)
 
+# Read theoretical
+files = [
+    "../../Fits/dt/Mairle_18Odt/Inputs/SFO-tls/mod1.pkl",
+    "../../Fits/dt/Mairle_18Odt/Inputs/SFO-tls/mod2.pkl",
+]
+theos: List[phys.SMDataDict] = []
+for file in files:
+    with open(file, "rb") as f:
+        sm = pickle.load(f)
+        theos.append(sm.data)
+
+# Build models
+models = [mairle, reana] + theos
+labels = ["Paper", "Reana", "Theo1", "Theo2"]
+
+# Styles
+styles = {
+    "ls": ["-", "--", "-.", ":"],
+    "ms": ["o", "s", "D", "^"],
+    "hs": ["", "////", "xxx", "++"],
+}
+
 
 def do_cumulative(data: phys.SMDataDict) -> List:
     retSte: Dict[phys.QuantumNumbers, List] = defaultdict(list)
@@ -62,29 +84,30 @@ def do_cumulative(data: phys.SMDataDict) -> List:
 
 cums = []
 fig, axs = plt.subplots(2, 2, figsize=(8, 6))
-for i, val in enumerate([reana, mairle]):
+for i, val in enumerate(models):
     cums.append(do_cumulative(val))
-    for j, dste in enumerate(cums[-1]):
-        for q, vals in dste.items():
+    for j, dic in enumerate(cums[-1]):
+        for q, vals in dic.items():
             x, y = zip(*vals)
-            axs[0, j].errorbar(
+            axs[0, j].plot(
                 unp.nominal_values(x),
                 unp.nominal_values(y),
-                xerr=unp.std_devs(x),
-                yerr=unp.std_devs(y),
+                # xerr=unp.std_devs(x),
+                # yerr=unp.std_devs(y),
                 color=sty.barplot[q]["ec"],
-                **sty.errorbar_nols,
-                label=q.format() if i == 0 else None,
-                alpha=1 if i == 0 else 0.5,
-                ls="-" if i == 0 else "--",
+                label=labels[i] if q == dt.qp12 else None,
+                ls=styles["ls"][i],
+                marker="none",
+                # capsize=0,
             )
+
 
 axs[0, 0].set_xlabel("Strength [%]")
 axs[0, 1].set_xlabel(r"E$_{x}$ cutoff [MeV]")
 # Common settings
 for ax in axs.flat[:2]:
-    ax.legend()
     ax.set_ylabel("Centroid [MeV]")
+axs[0, 1].legend(loc="lower left", bbox_to_anchor=(1.05, 0.25), ncols=1)
 
 # Plot things
 ax: mplaxes.Axes = axs[0, 0]
@@ -96,16 +119,9 @@ ourp32 = 14  # percent
 ax.axvline(ourp32, color=sty.barplot[dt.qp32]["ec"], ls="--")
 # Ex cut
 ax = axs[0, 1]
-ourMaxEx = 12.5 # MeV
+ourMaxEx = 12.5  # MeV
 ax.axvline(ourMaxEx, color="crimson", ls="--")
 
-# Note
-axs[0, 0].annotate(
-    "Solid: reanalysis\nDashed: paper",
-    xy=(0.5, 0.45),
-    xycoords="axes fraction",
-    fontsize=14,
-)
 
 # Find closest
 closeSte = []
@@ -114,30 +130,37 @@ gapSte = []
 gapEx = []
 for i, cum in enumerate(cums):
     ste, ex = cum
-    dste = {}
+    dic = {}
     # Strength
     # 0p12
-    dste[dt.qp12] = min(ste[dt.qp12], key=lambda x: abs(x[0] - ourp12))[1]
+    dic[dt.qp12] = min(
+        ste[dt.qp12], key=lambda x: abs(un.nominal_value(x[0] - ourp12))
+    )[1]
     # 0p32
-    dste[dt.qp32] = min(ste[dt.qp32], key=lambda x: abs(x[0] - ourp32))[1]
-    gapSte.append(dste[dt.qp32] - dste[dt.qp12])
+    dic[dt.qp32] = min(
+        ste[dt.qp32], key=lambda x: abs(un.nominal_value(x[0] - ourp32))
+    )[1]
+    gapSte.append(dic[dt.qp32] - dic[dt.qp12])
     # Ex
     dex = {}
-    dex[dt.qp12] = min(ex[dt.qp12], key=lambda x: abs(x[0] - ourMaxEx))[1]
-    dex[dt.qp32] = min(ex[dt.qp32], key=lambda x: abs(x[0] - ourMaxEx))[1]
+    dex[dt.qp12] = min(
+        ex[dt.qp12], key=lambda x: abs(un.nominal_value(x[0] - ourMaxEx))
+    )[1]
+    dex[dt.qp32] = min(
+        ex[dt.qp32], key=lambda x: abs(un.nominal_value(x[0] - ourMaxEx))
+    )[1]
     gapEx.append(dex[dt.qp32] - dex[dt.qp12])
     # Append
-    closeSte.append(dste)
+    closeSte.append(dic)
     closeEx.append(dex)
 
 # Plot centroids
-width = 0.5
-
+width = 0.35
 ax: mplaxes.Axes = axs[1, 0]
-labels = ["Strength", r"E$_{x}$"]
+xlabels = ["Strength", r"E$_{x}$"]
 for i, cond in enumerate([closeSte, closeEx]):
-    for j, val in enumerate(cond):
-        for q, val in val.items():
+    for j, model in enumerate(cond):
+        for q, val in model.items():
             ax.barh(
                 un.nominal_value(val),
                 left=i - width / 2,
@@ -145,7 +168,7 @@ for i, cond in enumerate([closeSte, closeEx]):
                 height=0.1,
                 color=sty.barplot[q]["ec"],
                 alpha=1 if j == 0 else 0.5,
-                hatch=None if j == 0 else "///",
+                hatch=styles["hs"][j],
             )
             ax.annotate(
                 f"{val:.2uS}" if isinstance(val, un.UFloat) else f"{val:.2f}",
@@ -153,7 +176,7 @@ for i, cond in enumerate([closeSte, closeEx]):
                 ha="left",
                 va="center",
             )
-ax.set_xticks([0, 1], labels)
+ax.set_xticks([0, 1], xlabels)
 ax.set_xlim(-0.75, 1.75)
 ax.set_xlabel("Condition")
 ax.set_ylabel("Centroid [MeV]")
@@ -169,7 +192,8 @@ for i, cond in enumerate([gapSte, gapEx]):
             height=0.1,
             color="orange",
             alpha=1 if j == 0 else 0.5,
-            hatch=None if j == 0 else "///",
+            hatch=styles["hs"][j],
+            label=labels[j] if (i == 0) else None,
         )
         ax.annotate(
             f"{val:.2uS}" if isinstance(val, un.UFloat) else f"{val:.2f}",
@@ -177,29 +201,41 @@ for i, cond in enumerate([gapSte, gapEx]):
             ha="left",
             va="center",
         )
-ax.set_xticks([0, 1], labels)
+ax.set_xticks([0, 1], xlabels)
 ax.set_xlim(-0.75, 1.75)
 ax.set_xlabel("Condition")
 ax.set_ylabel("N = 6 gap [MeV]")
-
-# Note
-axs[1, 0].annotate(
-    "Solid: reanalysis\nHatched: paper",
-    xy=(0.5, 0.35),
-    xycoords="axes fraction",
-    fontsize=14,
-)
+axs[1, 1].legend(loc="lower left", bbox_to_anchor=(1.05, 0.25), ncols=1)
 
 # Gap 20O
-ax.axhline(3.79, ls="--", color="crimson", lw=1.5)
-ax.annotate(r"Exp $^{20}$O gap", xy=(-0.25, 3.95), ha="center", va="center", fontsize=12, color="crimson")
+# Experimental gap
+ax.axhline(3.79, ls="--", color="dodgerblue", lw=1.5)
+ax.annotate(
+    r"Exp $^{20}$O gap",
+    xy=(-0.25, 3.95),
+    ha="center",
+    va="center",
+    fontsize=12,
+    color="dodgerblue",
+)
 
-# Print
-datanames = ["Reanalysis", "Paper"]
-for i, cond in enumerate([gapSte, gapEx]):
-    print("======", labels[i], "=====")
-    for j, data in enumerate(cond):
-        print(f"  {datanames[j]} : {data:.2f}")
+# Theoretical gap
+ax.axhline(4.35, ls="--", color="crimson", lw=1.5)
+ax.annotate(
+    r"SFO-tls-2 $^{20}$O gap",
+    xy=(-0.25, 4.5),
+    ha="center",
+    va="center",
+    fontsize=12,
+    color="crimson",
+)
+
+# # Print
+# datanames = ["Reanalysis", "Paper"]
+# for i, cond in enumerate([gapSte, gapEx]):
+#     print("======", labels[i], "=====")
+#     for j, data in enumerate(cond):
+#         print(f"  {datanames[j]} : {data:.2f}")
 
 
 fig.tight_layout()

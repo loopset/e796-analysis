@@ -5,6 +5,12 @@ import pyphysics as phys
 from pyphysics.actroot_interface import FitInterface, SFInterface
 import pandas as pd
 import uncertainties as un
+from matplotlib.axes import Axes
+
+import sys
+
+sys.path.append("../")
+import styling as sty
 
 fit = FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
 unrebin = SFInterface("../../Fits/dt/Outputs/sfs.root")
@@ -112,3 +118,82 @@ def get_centroids(
             den += (2 * q.j + 1) * val.SF  # type: ignore
         ret[q] = num / den
     return ret
+
+
+def plot_bars(
+    models: List[phys.SMDataDict],
+    labels: List[str],
+    ax: Axes,
+    first_call: bool = True,
+    width: float = 0.6,
+    height: float = 0.25,
+    **kwargs,
+) -> None:
+    nmodels = len(models)
+    left_padding = 0.075
+    right_padding = 0.075
+
+    for i, data in enumerate(models):
+        for q, vals in data.items():
+            if q == phys.QuantumNumbers.from_str("0d3/2"):
+                continue
+            for j, val in enumerate(vals):
+                ex = un.nominal_value(val.Ex)
+                sf = un.nominal_value(val.SF)
+                max_sf = q.degeneracy()
+                ## Left position of barh
+                left = (i + 0.5) - width / 2
+                color = sty.barplot.get(q, {}).get("ec")
+                ec = color if "hatch" in kwargs else "none"
+                label = None
+                if first_call and (i == 0 and j == 0):
+                    label = q.format()
+                ## background bar
+                ax.barh(
+                    ex,
+                    left=(i + 0.5) - width / 2,
+                    width=width,
+                    height=height,
+                    color=color,
+                    edgecolor=ec,
+                    alpha=0.35,
+                    **kwargs,
+                )
+                ## foreground bar
+                ratio = sf / max_sf
+                ax.barh(
+                    ex,
+                    left=(i + 0.5) - width / 2,
+                    width=ratio * width,
+                    height=height,
+                    color=color,
+                    edgecolor=ec,
+                    alpha=0.75,
+                    label=label,
+                    **kwargs,
+                )
+                ## Annotate C2S
+                ax.annotate(
+                    f"{sf:.2f}",
+                    xy=(left - left_padding, ex),
+                    ha="center",
+                    va="center",
+                    fontsize=10,
+                )
+                ## Annotate Jpi
+                pi = "+" if q.l != 1 else "-"
+                ax.annotate(
+                    f"${q.get_j_fraction()}^{{{pi}}}_{{{j}}}$",
+                    xy=(left + width + right_padding, ex),
+                    ha="center",
+                    va="center",
+                    fontsize=10,
+                )
+    # Some axis settings
+    ax.set_xticks([i + 0.5 for i in range(nmodels)], labels)
+    ax.set_xlim(0, nmodels)
+    ax.tick_params(axis="x", which="both", bottom=False, top=False, pad=15)
+    ax.tick_params(axis="y", which="both", right=False)
+    for spine in ["bottom", "top", "right"]:
+        ax.spines[spine].set_visible(False)
+    return None
