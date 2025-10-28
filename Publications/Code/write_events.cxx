@@ -14,7 +14,10 @@ void write_events()
     ActRoot::DataManager datman {"../../configs/data.conf"};
     // Which events?
     // std::vector<std::pair<int, int>> events {{155, 38}, {155, 1296}, {157, 46581}, {160, 49121}};
-    std::vector<std::pair<int, int>> events {{155, 630}};
+    // std::vector<std::pair<int, int>> events {{155, 630}};
+    // For thesis. One single event to highlight all Continuity and MultiAction operations
+    std::vector<std::pair<int, int>> events {{155, 37333}, {156, 11522}, {156, 12164},
+                                             {156, 32647}, {157, 3524},  {157, 5682}};
 
     for(const auto& [run, entry] : events)
     {
@@ -42,15 +45,15 @@ void write_events()
                 map[{pos.X(), pos.Y(), pos.Z()}].second = cl.GetClusterID();
             }
         }
-        // Write projection
+        // // Write projection
         auto name {TString::Format("./Events/run_%d_entry_%d", run, entry)};
-        std::ofstream streamer {(name + ".dat").Data()};
-        for(const auto& [key, val] : map)
-        {
-            auto [x, y, z] {key};
-            streamer << x << " " << y << " " << z << " " << val.first << " " << val.second << '\n';
-        }
-        streamer.close();
+        // std::ofstream streamer {(name + ".dat").Data()};
+        // for(const auto& [key, val] : map)
+        // {
+        //     auto [x, y, z] {key};
+        //     streamer << x << " " << y << " " << z << " " << val.first << " " << val.second << '\n';
+        // }
+        // streamer.close();
         auto f {std::make_unique<TFile>(name + ".root", "recreate")};
         f->WriteObject(data, "TPCData");
     }
