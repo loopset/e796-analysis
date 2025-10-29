@@ -77,8 +77,8 @@ void manual_filter()
     ActRoot::Options::GetInstance()->SetMode(ActRoot::ModeType::EFilter);
     ActRoot::Options::GetInstance()->Print();
     // Events
-    std::vector<std::pair<int, int>> events {{156, 41924}};
-    std::vector<std::string> labels {"fine_after"};
+    std::vector<std::pair<int, int>> events {{240, 23875}};
+    std::vector<std::string> labels {"after_all"};
     // Data
     ActRoot::DataManager dataman {"./configs/data.conf", ActRoot::ModeType::EReadTPC};
     // Detector manager
@@ -100,9 +100,10 @@ void manual_filter()
         auto filterData {
             dynamic_cast<ActRoot::TPCData*>(detman.GetDetector(ActRoot::DetectorType::EActar)->GetOutputFilter())};
         // filterData->Print();
-        std::cout << "Saving in " << labels[idx] << '\n';
         // write(run, entry, filterData);
-        write_tfile(labels[idx], filterData);
+        auto name {TString::Format("run_%d_entry_%d_%s", run, entry, labels[idx].c_str())};
+        std::cout << "Saving in " << name << '\n';
+        write_tfile(name.Data(), filterData);
         idx++;
     }
 }

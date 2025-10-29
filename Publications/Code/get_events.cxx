@@ -22,7 +22,9 @@ void get_events()
     df.Foreach(
         [&](ActRoot::MergerData& d)
         {
-            if(auto phi {std::abs(d.fPhiLight)}; phiCut.first <= phi && phi <= phiCut.second)
+            auto phi {std::abs(d.fPhiLight)};
+            auto rpx {d.fRP.X()};
+            if((phiCut.first <= phi && phi <= phiCut.second) && (100 <= rpx && rpx <= 130))
                 d.Stream(streamer);
         },
         {"MergerData"});

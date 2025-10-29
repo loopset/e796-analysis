@@ -17,7 +17,7 @@ void write_events()
     // std::vector<std::pair<int, int>> events {{155, 630}};
     // For thesis. One single event to highlight all Continuity and MultiAction operations
     std::vector<std::pair<int, int>> events {{155, 37333}, {156, 11522}, {156, 12164},
-                                             {156, 32647}, {157, 3524},  {157, 5682}};
+                                             {156, 32647}, {157, 3524},  {157, 5682}, {155, 13613}, {240, 23875}};
 
     for(const auto& [run, entry] : events)
     {
