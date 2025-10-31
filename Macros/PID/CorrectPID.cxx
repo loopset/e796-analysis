@@ -81,6 +81,11 @@ void CorrectPID(bool write)
     auto hPIDCorr {vetof0.Define("x", "fSilEs.front()")
                        .Histo2D(HistConfig::ChangeTitle(HistConfig::PID, "Corrected PID"), "x", "corrQave")};
 
+
+    // // Save before correction, for thesis plot
+    // vetof0.Define("ESil0", "fSilEs[0]")
+    //     .Snapshot("PID_Tree", "../../Publications/analysis/Inputs/pid_before_corr.root", {"ESil0", "fQave"});
+
     // plot
     auto* c1 {new TCanvas("c1", "PID canvas")};
     c1->DivideSquare(4);

@@ -11,6 +11,12 @@ base2d = {
     "cbarextend": False,
 }
 
+base2d_nocmin = {k: v for k,v in base2d.items() if k != "cmin"}
+
+ann = {"ha": "center", "va": "center", "fontsize": 14}
+
+arrowprops = {"arrowstyle": "->", "lw": 0.75}
+
 errorbar_line = {"ls": "-", "marker": "o", "ms": 4, "capsize": 3}
 errorbar = {"ls": "none", "marker": "s", "capsize": 3}
 errorbar_nols = {"marker": "s", "capsize": 3}
