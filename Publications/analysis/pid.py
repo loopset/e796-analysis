@@ -1,4 +1,5 @@
 from typing import List
+
 import pyphysics as phys
 import hist
 import uproot
@@ -18,7 +19,7 @@ import styling as sty
 labels = ["l0", "f0", "f0-f1"]
 files = [
     "../pid/Inputs/pid_side.root:PID_Tree",
-    "../pid/Inputs/pid_front.root:PID_Tree",
+    "./Inputs/pid_nocorr_noveto.root:PID_Tree",
     "../pid/Inputs/pid_two.root:PID_Tree",
 ]
 
@@ -63,11 +64,17 @@ def annotate(label: str, pos: tuple, l: float, a: float):
 fig, axs = plt.subplots(1, 2, figsize=(10, 5))
 for i, h in enumerate(hs[:2]):
     ax: mplaxes.Axes = axs.flat[i]
-    ret = h.plot(ax=ax, **sty.base2d)
+    if i == 0:
+        ret = h.plot(ax=ax, **sty.base2d)
+    else:
+        ret = h.plot(ax=ax, norm=mplcolor.LogNorm(), **sty.base2d_nocmin)
     ax.set_xlabel("")
     ax.set_ylabel("")
     # Number of ticks in cbar
-    ret[1].ax.locator_params(nbins=6) #type: ignore
+    if i == 0:
+        ret[1].ax.locator_params(nbins=6) #type: ignore
+    else:
+        phys.utils.apply_ROOT_colorbar(ret[1])
 
 parts = ["p", "d", "t", r"$^{3}He$", r"$\mathbf{\alpha}$"]
 ## Side settings
@@ -82,8 +89,8 @@ for i, part in enumerate(parts[:2]):
 
 ## Transfer settings
 ax = axs[1]
-pos = [(7.4, 190), (9.7, 250), (11.1, 315), (24, 590), (30.5, 615)]
-d = 25
+pos = [(5.1, 190), (6.35, 260), (8.6, 325), (24, 560), (30.5, 585)]
+d = 30
 a = -75
 ds = [d, d, d, 200, 200]
 ass = [a, a, a, -90, -90]
@@ -96,7 +103,7 @@ for ax in axs:
 
 # Final annotations
 phys.utils.annotate_subplots(axs)
-for i, ann in enumerate(["Side\n(In)Elastic", "Front\nTransfer"]):
+for i, ann in enumerate(["Side", "Front"]):
     axs[i].annotate(ann, xy=(0.825, 0.875), xycoords="axes fraction", **sty.ann)
 
 fig.supxlabel(r"$E_{sil}$ [MeV]", x=0.525, y=0.05, ha="center", va="center", fontsize=plt.rcParams["axes.labelsize"])
@@ -107,7 +114,7 @@ fig.tight_layout()
 fig.savefig(sty.thesis + "e796_pid_gas_sil.pdf", dpi=300)
 
 ## Two silicons
-plt.close("all")
+# plt.close("all")
 fig, ax = plt.subplots(figsize=(6, 5))
 ax: mplaxes.Axes
 ret = hs[-1].plot(ax=ax, norm=mplcolor.LogNorm(), **sty.base2d_nocmin)

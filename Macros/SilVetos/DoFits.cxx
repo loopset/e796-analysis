@@ -1,7 +1,11 @@
 #include "ActSilMatrix.h"
 
+#include "TCanvas.h"
+#include "TF1.h"
 #include "TFile.h"
+#include "TGraphErrors.h"
 #include "TString.h"
+#include "TStyle.h"
 
 #include <iostream>
 
@@ -61,6 +65,42 @@ void DoFits(TString mode)
     // Z
     auto zpoints {FitToCountour(nzs, thresh, width)};
 
+    // Build graphs with resolutions
+    auto* gsy {new TGraphErrors};
+    gsy->SetTitle("#sigma_{XY};Sil idx;#sigma_{XY} [mm]");
+    auto* gsz {new TGraphErrors};
+    gsz->SetTitle("#sigma_{Z};Sil idx;#sigma_{Z} [mm]");
+    // Y
+    for(auto& [idx, h] : nxys)
+    {
+        // Get functions
+        auto* left {h->GetFunction("fleft")};
+        auto* right {h->GetFunction("fright")};
+        if(left && right)
+        {
+            auto sum {left->GetParError(2) + right->GetParameter(2)};
+            gsy->AddPoint(idx, sum / 2);
+        }
+    }
+    // Z
+    for(auto& [idx, h] : nzs)
+    {
+        // Get functions
+        auto* left {h->GetFunction("fleft")};
+        auto* right {h->GetFunction("fright")};
+        if(left && right)
+        {
+            auto sum {left->GetParError(2) + right->GetParameter(2)};
+            gsz->AddPoint(idx, sum / 2);
+        }
+    }
+    // Fit them
+    for(auto* g : {gsy, gsz})
+    {
+        g->Fit("pol0", "0Q");
+        g->GetFunction("pol0")->ResetBit(TF1::kNotDraw);
+    }
+
 
     // Build class to store them
     auto* smatrix {new ActPhysics::SilMatrix {mode.Data()}};
@@ -83,10 +123,22 @@ void DoFits(TString mode)
     auto* cnz {new TCanvas("cnz", "Normalized Z canvas")};
     PlotAll(cnz, nzs);
 
+    gStyle->SetOptFit();
+    auto* cs {new TCanvas {"cs", "Sigma canvas"}};
+    cs->DivideSquare(2);
+    for(auto* g : {gsy, gsz})
+    {
+        g->SetMarkerStyle(24);
+        g->SetLineWidth(2);
+    }
+    cs->cd(1);
+    gsy->Draw("apl");
+    cs->cd(2);
+    gsz->Draw("apl");
 
-    auto* cm {new TCanvas("cm", "Sil matrix")};
-    auto name {TString::Format("./Outputs/%s_matrix.root", mode.Data())};
-    std::cout << "Saving matrix at : " << name << '\n';
-    smatrix->Write(name.Data());
-    smatrix->Draw(false);
+    // auto* cm {new TCanvas("cm", "Sil matrix")};
+    // auto name {TString::Format("./Outputs/%s_matrix.root", mode.Data())};
+    // std::cout << "Saving matrix at : " << name << '\n';
+    // smatrix->Write(name.Data());
+    // smatrix->Draw(false);
 }

@@ -8,19 +8,19 @@
 void CompareSilMatrix()
 {
     ActPhysics::SilMatrix sma; // using all data
-    sma.Read("./silmatrix.root");
+    sma.Read("./Outputs/antiveto_matrix.root");
     sma.SetName("All data");
     sma.SetSyle(true, kSolid, 2, 0);
     sma.Print();
 
     ActPhysics::SilMatrix sm0; // using data RP.X() < 256. / 3
-    sm0.Read("./silmatrix_part0.root");
+    sm0.Read("../silmatrix_part0.root");
     sm0.SetName("First third");
     sm0.SetSyle(false, kDashed, 4, 0);
     sm0.Print();
 
     ActPhysics::SilMatrix sm1; // using data RP.X() > 256. * 2. / 3
-    sm1.Read("./silmatrix_part1.root");
+    sm1.Read("../silmatrix_part1.root");
     sm1.SetName("Last third");
     sm1.SetSyle(false, kDotted, 4, 0);
     sm1.Print();
@@ -45,8 +45,8 @@ void CompareSilMatrix()
 
     // plot
     auto* cm {new TCanvas("cm", "Sil matrix canvas")};
-    sma.Draw();
-    sm0.Draw(true);
-    sm1.Draw(true);
-    // leg->Draw("same");
+    sma.DrawClone(false);
+    sm0.DrawClone(true);
+    sm1.DrawClone(true);
+    leg->Draw("same");
 }
