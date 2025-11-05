@@ -1,4 +1,3 @@
-from turtle import up
 from typing import List
 import pyphysics as phys
 import hist

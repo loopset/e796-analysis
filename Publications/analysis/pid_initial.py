@@ -74,7 +74,7 @@ for i, h in enumerate(hs[:2]):
     if i == 0:
         ret[1].ax.locator_params(nbins=6) #type: ignore
     else:
-        phys.utils.apply_ROOT_colorbar(ret[1])
+        phys.utils.apply_ROOT_colorbar(ret[1]) #type: ignore
 
 parts = ["p", "d", "t", r"$^{3}He$", r"$\mathbf{\alpha}$"]
 ## Side settings
