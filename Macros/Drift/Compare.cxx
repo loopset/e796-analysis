@@ -26,6 +26,16 @@
 
 #include "../../Selector/Selector.h"
 
+double func_offset_constrained(double* x, double* p)
+{
+    auto z {x[0]};
+    auto a {p[0]};
+    auto b {p[1]};
+    auto c {p[2]};
+    double zb {169.25}; // mm, determined from AntiVetoSM->GetCenter({3,4}) + beamOffset calculated for simu
+    return a + b * (z - zb) + c * TMath::Power(z - zb, 2);
+}
+
 std::pair<double, double> FindExtreme(TF1* func)
 {
     auto p2 {func->GetParameter(2)};
@@ -80,6 +90,15 @@ void Compare()
             auto* hp {file->Get<TProfile>("hProfX")};
             auto* hex {file->Get<TH1D>("hEx")};
             auto* func {hp->GetFunction("pol2")};
+            // Refit using new function
+            auto* fok {new TF1 {"fok", func_offset_constrained, 0, 350, 3}};
+            fok->FixParameter(0, 0);
+            hp->Fit(fok, "0Q+");
+            auto* fitfunc {hp->GetFunction(fok->GetName())};
+            fitfunc->ResetBit(TF1::kNotDraw);
+            fitfunc->SetLineStyle(2);
+            // But do not use it
+
             auto* g {new TGraph {func}};
             g->SetLineWidth(2);
             // Null dirs for histograms
@@ -91,6 +110,7 @@ void Compare()
             h2d->SetTitle((key + " ").c_str() + title);
             hp->SetTitle((key + " ").c_str() + title);
             g->SetTitle(title);
+            func->SetTitle(title);
             if(hex)
             {
                 hex->SetDirectory(nullptr);
@@ -138,7 +158,8 @@ void Compare()
         for(auto& func : vec)
         {
             auto [x, y] {extremes[key][idx]};
-            auto [xref, _] {extremes[key][idxref]};
+            // auto [xref, _] {extremes[key][idxref]};
+            double xref {169.25}; // mm
             // 1-> Correct X centering by [3] parameter
             // 2-> Correct Y centering by shifting offset in [4]
             auto diffx {-(x - xref)};
@@ -156,6 +177,7 @@ void Compare()
             fcorr->SetParameter(4, diffy);
             // Create graph
             auto* g {new TGraph(fcorr)};
+            g->SetTitle(func->GetTitle());
             g->SetLineWidth(2);
             g->SetLineStyle(2);
             // Add marker to plot new extremes
@@ -200,6 +222,15 @@ void Compare()
         std::cout << "     Manual unc : " << unc << '\n';
         std::cout << "   DriftF   : " << (root / conv).format(2) << '\n';
     }
+
+    // Save to .root files
+    auto fout {std::make_unique<TFile>("../../Publications/analysis/Inputs/drift_corr_funcs.root", "recreate")};
+    // (p,d) only
+    for(const auto* o : *(corrs["pd"]->GetListOfGraphs()))
+        o->Write();
+    // p2 graph
+    g2s["pd"]->Write("g2");
+    fout->Close();
 
 
     // Plot
