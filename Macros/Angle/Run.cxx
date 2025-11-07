@@ -139,6 +139,17 @@ void Run()
     FitTH2 fit3 {h3.GetPtr(), npar};
     fit3.Fit();
 
+    // Save to files to produce thesis plots
+    auto fthesis {std::make_unique<TFile>(
+        TString::Format("../../Publications/analysis/Inputs/angle_%s.root", isEl ? "side" : "front"), "recreate")};
+    fthesis->cd();
+    hExLeg->Write("hExLeg");
+    hExRPxLeg->Write("hExRPLeg");
+    hDiffRPx->Write("hCorr1");
+    hDiffThetaRP->Write("hCorr2");
+    fthesis->Close();
+
+
     // Draw
     auto* c0 {new TCanvas {"c0", "Angle correction"}};
     c0->DivideSquare(6);
@@ -181,9 +192,10 @@ void Run()
     c1->cd(5);
     h3->DrawClone("colz");
 
-    // Save on file
-    auto file {
-        std::make_unique<TFile>(TString::Format("./Outputs/angle_corr_%s_v2.root", isEl ? "side" : "front"), "recreate")};
-    func1->Write("func1");
-    func2->Write("func2");
+    // // Save on file
+    // auto file {
+    //     std::make_unique<TFile>(TString::Format("./Outputs/angle_corr_%s_v2.root", isEl ? "side" : "front"),
+    //     "recreate")};
+    // func1->Write("func1");
+    // func2->Write("func2");
 }

@@ -161,7 +161,7 @@ void Check()
         sExJuan->Add((TH1D*)hExJuan->Clone(), "hist");
 
         // Ex vs RPx
-        auto hExRPx {node.Histo2D(HistConfig::ExThetaCM, "ThetaCMOK", "ExOK")};
+        auto hExRPx {node.Histo2D(HistConfig::ExRPx, "fRP.fCoordinates.fX", "ExOK")};
         hExRPx->SetTitle(labels[idx].c_str());
         hsExRPx.push_back((TH2D*)hExRPx->Clone());
         idx++;
@@ -210,4 +210,9 @@ void Check()
     hsExRPx.front()->Draw("colz");
     c0->cd(6);
     hsExRPx.back()->Draw("colz");
+
+    // Save to thesis
+    auto fthesis {std::make_unique<TFile>("../../Publications/analysis/Inputs/angle_front.root", "update")};
+    hsExRPx.front()->Write("hExRPOK");
+    fthesis->Close();
 }

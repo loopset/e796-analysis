@@ -81,6 +81,7 @@ void Ang(bool isLab = false)
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
+    xs.Write("./Outputs/");
 
     // Comparators!
     for(const auto& peak : peaks)
