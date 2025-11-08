@@ -11,6 +11,7 @@
 #include "THStack.h"
 #include "TMath.h"
 #include "TMultiGraph.h"
+#include "TObject.h"
 #include "TString.h"
 #include "TVirtualPad.h"
 
@@ -213,6 +214,8 @@ void Check()
 
     // Save to thesis
     auto fthesis {std::make_unique<TFile>("../../Publications/analysis/Inputs/angle_front.root", "update")};
-    hsExRPx.front()->Write("hExRPOK");
+    hsExRPx.front()->Write("hExRPOK", TObject::kOverwrite);
+    sEx->Write("hsAfter", TObject::kOverwrite);
+    sExLeg->Write("hsBefore", TObject::kOverwrite);
     fthesis->Close();
 }

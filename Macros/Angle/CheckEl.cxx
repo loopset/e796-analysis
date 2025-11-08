@@ -151,7 +151,7 @@ void CheckEl()
         sEx->Add((TH1D*)hEx->Clone(), "hist");
 
         // Legacy Ex to compare
-        auto hExLeg {node.Histo1D(HistConfig::Ex, "Ex")};
+        auto hExLeg {node.Histo1D(HistConfig::Ex, "ExLegacy")};
 
         // With Juan's correction for angle
         auto hExJuan {node.Histo1D(HistConfig::Ex, "ExJuan")};
@@ -180,7 +180,7 @@ void CheckEl()
         sExJuan->Add((TH1D*)hExJuan->Clone(), "hist");
 
         // Ex vs RPx
-        auto hExRPx {node.Histo2D(HistConfig::ExThetaCM, "ThetaCMOK", "ExOK")};
+        auto hExRPx {node.Histo2D(HistConfig::ExRPx, "fRP.fCoordinates.fX", "ExOK")};
         hExRPx->SetTitle(labels[idx].c_str());
         hsExRPx.push_back((TH2D*)hExRPx->Clone());
 
@@ -217,6 +217,12 @@ void CheckEl()
         i++;
     }
 
+    // Write output for thesis
+    auto fthesis {std::make_unique<TFile>("../../Publications/analysis/Inputs/angle_side.root", "update")};
+    sEx->Write("hsAfter");
+    sExLeg->Write("hsBefore");
+    fthesis->Close();
+
     // Draw
     auto* c0 {new TCanvas {"c0", "Check angle correction"}};
     c0->DivideSquare(6);
@@ -232,8 +238,8 @@ void CheckEl()
     c0->cd(4);
     mg->Draw("apl");
     c0->cd(5);
-    sDiff->Draw("nostack plc pmc");
-    // hsExRPx.front()->Draw("colz");
-    // c0->cd(6);
-    // hsExRPx.back()->Draw("colz");
+    // sDiff->Draw("nostack plc pmc");
+    hsExRPx.front()->Draw("colz");
+    c0->cd(6);
+    hsExRPx.back()->Draw("colz");
 }

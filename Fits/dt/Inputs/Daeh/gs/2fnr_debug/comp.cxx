@@ -8,8 +8,9 @@ void comp()
     Angular::Comparator comp {"19O gs", gexp};
     comp.Add("Franck", "./../Franck/gs.xs");
     comp.Add("Fresco", "../fort.204");
-    comp.Add("2fnr front", "./21.front");
-    comp.Add("2fnr edited", "./21.edited");
+    comp.Add("Fresco 0range", "../fresco_debug/fort.204");
+    comp.Add("2fnr front (Vso / 2 as in fresco)", "./21.front");
+    comp.Add("2fnr edited (Vso paper)", "./21.edited");
     comp.Fit();
     comp.Draw("2fnr comparison");
 }
