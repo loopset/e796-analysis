@@ -20,8 +20,8 @@ void OverlapSM()
 {
     // Read histograms
     auto file {new TFile {"./Outputs/histos.root"}};
-    auto* hxz {file->Get<TH2D>("hXZ")};
-    auto* hyz {file->Get<TH2D>("hYZ")};
+    auto* hxz {file->Get<TH2D>("hTrajXZ")};
+    auto* hyz {file->Get<TH2D>("hTrajYZ")};
     // Mean of beam in histogram
     auto meanSide {hxz->GetMean(2)};
     auto meanFront {hyz->GetMean(2)};

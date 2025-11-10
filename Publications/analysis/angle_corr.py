@@ -1,4 +1,3 @@
-from shutil import which
 from typing import List
 import pyphysics as phys
 from pyphysics.root_interface import parse_tgraph, parse_tf1, parse_th1

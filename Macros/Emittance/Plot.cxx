@@ -141,15 +141,22 @@ void Plot()
     // auto* f {new TF1 {"f", "0 + 1 * x", 80, 160}};
     // f->Draw("same");
 
-    // Save objects to file
-    auto file {std::make_unique<TFile>("./Outputs/histos.root", "recreate")};
-    hBegin->Write("hBegin");
-    hEnd->Write("hEnd");
-    hxz->Write("hTrajXZ");
-    hyz->Write("hTrajYZ");
-    h3d->Write("h3d");
-    hBeginZ->Write("hBeginZ");
+    // Save for thesis
+    auto fthesis {std::make_unique<TFile>("../../Publications/analysis/Inputs/emittance.root", "recreate")};
+    hYthetaXY->Write();
+    hYthetaXZ->Write();
+    fthesis->Close();
 
-    gSelector->SendToWebsite("emittance.root", c0, "cEmitt0");
-    gSelector->SendToWebsite("emittance.root", c1, "cEmitt1");
+
+    // // Save objects to file
+    // auto file {std::make_unique<TFile>("./Outputs/histos.root", "recreate")};
+    // hBegin->Write("hBegin");
+    // hEnd->Write("hEnd");
+    // hxz->Write("hTrajXZ");
+    // hyz->Write("hTrajYZ");
+    // h3d->Write("h3d");
+    // hBeginZ->Write("hBeginZ");
+    //
+    // gSelector->SendToWebsite("emittance.root", c0, "cEmitt0");
+    // gSelector->SendToWebsite("emittance.root", c1, "cEmitt1");
 }
