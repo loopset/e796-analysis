@@ -1,3 +1,4 @@
+from boost_histogram import loc
 import pyphysics as phys
 import awkward as ak
 from pyphysics.root_interface import parse_tf1, parse_th1, parse_tgraph
@@ -34,6 +35,13 @@ for target, light in pairs:
     g = parse_tgraph(file.Get("gsigmas"))
     gs.append(g)
 
+cmaps = [
+    plt.colormaps.get_cmap("Blues"),
+    plt.colormaps.get_cmap("Reds"),
+    plt.colormaps.get_cmap("Oranges"),
+    plt.colormaps.get_cmap("Greens"),
+]
+
 # Plot
 fig, axs = plt.subplots(1, 2, figsize=(10, 4))
 for i, g in enumerate(gs):
@@ -43,6 +51,7 @@ for i, g in enumerate(gs):
         g[:, 1],
         yerr=g[:, 2],
         label=labels[i],
+        color=cmaps[i](0.5),
         marker="o",
         ls="none",
         # markersize=3,
@@ -51,12 +60,14 @@ for i, g in enumerate(gs):
     fit = phys.fit_poln(g[:, 0], g[:, 1], n=1)
     x = np.linspace(0, ax.get_xlim()[1], 5)
     y = np.polyval(unp.nominal_values(fit), x)
-    ax.plot(x, y, err[0].get_color(), ls="--")
+    ax.plot(x, y, ls="--", color=cmaps[i](0.5))
     # Legend
-    ax.legend()
+    ax.legend(loc="center left")
     # Format
     ax.set_xlabel(r"E$_{x}$ [MeV]")
     ax.set_ylabel(r"$\sigma$ [MeV]")
+
+phys.utils.annotate_subplots(axs, x=0.9)
 
 fig.tight_layout()
 fig.savefig(sty.thesis + "simu_sigmas.pdf", dpi=300)
