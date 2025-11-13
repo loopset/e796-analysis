@@ -131,7 +131,7 @@ void apply()
                           {"CM"})};
     // Correcting function
     // auto* func {new TF1 {"func", "1. - 1. / 180 * x", 0, 180}};
-    double cutoff {137.1};
+    double cutoff {137.1}; // determined by iter for (1-x) dependency
     auto corr {
         [&](double w, double deltap)
         {
@@ -153,10 +153,11 @@ void apply()
                                    "thetapn", "weight")};
     auto hLabEs {def.Histo2D({"hLabEs", "Lab energy correlation;T_{p} [MeV];T_{n} [MeV]", 300, 0, 100, 300, 0, 400},
                              "ep", "en")};
-    auto hLabKinP {
-        def.Histo2D({"hLabKinP", "Lab p kin;#theta_{Lab, p};E_{p}", 200, 0, 180, 200, 0, 20}, "thetap", "ep", "weight")};
+    auto hLabKinP {def.Histo2D({"hLabKinP", "Lab p kin;#theta_{Lab, p};E_{p}", 200, 0, 180, 200, 0, 20}, "thetap", "ep",
+                               "weight")};
     auto hLabKinPtrans {
-        def.Histo2D({"hLabKinPtrans", "Transformed lab p kin;#theta_{Lab, p};E_{p}", 200, 0, 180, 200, 0, 20}, "thetap", "ep", "weight_trans")};
+        def.Histo2D({"hLabKinPtrans", "Transformed lab p kin;#theta_{Lab, p};E_{p}", 200, 0, 180, 200, 0, 20}, "thetap",
+                    "ep", "weight_trans")};
 
 
     // CM kinematics

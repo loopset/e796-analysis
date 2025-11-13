@@ -161,9 +161,11 @@ void pscorr()
     for(int i = 0; i < hfitpss.size(); i++)
     {
         c1->cd(i + 1);
+        // gPad->SetLogy();
         auto& clone {hfitex[i]};
         clone->Draw();
-        clone->GetYaxis()->SetRangeUser(0, 500);
+        clone->GetYaxis()->SetRangeUser(1, 500);
+        gPad->SetLogy();
         gglobals[i]->Draw("l");
         auto& fit {hfitpss[i]};
         fit->SetLineColor(9);

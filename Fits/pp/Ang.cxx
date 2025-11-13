@@ -29,8 +29,9 @@ void Ang(bool isLab = false)
 
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "1H", "1H")};
     // Phase space deuton breakup
-    ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
-    // ROOT::RDataFrame phase {"SimulationTTree", "../../Simulation/Macros/Breakup/Outputs/d_breakup_trans.root"};
+    // ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -1, 0)};
+    ROOT::RDataFrame phase {"SimulationTTree",
+                            "../../Simulation/Macros/Breakup/Outputs/d_breakup_trans.root"}; // set weight_trans
 
     // Book histograms
     auto hCM {df.Histo2D(HistConfig::KinCM, "ThetaCM", "EVertex")};
@@ -46,13 +47,13 @@ void Ang(bool isLab = false)
     {
         df.Foreach([&](double thetacm, double ex) { ivs.Fill(thetacm, ex); }, {"ThetaCM", "Ex"});
         phase.Foreach([&](double thetacm, double ex, double w) { ivs.FillPS(0, thetacm, ex, w); },
-                      {"theta3CM", "Eex", "weight"});
+                      {"theta3CM", "Eex", "weight_trans"});
     }
     else
     {
         df.Foreach([&](float thetalab, double ex) { ivs.Fill(thetalab, ex); }, {"fThetaLight", "Ex"});
         phase.Foreach([&](double thetalab, double ex, double w) { ivs.FillPS(0, thetalab, ex, w); },
-                      {"theta3Lab", "Eex", "weight"});
+                      {"theta3Lab", "Eex", "weight_trans"});
     }
     ivs.TreatPS(4);
     // ivs.FitPS("pol6");
@@ -119,6 +120,10 @@ void Ang(bool isLab = false)
     inter.GetComp("g0")->ScaleToExp("BG", &exp, fitter.GetIgCountsGraph("g0"), eff.GetTEfficiency("g0"));
     if(!isLab)
         inter.WriteComp("./Outputs/sfs.root");
+
+    auto comp {inter.GetComp("g0")};
+    comp->IntegralExp();
+    comp->IntegralModel("CH89");
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

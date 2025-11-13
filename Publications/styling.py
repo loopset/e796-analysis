@@ -11,7 +11,7 @@ base2d = {
     "cbarextend": False,
 }
 
-base2d_nocmin = {k: v for k,v in base2d.items() if k != "cmin"}
+base2d_nocmin = {k: v for k, v in base2d.items() if k != "cmin"}
 
 ann = {"ha": "center", "va": "center", "fontsize": 14}
 
@@ -58,12 +58,14 @@ styles = {
 }
 
 # colors = {"l0": "#57d1c9", "l1": "#ea5b67", "l2": "#555d89"} # from Juan's thesis
-colors = {
-    "l0": "#a01525",
-    "l1": "#28a83c",
-    "l2": "#5a99d8",
-}  # from Juan's 15C cross-shell states... paper
-ls = {"l0": "--", "l1": "-", "l2": ":"}
+# colors = {
+#     "l0": "#a01525",
+#     "l1": "#28a83c",
+#     "l2": "#5a99d8",
+# }
+colors = {"l0": "crimson", "l1": "green", "l2": "dodgerblue"}
+# from Juan's 15C cross-shell states... paper
+ls = {"l0": "--", "l1": "-", "l2": (0, (1, 1))}
 
 cyclers = {
     "l012": cycler.cycler(color=[colors["l0"], colors["l1"], colors["l2"]])

@@ -24,7 +24,7 @@ std::pair<double, double> Integral(TH1D* h, double exmin, double exmax)
     return {i, TMath::Sqrt(i)};
 }
 
-void xs_ps()
+void Ang_ps()
 {
     Angular::Fitter res {};
     res.Read("../Outputs/fitter.root");
