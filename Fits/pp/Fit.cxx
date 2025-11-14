@@ -53,7 +53,7 @@ void Fit()
     inter.SetFix("g3", 2, true);
     inter.SetFix("g4", 2, true);
     // inter.SetFix("ps0", 0, true);
-    inter.Print();
+    // inter.Print();
     inter.Write("./Outputs/interface.root");
 
     // Model

@@ -122,8 +122,7 @@ void Ang(bool isLab = false)
         inter.WriteComp("./Outputs/sfs.root");
 
     auto comp {inter.GetComp("g0")};
-    comp->IntegralExp();
-    comp->IntegralModel("CH89");
+    comp->SFfromIntegral(true);
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

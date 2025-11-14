@@ -123,16 +123,16 @@ for i, h in enumerate(hkins):
 # Annotations in first
 ax = axs[0]
 ax.annotate(
-    r"$^{20}O \rightarrow ^{19}O + n$",
+    r"d break-up",
     xy=(64, 5.4),
-    xytext=(55, 9),
+    xytext=(57, 9),
     **sty.ann,
     arrowprops=sty.arrowprops,
 )
 ax.annotate(
-    r"d break-up",
+    r"$^{20}O \rightarrow ^{19}O + n$",
     xy=(30, 10),
-    xytext=(60, 12.5),
+    xytext=(57, 12.5),
     **sty.ann,
     arrowprops=sty.arrowprops,
 )

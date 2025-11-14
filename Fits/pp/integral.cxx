@@ -11,6 +11,7 @@ void integral()
     comp.Add("CH89", "./Inputs/g0_CH89/fort.201");
     comp.IntegralExp();
     comp.IntegralModel("CH89");
+    comp.SFfromIntegral();
 
     // // Read theo
     // auto* theo {new TGraphErrors {"./Inputs/g0_CH89/fort.201", "%lg %lg"}};

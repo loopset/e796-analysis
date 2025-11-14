@@ -7,6 +7,7 @@ import uproot
 import re
 
 import numpy as np
+from numpy.polynomial import Polynomial
 import matplotlib.pyplot as plt
 import matplotlib.axes as mplaxes
 from mpl_toolkits.mplot3d import Axes3D
@@ -66,6 +67,13 @@ for i, g in enumerate(gs):
     # Format
     ax.set_xlabel(r"E$_{x}$ [MeV]")
     ax.set_ylabel(r"$\sigma$ [MeV]")
+    # Write sigma file to outputs
+    p = Polynomial(
+        coef=unp.nominal_values(fit[::-1]),
+        domain=(x.min(), x.max()),
+        window=(x.min(), x.max()),
+    )
+    np.save(f"./Outputs/sigmas_fit_{labels[i]}.npy", p)  # type: ignore
 
 phys.utils.annotate_subplots(axs, x=0.9)
 

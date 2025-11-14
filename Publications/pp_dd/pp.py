@@ -1,3 +1,4 @@
+from typing import Dict
 import pyphysics as phys
 from pyphysics.actroot_interface import FitInterface
 import hist
@@ -45,9 +46,26 @@ ax.set_yscale("log")
 fit.plot_hist(**sty.styles["ex"])
 fit.format_ax(ax)
 fit.plot_global(**sty.styles["global"])
-for key in fit.fFuncs.keys():
-    fit.plot_func(key)
 
+
+def build_dict_legend(fit: FitInterface, backs: list = []) -> Dict[str, str]:
+    ret = {}
+    it = iter(backs)
+    for key in fit.fFuncs.keys():
+        val = ""
+        if key == "g0":
+            val = "g.s"
+        elif "ps" in key:
+            val = next(it, "")
+        else:
+            val = f"{fit.get(key)[0]:.2uS}"
+        ret[key] = val
+    return ret
+
+labels = build_dict_legend(fit, backs=["d break-up"])
+for key in fit.fFuncs.keys():
+    fit.plot_func(key, label=labels[key])
+ax.legend(loc="upper right", fontsize=12)
 
 # Annotate axis
 phys.utils.annotate_subplots(axs)

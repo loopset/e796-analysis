@@ -1,6 +1,7 @@
 import cycler
 import pyphysics
 
+# Hist package plotting options
 base2d = {
     "flow": "none",
     "cmin": 1,
@@ -42,7 +43,7 @@ styles = {
         "marker": "none",
     },
     "global": {
-        "lw": 1.5,
+        "lw": 1.25,
         "color": "red",
     },
     "ps": {
@@ -57,6 +58,7 @@ styles = {
     },
 }
 
+# Colors and linestyles for xs
 # colors = {"l0": "#57d1c9", "l1": "#ea5b67", "l2": "#555d89"} # from Juan's thesis
 # colors = {
 #     "l0": "#a01525",

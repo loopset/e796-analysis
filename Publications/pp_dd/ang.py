@@ -41,6 +41,7 @@ ax.set_ylim(ax.get_ylim()[0] * 1.2, ax.get_ylim()[1] * 1.9)
 phys.utils.apply_log_formatter(ax)
 ax.set_ylabel("")
 ax.yaxis.tick_right()
+ax.yaxis.set_ticks_position("both")
 
 # X label
 fig.supxlabel(r"$\theta_{CM}$ [$\circ$]", x=0.525, fontsize=plt.rcParams["axes.labelsize"])

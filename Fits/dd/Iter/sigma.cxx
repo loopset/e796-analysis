@@ -52,11 +52,11 @@ Return Run(ROOT::RDF::RNode ana, double emin, double emax)
     Fitters::Interface inter;
     double sigma {0.3}; // common init sigma for all
     // Key for gs
-    std::string gs {"v0"};
-    inter.AddState(gs, {400, 0, sigma, 0.04}, "0+");
-    inter.AddState("g0", {100, 1.6, sigma}, "2+0");
-    inter.AddState("g1", {50, 4, sigma}, "2+0");
-    inter.AddState("g2", {50, 5.5, sigma}, "3-");
+    std::string gs {"g0"};
+    inter.AddState(gs, {400, 0, sigma}, "0+");
+    inter.AddState("g1", {100, 1.6, sigma}, "2+0");
+    inter.AddState("g2", {50, 4, sigma}, "2+0");
+    inter.AddState("g3", {50, 5.5, sigma}, "3-");
     // inter.AddState("g4", {50, 6.5, sigma}, "2+");
     // inter.AddState("g5", {50, 7.6, sigma}, "3- and 4+");
     // inter.AddState("g6", {50, 8.6, sigma}, "4+0");
@@ -141,14 +141,17 @@ Return Run(ROOT::RDF::RNode ana, double emin, double emax)
             }
         }
     }
+    auto gamma {unc::udouble {}};
     if(idxs.size() != 3)
-        throw std::runtime_error("std::vector<int> idxs size != 3");
+        gamma = {-1, 0};
+    else
+        gamma = {res.Parameter(idxs[2]), res.Error(idxs[2])};
 
     // Return values
     return {.fHist = (TH1D*)h->Clone(),
             .fEx = {res.Parameter(idxs[0]), res.Error(idxs[0])},
             .fSigma = {res.Parameter(idxs[1]), res.Error(idxs[1])},
-            .fGamma = {res.Parameter(idxs[2]), res.Error(idxs[2])}};
+            .fGamma = gamma};
 }
 
 
@@ -164,7 +167,7 @@ void sigma()
     std::vector<std::pair<double, double>> ivs {};
     double emin {3.5};
     double emax {9.2};
-    int n {4};
+    int n {6};
     double step {(emax - emin) / n};
     for(int i = 0; i < n; i++)
     {
