@@ -28,8 +28,8 @@ void gen()
     // Np *= 0.705004 * 0.585 * factor;
     // Np *= 0.705004 * 0.5897;
     // INFO: 09/06/2025. Final normalization using (p,p) gs CH89 line
-    Nd *= 0.758918;
-    Np *= 0.758918;
+    // Nd *= 0.758918;
+    // Np *= 0.758918;
     // Exact targets depend on the actual length of ACTAR
     // considered in the analysis, accesible in the gSelector
     // Then Ntargets = actualLength / totalLength * Np or Nd

@@ -32,29 +32,35 @@ pp = FitInterface("../../Fits/pp/Outputs/fit_free_sigma.root")
 dd = FitInterface("../../Fits/dd/Outputs/fit_free_sigma.root")
 frees = [pp, dd]
 
+# Limits
+xlim = (-0.5, 7)
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(4.5, 3.5))
 ls = []
 for fit in fits:
+    fit: np.polynomial.Polynomial
+    fit.domain = xlim  # type:ignore
     x, y = fit.linspace()
-    ls.append(ax.plot(x, y))
+    ls.append(ax.plot(x, y, ls="--"))
 
 for i, free in enumerate(frees):
-    xfree = list(free.fEx.values())
-    yfree = list(free.fSigmas.values())
+    xfree = np.array(list(free.fEx.values()))
+    yfree = np.array(list(free.fSigmas.values()))
+    mask = unp.nominal_values(xfree) < 6.2
     ax.errorbar(
-        unp.nominal_values(xfree),
-        unp.nominal_values(yfree),
-        yerr=unp.std_devs(yfree),
+        unp.nominal_values(xfree[mask]),
+        unp.nominal_values(yfree[mask]),
+        yerr=unp.std_devs(yfree[mask]),
         **sty.errorbar,
         color=ls[i][0].get_color(),
+        label=r"$^{20}$O" + labels[i],
     )
 
-ax.axvline(x=phys.Particle("20O").get_sn(), color="crimson", ls="--", label="S2n")
-ax.set_ylim(0)
+ax.set_xlim(*xlim)
+ax.set_ylim(0, 0.5)
 ax.set_xlabel(r"$E_{x}$ [MeV]")
 ax.set_ylabel(r"$\sigma$ [MeV]")
-ax.legend()
+ax.legend(loc="lower left", ncols=2)
 
 fig.tight_layout()
 fig.savefig(sty.thesis + "exp_sigmas_pp_dd.pdf", dpi=300)
