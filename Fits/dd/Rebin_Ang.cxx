@@ -86,7 +86,7 @@ void Rebin_Ang()
         inter.AddAngularDistribution(peak, xs.Get(peak));
     inter.ReadCompConfig("./comps.conf");
     inter.DoComp();
-    // inter.WriteComp("./Outputs/sfs.root");
+    inter.WriteComp("./Outputs/rebin_sfs.root");
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};
