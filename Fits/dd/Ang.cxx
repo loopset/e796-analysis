@@ -93,8 +93,8 @@ void Ang(bool isLab = false)
     xs.DoFor(peaks);
     if(!isLab)
     {
-        xs.TrimX("g1", 16.75);
-        xs.TrimX("g1", 21, false);
+        xs.TrimX("g1", 15.75);
+        xs.TrimX("g1", 20, false);
         xs.TrimX("g2", 16.2);
         xs.TrimX("g3", 17.8);
         xs.Write("./Outputs/");

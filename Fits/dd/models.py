@@ -1,5 +1,3 @@
-from shutil import which
-from turtle import right
 import uncertainties as un
 import numpy as np
 import uncertainties.umath as umath

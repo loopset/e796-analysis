@@ -75,8 +75,8 @@ void Rebin_Ang()
     // And compute differential xs!
     Angular::DifferentialXS xs {&ivs, &fitter, &eff, &exp};
     xs.DoFor(peaks);
-    xs.TrimX("g1", 16.75);
-    xs.TrimX("g1", 21, false);
+    xs.TrimX("g1", 15.75);
+    xs.TrimX("g1", 20, false);
     xs.TrimX("g2", 16.2);
     xs.TrimX("g3", 17.8);
     // xs.Write("./Outputs/");
