@@ -66,7 +66,7 @@ void Fit()
     // Run!
     Fitters::RunFit(hEx.GetPtr(), exmin, exmax, model, inter.GetInitial(), inter.GetBounds(), inter.GetFixed(),
                     ("./Outputs/fit_" + gSelector->GetFlag() + ".root"), "20O(p,p) fit",
-                    {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "20O(d,d) breakup"}}, false);
+                    {{"g0", "g.s"}, {"g1", "1st ex"}, {"ps0", "20O(d,d) breakup"}}, false, true);
 
     gPad->GetListOfPrimitives()->RemoveLast();
     gSelector->SendToWebsite("pp.root", gPad, "cFit");
