@@ -108,6 +108,7 @@ void Ang(bool isLab = false)
     if(!isLab)
         inter.WriteComp("./Outputs/sfs.root");
     inter.GetComp("g0")->DrawSFfromIntegral(true);
+    inter.GetComp("g1")->DrawSFfromIntegral(true);
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};

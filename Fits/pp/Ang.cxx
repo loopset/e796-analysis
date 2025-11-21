@@ -123,6 +123,7 @@ void Ang(bool isLab = false)
 
     auto comp {inter.GetComp("g0")};
     comp->DrawSFfromIntegral(true);
+    inter.GetComp("g1")->DrawSFfromIntegral(true);
 
     // plotting
     auto* c0 {new TCanvas {"c0", "Angular canvas"}};
