@@ -1,207 +1,143 @@
+import copy
+from turtle import right
+
+import hist.plot
 import pyphysics as phys
 import numpy as np
 from pyphysics.actroot_interface import FitInterface
-import uproot
 import hist
 import matplotlib.axes as mplaxes
+import matplotlib.ticker as mpltick
+import matplotlib.colors as mplcolor
 import matplotlib.pyplot as plt
-import ROOT as r  # type: ignore
 import sys
 
 sys.path.append("../")
-from styling import styles
-from histos import mExdt
 
-exp = uproot.open(
-    "../../PostAnalysis/RootFiles/Pipe3/tree_20O_2H_3H_front_juan_RPx.root:Sel_Tree"
-).arrays(  # type: ignore
-    ["Ex"]
-)
-
-# Ex histogram
-nbins = mExdt[0]
-exmin = mExdt[1]
-exmax = mExdt[2]
-# Ground-state
-gscut = 1
-gsfactor = 0.25
-hExgs = hist.Hist.new.Reg(*mExdt, label=r"E$_{\mathrm{x}}$ [MeV]").Double()
-gsbin = hExgs.axes[0].index(gscut)
-hExgs.fill(exp[exp.Ex < gscut].Ex)
-hExgs *= gsfactor
-# Other than gs
-hEx = hExgs.copy()
-hEx.reset()
-hEx.fill(exp[exp.Ex >= gscut].Ex)
+import styling as sty
 
 
 # Fit interface
-inter = FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
-# Modify function for gs
-inter.fFuncs["g0"] = (lambda old_f: lambda x: [gsfactor * y for y in old_f(x)])(
-    inter.fFuncs["g0"]
-)
+fit = FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
+ori = copy.deepcopy(fit)
+gsbreak = 1.0
+gsfactor = 0.25
+clone = copy.deepcopy(fit)
+clone.scale_limit(scale=gsfactor, xrange=(-np.inf, gsbreak))
+fit.scale_limit(scale=1, xrange=(gsbreak, np.inf))
 
-# Draw
-fig, ax = plt.subplots(1, 1, figsize=(10, 4))
+# Declare background peaks
+back = ["v8", "v9", "v10", "v11"]
+
+# Draw — two vertical subplots, lower one shorter
+fig, (ax, ax_pull) = plt.subplots(
+    2,
+    1,
+    figsize=(10, 5),
+    gridspec_kw={"height_ratios": [4, 1]},
+    sharex=True,
+    constrained_layout=True,
+)
 ax: mplaxes.Axes
-# Ex histograms in two regions
-hExgs[:gsbin].plot(label="Experiment", **styles["ex"])  # type: ignore
-hEx[gsbin:].plot(**styles["ex"])  # type: ignore
-ax.set_ylabel(f"Counts / {(exmax - exmin) / nbins * 1000:.0f} keV")
-# Limits
-ax.set_xlim(-3, 25)
+ax_pull: mplaxes.Axes
+plt.sca(ax)
+for i, inter in enumerate([clone, fit]):
+    inter.plot_hist(ax=ax, **sty.styles["ex"], label="Exp." if i == 0 else None)
+    inter.plot_global(**sty.styles["global"], label="Fit" if i == 0 else None)
+    withCont = False
+    for j, key in enumerate(inter.fFuncs.keys()):
+        opts = {}
+        if key in back:
+            opts.update(sty.styles["ps"])
+            opts.update(
+                dict(
+                    ls="-",
+                    ec="grey",
+                    fc="grey",
+                    fill=True,
+                    alpha=0.5,
+                    label="(p,d) cont." if not withCont else None,
+                ),
+            )
+            withCont = True
+        elif key == "ps0":
+            opts.update(sty.styles["ps"])
+            opts.update(
+                dict(ls="-", ec="purple", fc="purple", fill=True, alpha=0.1, zorder=1),
+                label="1n PS" if i == 0 else None,
+            )
+        elif i == 0 and j == 0:
+            opts.update(dict(label="States"))
+        inter.plot_func(key, **opts)
+    if i == 0:
+        inter.format_ax(ax)
 
-# Global fit in two regions
-if inter.fGlobal is not None:
-    low = inter.fGlobal[inter.fGlobal[:, 0] < gscut]
-    low[:, 1] *= gsfactor
-    up = inter.fGlobal[inter.fGlobal[:, 0] >= gscut]
-    for i, data in enumerate([low, up]):
-        ax.plot(
-            data[:, 0],
-            data[:, 1],
-            label="Global fit" if i == 0 else None,
-            **styles["global"],
-        )
-
-# Phase spaces
-inter.fHistPS["ps0"].plot(
-    label="1n phase space", color="orange", hatch="\\\\", **styles["ps"]
+## Build pull array
+pulls = []
+for i, h in enumerate([clone, fit]):  # very important order to concatenate later
+    if h.fGlobal is not None and h.fHistEx is not None:
+        spline = phys.create_spline3(h.fGlobal[:, 0], h.fGlobal[:, 1])
+        aux = []
+        for b, x in enumerate(h.fHistEx.axes[0].centers):
+            yhist = h.fHistEx[b]
+            uhist = np.sqrt(yhist)  # type: ignore
+            yfit = spline(x)
+            if yhist < 1 or uhist == 0:  # type: ignore
+                pull = 0
+            else:
+                pull = (yhist - yfit) / uhist  # type:ignore
+            aux.append(pull)
+        pulls.append(np.array(aux))
+# Merge both pulls from two regions
+pulls = np.concatenate((pulls[0], pulls[1]))
+hist.plot.plot_pull_array(
+    ori.fHistEx,  # type: ignore
+    np.array(pulls),
+    ax=ax_pull,
+    bar_kwargs=dict(color="crimson", alpha=0.5),
+    pp_kwargs=dict(num=3, color="none"),
 )
-# ## 2n PS has null amplitude
-# inter.fHistPS["ps1"].plot(
-#     label="2n phase space", color="green", hatch="//", **styles["ps"]
-# )
+ax_pull.axhspan(ymin=-1, ymax=1, color="crimson", alpha=0.15)
+ax_pull.set_ylim(-3.5, 3.5)
+ax_pull.yaxis.set_minor_locator(mpltick.AutoMinorLocator(2))
+# ax_pull.tick_params(axis="y", which="minor", left=False, right=False)
+ax_pull.set_yticks(list(range(-2, 3, 2)))
+ax_pull.grid(True, which="both", axis="y", ls="--", color="grey")
+# Print stats
+print("% pull < 1 sigma : ", len(pulls[pulls <= 1]) / len(pulls) * 100)
 
-## (p,d) as a phase space - contamination
-# inter.fHistPS["ps2"].plot(
-#     label="(p,d) background", color="grey", hatch="xx", **styles["ps"]
-# )
-# (p,d) contamination
-for i, state in enumerate(["v8", "v9", "v10", "v11"]):
-    inter.plot_func(
-        state,
-        nbins,
-        exmin,
-        exmax,
-        label="(p,d) background" if i == 0 else None,
-        color="grey",
-        hatch="xx",
-        **styles["ps"],
-    )
+# Format axes
+ax.set_xlabel("")
+ax_pull.set_xlabel(r"$E_{x}$ [MeV]")
+ax.set_xlim(-2.5)
 
 # Sn
-p = r.ActPhysics.Particle("19O")  # type: ignore
-ax.axvline(p.GetSn(), color="purple", **styles["sn"])
+o19 = phys.Particle("19O")
+ax.axvline(o19.get_sn(), color="purple", **sty.styles["sn"], ls="dotted")
 ax.annotate(
-    rf"S$_{{\mathrm{{n}}}} =$ {p.GetSn():.2f} MeV",
-    xy=(p.GetSn() + 0.5, 800 * gsfactor),
-    fontsize=12,
+    rf"S$_{{\mathrm{{n}}}} =$ {o19.get_sn():.2f} MeV",
+    xy=(o19.get_sn() + 2.5, 875 * gsfactor),
+    **sty.ann,
 )
-ax.axvline(p.GetS2n(), color="hotpink", **styles["sn"])
+ax.axvline(o19.get_s2n(), color="hotpink", **sty.styles["sn"], ls="dashdot")
 ax.annotate(
-    rf"S$_{{\mathrm{{2n}}}} =$ {p.GetS2n():.2f} MeV",
-    xy=(p.GetS2n() - 5.5, 650 * gsfactor),
-    fontsize=12,
+    rf"S$_{{\mathrm{{2n}}}} =$ {o19.get_s2n():.2f} MeV",
+    xy=(o19.get_s2n() + 2.5, 875 * gsfactor),
+    **sty.ann,
 )
 
 # Annotations
-ax.annotate(rf"g.s $\times$ {gsfactor:.2f}", xy=(0.3, 900 * gsfactor), fontsize=12)
-handles, labels = ax.get_legend_handles_labels()
-ax.legend(
-    handles=[handles[-1]] + handles[:-1],
-    labels=[labels[-1]] + labels[:-1],
-    loc="upper left",
-    labelspacing=0.4,
-    borderaxespad=0.3,
-    bbox_to_anchor=(1.02, 1),
-)
-fig.tight_layout()
-fig.savefig("/media/Data/Docs/EuNPC/figures/ex_0.png", dpi=600)
-
-# Indivual fits
-color = "dodgerblue"
-## T = 3/2
-for i, state in enumerate(inter.fEx.keys()):
-    if state in ["v8", "v9", "v10"]:  # exclude peaks at >16 MeV
-        continue
-    if i >= 7:
-        continue
-    ls = "solid"
-    label = None
-    if i == 0:
-        label = r"T = 3/2"
-    inter.plot_func(state, nbins, exmin, exmax, lw=1, color=color, ls=ls, label=label)
-handles, labels = ax.get_legend_handles_labels()
-ax.legend(
-    handles=[handles[-1]] + handles[:-1],
-    labels=[labels[-1]] + labels[:-1],
-    loc="upper left",
-    labelspacing=0.4,
-    borderaxespad=0.3,
-    bbox_to_anchor=(1.02, 1),
-)
-fig.tight_layout()
-fig.savefig("/media/Data/Docs/EuNPC/figures/ex_1.png", dpi=600)
-
-## T = 5/2
-for i, state in enumerate(inter.fEx.keys()):
-    if state in ["v8", "v9", "v10"]:  # exclude peaks at >16 MeV
-        continue
-    if i < 7:
-        continue
-    ls = "dashed"
-    label = None
-
-    if i == 7:
-        label = r"T = 5/2"
-    inter.plot_func(state, nbins, exmin, exmax, lw=1, color=color, ls=ls, label=label)
+ax.annotate(rf"g.s $\times$ {gsfactor:.2f}", xy=(1.4, 180), **sty.ann)
 
 # Legend
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(
     handles=[handles[-1]] + handles[:-1],
     labels=[labels[-1]] + labels[:-1],
-    loc="upper left",
+    loc="upper right",
     labelspacing=0.4,
-    borderaxespad=0.3,
-    bbox_to_anchor=(1.02, 1),
+    # borderaxespad=0.3,
+    # bbox_to_anchor=(1.02, 1),
 )
-
-# # Juan (d,3He)
-# hjuan = uproot.open("./Inputs/Ex_and_fitted_states_Extended_update.root")["htot"].to_hist()  # type: ignore
-# hjuan.axes[0].label = r"E$_{\text{x}}$ [MeV]"
-# hjuan: hist.BaseHist
-# hdiff = hjuan.copy()
-# hdiff: hist.BaseHist
-# hdiff.reset()
-# # Transform Juan's to (d,t) by a shift
-# bediff = 10.8  # MeV difference
-# for i, value in enumerate(hjuan.values()):
-#     center = 0.5 * (hjuan.axes[0].edges[i] + hjuan.axes[0].edges[i + 1])
-#     center += bediff
-#     hdiff.fill(center, weight=value)
-# # Scaling factor
-# jfactor = 1.25
-# hdiff *= jfactor
-# d3he = hdiff.plot(ax=ax, color="magenta", lw=1.25, ls="dashed")
-# fig.tight_layout()
-# fig.savefig("./Outputs/ex_with_d3he.png")
-
-
-# # Disable juan for final plot
-# d3he[0].stairs.set_visible(False)
-
-# Spans
-ax.set_ylim(0, 250)
-low = np.linspace(-2, 10, 100)
-ax.fill_between(low, 0, 250, color="lightblue", alpha=0.25)
-up = np.linspace(10, 15.5, 100)
-ax.fill_between(up, 0, 250, color="moccasin", alpha=0.25)
-
-fig.tight_layout()
-fig.savefig("/media/Data/Docs/EuNPC/figures/ex.png", dpi=600)
-fig.savefig("./Outputs/ex.pdf")
-# fig.savefig("./Outputs/ex.eps")
+fig.savefig(sty.thesis + "20O_dt_ex.pdf", dpi=300)
 plt.show()

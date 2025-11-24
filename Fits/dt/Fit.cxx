@@ -72,7 +72,7 @@ void Fit()
     inter.AddState("v9", {20, 17. - offset, sigma, 0.}, "Cont1");
     inter.AddState("v10", {20, 20.1 - offset, sigma, 0.}, "Cont2");
     inter.AddState("v11", {20, 22.6 - offset, sigma, 0.}, "Cont3");
-    // inter.AddState("v12", {20, 18.4 - offset, sigma, 0.}, "Cont3");
+    inter.AddState("v12", {20, 18.4 - offset, sigma, 0.}, "Cont3");
     inter.AddState("ps0", {1.5});
     inter.AddState("ps1", {0.1});
     // inter.AddState("ps2", {0.1});
@@ -102,7 +102,7 @@ void Fit()
         inter.SetFix(s, 3, true);
     }
     // inter.SetBounds("v12", 2, {0, .5});
-    // inter.SetBounds("v12", 3, {0, 0.2});
+    inter.SetBounds("v12", 3, {0, 0.0});
     inter.Write("./Outputs/interface.root");
 
     // Fitting range
