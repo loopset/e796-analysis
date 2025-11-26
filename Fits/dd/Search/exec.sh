@@ -34,7 +34,9 @@ mkdir -p $maindir
 cd $maindir
 
 # Copy file
-cp "../../Inputs/${state}_${omp}/fresco.in" .
+reference="/media/Data/E796v2/Fits/dd/Inputs/${state}_${omp}/fresco.in"
+echo "Reference file: ${reference}"
+cp ${reference} .
 
 # Create array of values
 beta2s=$(awk -v start="$start" -v end="$end" -v step="$step" 'BEGIN {

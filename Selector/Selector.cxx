@@ -63,6 +63,9 @@ E796::Selector::Selector(const std::string& file)
     ReassignNames();
     // Read flag
     auto flag {selec->GetString("Flag")};
+    // Read tag
+    if(selec->CheckTokenExists("Tag", true))
+        fTag = selec->GetString("Tag");
 
     // And now read the configs
     auto headers {parser.GetBlockHeaders()};

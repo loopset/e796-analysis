@@ -2,6 +2,7 @@
 #include "ActConstants.h"
 #include "ActCrossSection.h"
 #include "ActCutsManager.h"
+#include "ActGenCorrection.h"
 #include "ActKinematicGenerator.h"
 #include "ActKinematics.h"
 #include "ActParticle.h"
@@ -21,6 +22,7 @@
 #include "TH2.h"
 #include "TLorentzVector.h"
 #include "TMath.h"
+#include "TMathBase.h"
 #include "TProfile2D.h"
 #include "TROOT.h"
 #include "TRandom.h"
@@ -114,6 +116,18 @@ double AngleWithNormal(const ROOT::Math::XYZVector& dir, const ROOT::Math::XYZVe
 {
     auto dot {dir.Unit().Dot(normal.Unit())};
     return TMath::ACos(dot);
+}
+
+double SampleAngleCorr(ActPhysics::GenCorrection* corr, double rpx, double thetalab)
+{
+    // Apply angle correction
+    // Bear in mind that correction is in degrees -> must convert to rad
+    auto temp {thetalab + corr->Eval(0, rpx) * TMath::DegToRad()};
+    auto thetaCorr {temp + corr->Eval(1, temp) * TMath::DegToRad()};
+    // Get gaussian width
+    auto width {TMath::Abs(thetalab - thetaCorr)};
+    // Gaussian sample
+    return gRandom->Gaus(thetalab, width);
 }
 
 void Simulation_E796(const std::string& beam, const std::string& target, const std::string& arglight, int neutronPS,
@@ -383,6 +397,18 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
                            350};
     }
 
+    // Systematic error in efficiency due to angle correction
+    bool isSysAngle {TString(gSelector->GetTag().c_str()).Contains("sys_angle") && gSelector->GetShortStr() == "dt"};
+    ActPhysics::GenCorrection* angCorr {};
+    if(isSysAngle)
+    {
+        angCorr = new ActPhysics::GenCorrection;
+        angCorr->Read("../Macros/Angle/Outputs/angle_front.root");
+        angCorr->Print();
+        // Random seed already set below
+    }
+
+
     // CUTS ON SILICON ENERGY, depending on particle
     // from the graphical PID cut
     ActRoot::CutsManager<std::string> cuts;
@@ -430,6 +456,10 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Phi efficiency
     auto hPhiAll {std::make_unique<TH1D>("hPhiAll", "#phi eff;#phi [#circ];", 400, 0, 360)};
     auto hPhiLab {std::make_unique<TH1D>("hPhiLab", "#phi eff;#phi [#circ];", 400, 0, 360)};
+    // Systematic uncertainty introduced by angle correction
+    auto hSysAngle {std::make_unique<TH2D>(
+        "hSysAngle", "Sys uncertainty angle;#theta_{lab} kin [#circ];#theta_{lab} sampled corr [#circ]", 300, 0, 100,
+        300, 0, 100)};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -590,6 +620,13 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             T3Lab = simkin->GetT3Lab();
             theta4Lab = simkin->GetTheta4Lab();
             phi4Lab = phiCM;
+        }
+        // If sys_angle, introduce systematic uncertainty in theta3 for efficiency
+        if(isSysAngle)
+        {
+            auto temp {theta3Lab};
+            theta3Lab = SampleAngleCorr(angCorr, vertex.X(), theta3Lab);
+            hSysAngle->Fill(temp * TMath::RadToDeg(), theta3Lab * TMath::RadToDeg());
         }
         // Simulated thetaCM, to be used for efficiency computation
         double thetaCMEff {reckin->ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
@@ -862,7 +899,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         sm->DrawClone();
         c0->cd(6);
         // hELoss0->DrawClone("colz");
-        hThetaLabNormal->DrawClone("colz");
+        // hThetaLabNormal->DrawClone("colz");
+        hSysAngle->DrawClone("colz");
 
         auto* c1 {new TCanvas("cAfter", "Canvas for inspection 1")};
         c1->DivideSquare(6);

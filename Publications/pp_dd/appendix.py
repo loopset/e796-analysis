@@ -2,6 +2,7 @@ from typing import Dict, List
 import pyphysics as phys
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
+import matplotlib.colors as mplcolor
 import os
 import numpy as np
 from numpy.typing import NDArray
@@ -40,25 +41,30 @@ def read_dir(path: str, dir: str) -> List[NDArray]:
     return [b for a, b in aux]
 
 
-paths = ["../../Fits/dd/Search/g1_Daeh/", "../../Fits/dd/Search/g3_Daeh/"]
+paths = ["../../Fits/dd/Search/g1_Daeh/l2", "../../Fits/dd/Search/g3_Daeh/l3"]
 arrays = [read_dir(path, "") for path in paths]
 labels = [r"$2^+$", r"$3^-$"]
 
+colors = [
+    plt.get_cmap("Oranges")(np.linspace(0.25, 1, len(arrays[0]))),
+    plt.get_cmap("Greens")(np.linspace(0.25, 1, len(arrays[1]))),
+]
 fig, axs = plt.subplots(1, 2, figsize=(9, 3.5), layout="constrained")
 for i, ax in enumerate(axs):
     ax: Axes
     top = arrays[i][-1]
     bottom = arrays[i][0]
-    ax.fill_between(
-        bottom[:, 0], bottom[:, 1], top[:, 1], color=f"C{i + 1}", alpha=0.75
-    )
-    # for line in arrays[i]:
-    #     ax.plot(line[:, 0], line[:, 1])
+    # ax.fill_between(
+    #     bottom[:, 0], bottom[:, 1], top[:, 1], color=f"C{i + 1}", alpha=0.75
+    # )
+    ax.set_prop_cycle(color=colors[i])
+    for line in arrays[i]:
+        ax.plot(line[:, 0], line[:, 1])
     ax.set_xlim(5, 50)
 
 phys.utils.annotate_subplots(axs, x=0.825)
 
-pos = [[(20, 40), (20, 0)], [(30, 10), (30, 0.5)]]
+pos = [[(20, 60), (20, 0)], [(30, 10), (30, 0.5)]]
 for i, ax in enumerate(axs):
     ax.annotate(
         labels[i],
