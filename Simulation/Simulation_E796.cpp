@@ -46,6 +46,7 @@
 #include <set>
 #include <stdexcept>
 #include <string>
+#include <system_error>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -118,16 +119,26 @@ double AngleWithNormal(const ROOT::Math::XYZVector& dir, const ROOT::Math::XYZVe
     return TMath::ACos(dot);
 }
 
-double SampleAngleCorr(ActPhysics::GenCorrection* corr, double rpx, double thetalab)
+double EvalSysAngleCorr(ActPhysics::GenCorrection* corr, double rpx, double thetalab)
 {
-    // Apply angle correction
-    // Bear in mind that correction is in degrees -> must convert to rad
-    auto temp {thetalab + corr->Eval(0, rpx) * TMath::DegToRad()};
-    auto thetaCorr {temp + corr->Eval(1, temp) * TMath::DegToRad()};
-    // Get gaussian width
-    auto width {TMath::Abs(thetalab - thetaCorr)};
-    // Gaussian sample
-    return gRandom->Gaus(thetalab, width);
+    // Uncertainty in f1 = f1(RPx)
+    auto f1 {corr->Get(0)};
+    auto u1 {TMath::Sqrt(1 * TMath::Power(f1->GetParError(0), 2) + rpx * rpx * TMath::Power(f1->GetParError(1), 2) +
+                         TMath::Power(rpx, 4) * TMath::Power(f1->GetParError(2), 2))};
+    // Convert to radians
+    u1 *= TMath::DegToRad();
+    // Uncertainty in theta1 f2 = f2(theta1)
+    // but for that we need to invert the f2 function, because it is evaluated in theta1 not in thetaOK = thetaLab
+    auto f2 {corr->Get(1)};
+    auto theta1 {(thetalab * TMath::RadToDeg() - f2->GetParameter(0)) / (1 + f2->GetParameter(1)) *
+                 TMath::DegToRad()}; // radians
+    auto u2 {
+        TMath::Sqrt(1 * TMath::Power(f2->GetParError(0), 2) + theta1 * theta1 * TMath::Power(f2->GetParError(1), 2))};
+    // Convert to radians
+    u2 *= TMath::DegToRad();
+    // Combination of both
+    auto systematic {TMath::Sqrt(u1 * u1 + u2 * u2)};
+    return systematic;
 }
 
 void Simulation_E796(const std::string& beam, const std::string& target, const std::string& arglight, int neutronPS,
@@ -459,7 +470,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     // Systematic uncertainty introduced by angle correction
     auto hSysAngle {std::make_unique<TH2D>(
         "hSysAngle", "Sys uncertainty angle;#theta_{lab} kin [#circ];#theta_{lab} sampled corr [#circ]", 300, 0, 100,
-        300, 0, 100)};
+        300, 0, 3)};
+    auto hSysAngle1D {std::make_unique<TH1D>("hSysAngle1D", "Sys unc in angle;uncertainty", 600, 0, 2)};
 
     // Load SRIM tables
     // The name of the file sets particle + medium
@@ -624,9 +636,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // If sys_angle, introduce systematic uncertainty in theta3 for efficiency
         if(isSysAngle)
         {
+            auto sys {EvalSysAngleCorr(angCorr, vertex.X(), theta3Lab)};
             auto temp {theta3Lab};
-            theta3Lab = SampleAngleCorr(angCorr, vertex.X(), theta3Lab);
-            hSysAngle->Fill(temp * TMath::RadToDeg(), theta3Lab * TMath::RadToDeg());
+            hSysAngle->Fill(theta3Lab * TMath::RadToDeg(), sys * TMath::RadToDeg());
+            hSysAngle1D->Fill(sys * TMath::RadToDeg());
+            // std::cout << "Theta : " << theta3Lab * TMath::RadToDeg() << " unc : " << sys * TMath::RadToDeg() << '\n';
+            theta3Lab = gRandom->Gaus(theta3Lab, sys);
         }
         // Simulated thetaCM, to be used for efficiency computation
         double thetaCMEff {reckin->ReconstructTheta3CMFromLab(T3Lab, theta3Lab)};
@@ -895,8 +910,9 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // hThetaCMAll->DrawClone();
         hRP->DrawClone("colz");
         c0->cd(5);
-        hRPz->DrawClone("colz");
-        sm->DrawClone();
+        // hRPz->DrawClone("colz");
+        // sm->DrawClone();
+        hSysAngle1D->DrawClone();
         c0->cd(6);
         // hELoss0->DrawClone("colz");
         // hThetaLabNormal->DrawClone("colz");

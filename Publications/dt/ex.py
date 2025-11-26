@@ -2,6 +2,7 @@ import copy
 from turtle import right
 
 import hist.plot
+from matplotlib import hatch
 import pyphysics as phys
 import numpy as np
 from pyphysics.actroot_interface import FitInterface
@@ -9,8 +10,11 @@ import hist
 import matplotlib.axes as mplaxes
 import matplotlib.ticker as mpltick
 import matplotlib.colors as mplcolor
+from matplotlib.patches import Patch
 import matplotlib.pyplot as plt
 import sys
+from matplotlib.legend_handler import HandlerBase
+from matplotlib.patches import Rectangle
 
 sys.path.append("../")
 
@@ -34,7 +38,7 @@ fig, (ax, ax_pull) = plt.subplots(
     2,
     1,
     figsize=(10, 5),
-    gridspec_kw={"height_ratios": [4, 1]},
+    gridspec_kw={"height_ratios": [4, 0.75]},
     sharex=True,
     constrained_layout=True,
 )
@@ -66,6 +70,8 @@ for i, inter in enumerate([clone, fit]):
                 dict(ls="-", ec="purple", fc="purple", fill=True, alpha=0.1, zorder=1),
                 label="1n PS" if i == 0 else None,
             )
+        elif key == "v7" or key == "v12":
+            opts.update(dict(hatch="..."))
         elif i == 0 and j == 0:
             opts.update(dict(label="States"))
         inter.plot_func(key, **opts)
@@ -129,11 +135,44 @@ ax.annotate(
 # Annotations
 ax.annotate(rf"g.s $\times$ {gsfactor:.2f}", xy=(1.4, 180), **sty.ann)
 
-# Legend
+
+# Legend — compact half/half handler
+class HalfHalfHandler(HandlerBase):
+    def __init__(self, c1="C3", c2="C8", hatch=None, **kw):
+        super().__init__(**kw)
+        self.c1, self.c2, self.hatch = c1, c2, hatch
+
+    def create_artists(
+        self, legend, orig_handle, xdescent, ydescent, width, height, fontsize, trans
+    ):
+        w = width / 2
+        left = Rectangle(
+            (xdescent, ydescent),
+            w,
+            height,
+            facecolor="none",
+            hatch=self.hatch,
+            edgecolor=self.c1,
+            transform=trans,
+        )
+        right = Rectangle(
+            (xdescent + w, ydescent),
+            w,
+            height,
+            facecolor="none",
+            hatch=self.hatch,
+            edgecolor=self.c2,
+            transform=trans,
+        )
+        return [left, right]
+
+
+isospin = Patch(facecolor="none", edgecolor="none", label="T = 5/2")
 handles, labels = ax.get_legend_handles_labels()
 ax.legend(
-    handles=[handles[-1]] + handles[:-1],
-    labels=[labels[-1]] + labels[:-1],
+    handles=[handles[-1]] + handles[:-1] + [isospin],
+    labels=[labels[-1]] + labels[:-1] + [isospin.get_label()],
+    handler_map={isospin: HalfHalfHandler("C3", "C8", hatch="...")},
     loc="upper right",
     labelspacing=0.4,
     # borderaxespad=0.3,

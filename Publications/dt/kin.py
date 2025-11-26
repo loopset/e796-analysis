@@ -6,36 +6,49 @@ import matplotlib.ticker as mpltick
 import matplotlib.axes as mplaxes
 import matplotlib.pyplot as plt
 
+import sys
+
+sys.path.append("../")
+import styling as sty
+
 exp = uproot.open(
     "../../PostAnalysis/RootFiles/Pipe3/tree_20O_2H_3H_front_juan_RPx.root:Sel_Tree"
-).arrays(["EVertex", "fThetaLight"])  # type: ignore
+).arrays(  # type: ignore
+    ["EVertex", "fThetaLight"]
+)  # type: ignore
 
 # Histogram
 xmodel = (200, 0, 60)
 ymodel = (200, 0, 20)
 h = (
-    hist.Hist.new.Reg(*xmodel, label=r"$\theta_{\mathrm{Lab}}$ [$\circ$]")
-    .Reg(*ymodel, label=r"E$_{\mathrm{Lab}}$ [MeV]")
+    hist.Hist.new.Reg(*xmodel, label=r"$\theta_{lab}$ [$\circ$]")
+    .Reg(*ymodel, label=r"$E_{lab}$ [MeV]")
     .Double()
 )
 h.fill(exp["fThetaLight"], exp["EVertex"])
 
-# Theoretical kinematics
-labels = ["g.s", r"E$_{\text{x}}$ = 15 MeV"]
-kins = [phys.Kinematics("20O(d,t)@700"), phys.Kinematics("20O(d,t)@700|15")]
+## States to draw
+exs = [0, 3.15, 4.62, 14.94]
 
-fig, ax = plt.subplots(1, 1, figsize=(5, 5))
+# Figure
+fig, ax = plt.subplots(1, 1, figsize=(5.5, 4.25))
 ax: mplaxes.Axes
-h.plot(cmin=1, cmap="managua_r")
-cmap = mpl.colormaps["Dark2"].colors #type: ignore
-ax.set_prop_cycle(color=cmap)
-for i, kin in enumerate(kins):
-    x, y = kin.get_line3()
-    ax.plot(x, y, lw=1.25, label=labels[i], ls="--")
+h.plot(ax=ax, **sty.base2d)
+for ex in exs:
+    theo = phys.Kinematics(f"20O(d,t)@700|{ex}").get_line3()
+    label = f"{ex:.1f}" if ex > 0 else "g.s"
+    ax.plot(theo[0], theo[1], label=label)
+# Legend
+ax.legend(title=r"$E_{x} / MeV$", title_fontsize=12)
+## Annotations
+ax.annotate(
+    rf"$^{{20}}$O(d,t)",
+    xy=(0.15, 0.9),
+    xycoords="axes fraction",
+    fontweight="bold",
+    **sty.ann,
+)
 
-ax.legend()
-ax.yaxis.set_major_locator(mpltick.MaxNLocator(integer=True, nbins=5))
 fig.tight_layout()
-fig.savefig("./Outputs/kin.pdf", dpi=300)
-fig.savefig("/media/Data/Docs/EuNPC/figures/kin.png", dpi=600)
+fig.savefig(sty.thesis + "20O_dt_kin.pdf", dpi=300)
 plt.show()

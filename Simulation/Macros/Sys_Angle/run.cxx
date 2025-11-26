@@ -6,7 +6,7 @@ void run()
 {
     TString pwd {gSystem->pwd()};
 
-    int niter {2};
+    int niter {1};
     for(int i = 0; i < niter; i++)
     {
         auto tag {TString::Format("sys_angle_%d", i)};

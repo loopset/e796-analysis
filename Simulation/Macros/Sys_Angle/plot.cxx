@@ -18,7 +18,7 @@ void plot()
     std::vector<Interpolators::Efficiency> effs(exs.size());
 
     // Read
-    int niter {2};
+    int niter {1};
     for(int s = 0; s < exs.size(); s++)
     {
         auto& ex {exs[s]};
