@@ -18,6 +18,7 @@
 #include "ureal.hpp"
 
 #include <filesystem>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <stdexcept>
@@ -94,7 +95,7 @@ void plot()
 {
     TH1::AddDirectory(false);
 
-    std::vector<std::string> states {"g1_Daeh", "g2_Daeh", "g3_Daeh", "g1_Haixia", "g2_Haixia", "g3_Haixia"};
+    std::vector<std::string> states {"g1_Daeh/l2", "g2_Daeh/l2", "g3_Daeh/l3"};
     std::vector<Angular::Comparator> comps;
     std::vector<TGraphErrors*> gs;
 
@@ -143,6 +144,15 @@ void plot()
             g->AddPoint(beta, sf);
             g->SetPointError(g->GetN() - 1, 0, usf);
         }
+        // Save interpolation to txt
+        auto filename {TString::Format("./Outputs/inter_%s.dat", state.substr(0, state.find_first_of("/")).c_str())};
+        std::ofstream streamer {filename.Data()};
+        for(int p = 0; p < gs.back()->GetN(); p++)
+        {
+            streamer << gs.back()->GetPointX(p) << " " << gs.back()->GetPointY(p) << " " << gs.back()->GetErrorY(p)
+                     << '\n';
+        }
+        streamer.close();
         pad++;
     }
 
