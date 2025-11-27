@@ -35,3 +35,13 @@ stack.columns = pd.MultiIndex.from_tuples(
 )
 latex = stack.map(lambda x: f"{x:2uS}").to_latex(float_format="{:2uS}".format)
 print(latex)
+
+# Estimate systemactic uncertainty
+df = dfs[0].T.copy()
+df["Int.n"] = df[1].apply(un.nominal_value)
+integrals = df["Int.n"]
+ref = integrals["CH89"]
+sys_std = (integrals - ref).std()
+print("std : ", sys_std)
+sys_rel = (ref + sys_std) / ref * 100 - 100
+print("Sys unc in normalisation : ", sys_rel)

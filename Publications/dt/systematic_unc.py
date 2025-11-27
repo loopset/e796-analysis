@@ -25,17 +25,19 @@ files = {
     "BG": "../../Fits/pp/Inputs/g0_BG/fort.201",
 }
 ppcomp.add_models(files)
+ppcomp.fit()
 
 ## 2-> Systematic uncertainty from (d,t) OMPs
 dtgs = phys.parse_txt("../../Fits/dt/Outputs/xs/g0_xs.dat", 3)
 comp = phys.Comparator(dtgs)
 files = {
-    "Daeh+Pang": "../../Fits/dt/Inputs/Sys/Daeh_Pang/fort.202",
-    "Daeh+HT1p": "../../Fits/dt/Inputs/Sys/Daeh_HT1p/fort.202",
-    "Haixia+Pang": "../../Fits/dt/Inputs/Sys/Haixia_Pang/fort.202",
-    "Haixia+HT1p": "../../Fits/dt/Inputs/Sys/Haixia_HT1p/fort.202",
+    "Daeh+Pang": "../../Fits/dt/Inputs/Daeh/gs/fort.204",
+    "Daeh+HT1p": "../../Fits/dt/Inputs/HT1p/gs/fort.204",
+    "Haixia+Pang": "../../Fits/dt/Inputs/Haixia/gs/fort.204",
+    # "Haixia+HT1p": "../../Fits/dt/Inputs/Sys/Haixia_HT1p/fort.202",
 }
 comp.add_models(files)
+comp.fit()
 
 fig, axs = plt.subplots(2, 3, figsize=(14, 9))
 
@@ -63,7 +65,9 @@ ref = ppcomp.get_sf("CH89")
 pp_handles = []
 for model, res in ppcomp.fSFs.items():
     val = get_fraction(res, ref)
-    handle = ax.errorbar("(p,p) gs", val.n, yerr=val.s, marker="o", label=model)
+    handle = ax.errorbar(
+        "(p,p) gs", un.nominal_value(val), yerr=un.std_dev(val), marker="o", label=model
+    )
     pp_handles.append(handle)
 
 ## (d,t)
@@ -71,7 +75,9 @@ ref = comp.get_sf("Daeh+Pang")
 dt_handles = []
 for model, res in comp.fSFs.items():
     val = get_fraction(res, ref)
-    handle = ax.errorbar("(d,t) gs", val.n, yerr=val.s, marker="s", label=model)
+    handle = ax.errorbar(
+        "(d,t) gs", un.nominal_value(val), yerr=un.std_dev(val), marker="s", label=model
+    )
     dt_handles.append(handle)
 
 leg1 = ax.legend(handles=pp_handles, loc="upper center", title="(p,p) gs norms.")
@@ -131,7 +137,7 @@ for key, vals in exp.items():
 exp_sys[dt.qd52][0].SF *= 0.5
 
 # Compute centroids
-cents: Dict[phys.QuantumNumbers, Tuple[un.UFloat, un.UFloat]] = defaultdict(tuple)
+cents: Dict[phys.QuantumNumbers, Tuple[un.UFloat, un.UFloat]] = defaultdict(tuple)  # type: ignore
 for q, vals in exp_sys.items():
     ste = sum(val.SF for val in vals)
     num, dem = 0, 0

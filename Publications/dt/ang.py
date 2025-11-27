@@ -1,6 +1,6 @@
 import pyphysics as phys
 from pyphysics.actroot_interface import FitInterface, SFInterface
-import uproot
+import uncertainties as un
 import matplotlib.ticker as mpltick
 import matplotlib.axes as mplaxes
 import matplotlib.pyplot as plt
@@ -17,7 +17,7 @@ rsfs = SFInterface("../../Fits/dt/Outputs/rebin_sfs.root")
 
 # List of states per figure
 # states = [["g0", "g1", "g2", "v0"], ["v1", "v2", "v3", "v4"], ["v5", "v6", "v7", "v8"]]
-states = [["g0", "g1", "g2", "v0", "v1", "v2"], ["v3", "v4", "v5", "v6", "v7", "v8"]]
+states = [["g0", "g1", "g2", "v0", "v1", "v2"], ["v3", "v4", "v5", "v6", "v7", "v12"]]
 which = {
     "g0": sfs,
     "g1": sfs,
@@ -30,7 +30,7 @@ which = {
     "v5": rsfs,
     "v6": rsfs,
     "v7": rsfs,
-    "v8": rsfs,
+    "v12": rsfs,
 }
 withl0 = {
     "g0": False,
@@ -44,7 +44,7 @@ withl0 = {
     "v5": True,
     "v6": True,
     "v7": True,
-    "v8": True,
+    "v12": True,
 }
 
 # X axis limits
@@ -54,13 +54,17 @@ fig, axs = plt.subplots(6, 2, sharex=True, figsize=(6, 8))
 handles = []
 for i, state in enumerate(sfs.fSFs):
     ax: mplaxes.Axes = axs.flatten()[i]
-    obj = which.get(state)
+    obj = which.get(state)  # type: ignore
     if obj is None:
         print(f"State {state} doesn't have a dataset assigned")
         continue
+    obj: SFInterface
 
-    ## Experimental
+    # Experimental
     obj.plot_exp(state, ax)
+    obj.format_ax(state, ax)
+    ax.set_xlabel("")
+    ax.set_ylabel("")
 
     ## Axis formatting
     # 1-> Labels on the right
@@ -85,14 +89,10 @@ for i, state in enumerate(sfs.fSFs):
         ax.tick_params(axis="x", which="both", bottom=False, top=True)
         ax.spines.bottom.set_visible(False)
         ax.plot([0, 1], [0, 0], transform=ax.transAxes, **abreak)  # type: ignore
-    elif i == 9:
+    elif 10 <= i <= 11:
         ax.tick_params(axis="x", which="both", bottom=True, top=False, labelbottom=True)
         ax.spines.top.set_visible(False)
-        ax.plot([0], [0], transform=ax.transAxes, **abreak)  # type: ignore
-        ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak)  # type: ignore
-    elif i == 10:
-        ax.tick_params(axis="x", which="both", bottom=True, top=False)
-        ax.spines.top.set_visible(False)
+        # ax.plot([0], [0], transform=ax.transAxes, **abreak)  # type: ignore
         ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak)  # type: ignore
     else:
         ax.tick_params(axis="x", which="both", bottom=False, top=False)
@@ -102,6 +102,7 @@ for i, state in enumerate(sfs.fSFs):
         ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak)  # type: ignore
 
     ## Models
+    obj.fSFs[state] = [model for model in obj.fSFs[state] if "=" in model.fName]
     l0 = withl0.get(state)
     if l0 is None:
         raise ValueError(f"Must specify withl0 for {state} state")
@@ -112,10 +113,13 @@ for i, state in enumerate(sfs.fSFs):
         obj.remove_model(state, "l = 0")
     models = obj.plot_models(state, ax)
 
-    ## Others
     # Text annotation
     ex, _ = fit.get(state)
-    text = (r"E$_{\mathrm{x}} = $ " + f"{ex.n:.2f}") if state != "g0" else "g.s"
+    text = (
+        (r"E$_{\mathrm{x}} = $ " + f"{un.nominal_value(ex):.2f}")
+        if state != "g0"
+        else "g.s"
+    )
     pos = (0.65, 0.85) if state != "g0" else (0.4, 0.85)
     ax.annotate(
         text,
@@ -131,29 +135,26 @@ for i, state in enumerate(sfs.fSFs):
     ax.yaxis.set_major_locator(
         mpltick.MaxNLocator(nbins=3, steps=[1, 2, 5, 10], integer=True, min_n_ticks=1)
     )
-    # Axis break
-
     if i == 1:
         handles = models
 
 # Hide last one
-axs.flat[-1].axis("off")
-axs.flat[-1].legend(
+# axs.flat[-1].axis("off")
+axs.flat[0].legend(
     handles,
-    [r"$\ell$ = 0", r"$\ell$ = 1", r"$\ell$ = 2"],
-    labelspacing=0.05,
+    [r"$L = 0$", r"$L = 1$", r"$L = 2$"],
+    labelspacing=0.075,
     borderpad=0.2,
-    loc="center",
+    loc="upper right",
 )
 
 # Figure settings
 fig.tight_layout()
 fig.subplots_adjust(hspace=0.05, wspace=0.0, bottom=0.075, left=0.085)
-# fig.tight_layout()
 fig.text(
     0.525,
     0.03,
-    r"$\theta_{\mathrm{CM}}$ [$^{\circ}$]",
+    r"$\theta_{CM}$ [$\circ$]",
     ha="center",
     va="center",
     fontsize=18,
@@ -161,7 +162,7 @@ fig.text(
 fig.text(
     0.03,
     0.55,
-    r"$\mathrm{d}\sigma/\mathrm{d}\Omega$ [mb/sr]",
+    r"$d\sigma/d\Omega$ [$mb\cdot sr^{-1}$]",
     rotation="vertical",
     ha="center",
     va="center",

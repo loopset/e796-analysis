@@ -53,7 +53,9 @@ void Rebin_Ang()
 
     // Fitter
     Angular::Fitter fitter {&ivs};
-    fitter.SetAllowFreeMean(true, {"v5", "v6", "v7"});
+    // fitter.SetAllowFreeMean(true, {"v5", "v6", "v7"});
+    fitter.SetAllowFreeMean(true, {"v5"});
+    fitter.SetFreeMeanRange(0.75);
     fitter.SetAllowFreeSigma(true, {"g0"});
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
@@ -67,7 +69,7 @@ void Rebin_Ang()
     inter.Read("./Outputs/interface.root");
     auto peaks {inter.GetPeaks()};
     // Remove contamination
-    for(const auto& s : {"v8", "v9", "v10", "v11"})
+    for(const auto& s : {"v8", "v9", "v10"})
         peaks.erase(std::remove(peaks.begin(), peaks.end(), s), peaks.end());
 
     // Efficiency
@@ -88,6 +90,11 @@ void Rebin_Ang()
     // xs.TrimX("v0", 12, false);
     xs.TrimX("v2", 12, false);
     xs.TrimX("v3", 7);
+    xs.TrimX("v3", 13.5, false);
+    xs.TrimX("v4", 6.5);
+    xs.TrimX("v5", 6.5);
+    xs.TrimX("v5", 12, false);
+    xs.TrimX("v12", 6.5);
     // xs.TrimX("v3", 13.5, false);
     // xs.TrimX("v4", 8);
     // xs.TrimX("v5", 8);

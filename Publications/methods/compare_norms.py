@@ -1,4 +1,3 @@
-from shutil import which
 import matplotlib.patches as mplpatches
 import matplotlib.pyplot as plt
 import matplotlib.axes as mplaxes
