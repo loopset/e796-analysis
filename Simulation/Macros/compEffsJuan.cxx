@@ -3,6 +3,8 @@
 
 #include "Interpolators.h"
 
+#include "../../Selector/Selector.h"
+
 void compEffsJuan()
 {
     // Init object
@@ -39,11 +41,24 @@ void compEffsJuan()
 
     // Interpolators::Efficiency effspd;
     // effspd.Add("Ours", "/media/Data/E796v2/Simulation/Outputs/juan_RPx/tree_20O_1H_2H_0.00_nPS_0_pPS_0.root");
-    // effspd.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_1H_to_2H_NumN_0_NumP_0_Ex0_Date_2025_2_7_Time_9_43.root");
+    // effspd.Add("Juan's",
+    // "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_1H_to_2H_NumN_0_NumP_0_Ex0_Date_2025_2_7_Time_9_43.root");
     // effspd.Draw();
 
-    Interpolators::Efficiency effsdt;
-    effsdt.Add("Ours", "/media/Data/E796v2/Simulation/Outputs/juan_RPx/tree_20O_2H_3H_16.20_nPS_0_pPS_0.root");
-    effsdt.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/20O_and_2H_to_3H_NumN_0_NumP_0_Ex16.199999999999999_Date_2025_4_29_Time_11_16.root");
-    effsdt.Draw();
+    // Interpolators::Efficiency effsdt;
+    // effsdt.Add("Ours", "/media/Data/E796v2/Simulation/Outputs/juan_RPx/tree_20O_2H_3H_16.20_nPS_0_pPS_0.root");
+    // effsdt.Add("Juan's", "/media/miguel/FICA_4/Juan/Asimp/ProducedEfficiencyFile/"
+    //                      "20O_and_2H_to_3H_NumN_0_NumP_0_Ex16.199999999999999_Date_2025_4_29_Time_11_16.root");
+    // effsdt.Draw();
+
+    Interpolators::Efficiency effspp;
+    effspp.Add("g.s", gSelector->GetSimuFile("20O", "1H", "1H", 0).Data(), "effPhi");
+    effspp.Add("1st", gSelector->GetApproxSimuFile("20O", "1H", "1H", 1.6), "effPhi");
+    effspp.Draw(true, "(p,p)");
+    
+    Interpolators::Efficiency effsdd;
+    effsdd.Add("g.s", gSelector->GetSimuFile("20O", "2H", "2H", 0).Data(), "eff");
+    effsdd.Add("1st", gSelector->GetApproxSimuFile("20O", "2H", "2H", 1.6), "eff");
+    effsdd.Add("2nd", gSelector->GetApproxSimuFile("20O", "2H", "2H", 4), "eff");
+    effsdd.Draw(true, "(d,d)");
 }

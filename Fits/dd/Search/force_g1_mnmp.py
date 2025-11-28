@@ -9,6 +9,10 @@ from BetaFinder import BetaFinder
 
 o20 = phys.Particle("20O")
 
+# Set sys for calculations
+BetaFinder.set_stat_unc_iter(500)
+BetaFinder.set_sys_unc(0.20)
+
 # Read interpolation for g1
 g1 = BetaFinder("../Outputs/xs/g1_xs.dat", "./g1_Daeh/l2", "202")
 
@@ -40,6 +44,7 @@ for k, root in roots.items():
 # States
 g2 = BetaFinder("../Outputs/xs/g2_xs.dat", "./g2_Daeh/l2", "202")
 g3 = BetaFinder("../Outputs/xs/g3_xs.dat", "./g3_Daeh/l3", "202")
+g5 = BetaFinder("../Outputs/xs/g5_xs.dat", "./g5_Daeh/l3", "202")
 states = {
     "2+1": g1,
     "2+2": g2,
@@ -48,12 +53,12 @@ states = {
 
 # Betas EM
 states_em = {
-    "2+1": betasem["Toshio"],
-    "2+2": phys.BE_to_beta(5.6, o20, 2, True),  # Toshio value
+    "2+1": betasem["Zanon"],
+    "2+2": phys.BE_to_beta(1.3, o20, 2, False),  # Zanon
     "3-1": phys.BE_to_beta(1.6e3, o20, 3, True),  # theoretical paper
 }
 
-scaling = sfs["Toshio"]
+scaling = sfs["Zanon"]
 states_mnmp = {}
 for state, finder in states.items():
     finder.scale(scaling)

@@ -5,13 +5,15 @@ import uncertainties as un
 
 sfo = phys.ShellModel(
     [
-        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
-        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
+        # "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
+        # "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
+        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1n.txt",
+        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1p.txt",
     ]
 )
 sfo.set_min_SF(0.005)
 
-qs = [phys.QuantumNumbers(0, 1, 0.5), phys.QuantumNumbers(0, 1, 1.5)]
+qs = [phys.QuantumNumbers(1, 0, 0.5), phys.QuantumNumbers(0, 1, 0.5), phys.QuantumNumbers(0, 1, 1.5)]
 
 fig, ax = plt.subplots(1, 1)
 
