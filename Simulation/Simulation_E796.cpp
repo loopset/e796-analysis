@@ -141,6 +141,20 @@ double EvalSysAngleCorr(ActPhysics::GenCorrection* corr, double rpx, double thet
     return systematic;
 }
 
+
+bool SelectPhiLab(const std::string& which, double phi)
+{
+    phi *= TMath::RadToDeg();
+    if(which == "low")
+        return (74 <= phi) && (phi <= 80);
+    else if(which == "middle")
+        return (88 <= phi) && (phi <= 93);
+    else if(which == "up")
+        return (100 <= phi) && (phi <= 106);
+    else
+        return false;
+}
+
 void Simulation_E796(const std::string& beam, const std::string& target, const std::string& arglight, int neutronPS,
                      int protonPS, double T1, double Ex, bool standalone, int thread = -1)
 {
@@ -389,9 +403,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     }
     double zVertexMean {silCentre + beamOffset};
 
-    double xf0ref {specs->GetLayer("f0").GetPoint().X()};
-    auto deltax {specs->GetLayer("f1").GetPoint().X() - xf0ref};
-    bool isIterAngle {(gSelector->GetFlag() == "iter_angle")};
+    double xy0ref {};
+    if(!isEl)
+        xy0ref = specs->GetLayer("f0").GetPoint().X();
+    else
+        xy0ref = specs->GetLayer("l0").GetPoint().Y();
+    bool isIterAngle {(gSelector->GetFlag() == "iter_angle") || TString(gSelector->GetTag()).Contains("angle")};
     TF2* funcxf0 {};
     if(isIterAngle)
     {
@@ -400,7 +417,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // Y: in mm units. Z dependence with angle
         // 85: onset of silicon plane along Z
         funcxf0 = new TF2 {"funcxf0",
-                           TString::Format("%.2f + (y - 85) * TMath::Tan(%.2f * TMath::DegToRad())", xf0ref,
+                           TString::Format("%.2f + (y - 85) * TMath::Tan(%.2f * TMath::DegToRad())", xy0ref,
                                            gSelector->GetOpt("angle")),
                            0,
                            350,
@@ -419,6 +436,19 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         // Random seed already set below
     }
 
+    // Check xs by cutting on phi angle
+    bool isPhiCut {TString(gSelector->GetFlag()).Contains("phi")};
+    std::string whichPhi {""};
+    if(isPhiCut)
+    {
+        if(auto tstr {TString(gSelector->GetFlag())}; tstr.Contains("low"))
+            whichPhi = "low";
+        else if(tstr.Contains("middle"))
+            whichPhi = "middle";
+        else if(tstr.Contains("up"))
+            whichPhi = "up";
+        std::cout << BOLDCYAN << "WhichPhi : " << whichPhi << RESET << '\n';
+    }
 
     // CUTS ON SILICON ENERGY, depending on particle
     // from the graphical PID cut
@@ -650,6 +680,12 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         hThetaLabAll->Fill(theta3LabEff * TMath::RadToDeg());
         hPhiAll->Fill(phi3Lab * TMath::RadToDeg());
 
+        if(isPhiCut)
+        {
+            if(!SelectPhiLab(whichPhi, phi3Lab))
+                continue;
+        }
+
         // 4-> Include thetaLab resolution to compute thetaCM and Ex afterwards
         if(thetaResolution)
             theta3Lab = gRandom->Gaus(theta3Lab, sigmaAngleLight * TMath::DegToRad());
@@ -674,12 +710,22 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
         if(isIterAngle)
         {
             // Eval x corresponding to nominal YZ
-            auto xeval {funcxf0->Eval(silPoint0InMM.Y(), silPoint0InMM.Z())};
+            double xyeval {};
+            if(!isEl)
+                xyeval = funcxf0->Eval(silPoint0InMM.Y(), silPoint0InMM.Z());
+            else
+                xyeval = funcxf0->Eval(silPoint0InMM.X(), silPoint0InMM.Z());
             // Reset sil point
-            specs->GetLayer("f0").SetPoint({(float)xeval, 0, 0});
+            if(!isEl)
+                specs->GetLayer(firstLayer).SetPoint({(float)xyeval, 0, 0});
+            else
+                specs->GetLayer(firstLayer).SetPoint({0, (float)xyeval, 0});
             std::tie(silIndex0, silPoint0InMM) = specs->FindSPInLayer(firstLayer, vertex, dirWorldFrame);
             // And reset back to next iteration
-            specs->GetLayer("f0").SetPoint({(float)xf0ref, 0, 0});
+            if(!isEl)
+                specs->GetLayer(firstLayer).SetPoint({(float)xy0ref, 0, 0});
+            else
+                specs->GetLayer(firstLayer).SetPoint({0, (float)xy0ref, 0});
         }
 
         // skip tracks that doesn't reach silicons or are not in SiliconMatrix indexes
