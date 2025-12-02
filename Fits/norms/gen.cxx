@@ -35,8 +35,8 @@ void gen()
     // Nd *= 0.792081 * 0.423209;
     // Np *= 0.792081 * 0.423209;
     // Simpler pp gs normalisation
-    Nd *= 0.792081;
-    Np *= 0.792081;
+    Nd *= 0.790974;
+    Np *= 0.790974;
     // Exact targets depend on the actual length of ACTAR
     // considered in the analysis, accesible in the gSelector
     // Then Ntargets = actualLength / totalLength * Np or Nd

@@ -44,12 +44,19 @@ labels = [
 colors = sty.cycler.cycler(color=plt.get_cmap("tab10").colors[:4])  # type: ignore
 ls = sty.cycler.cycler(ls=["solid", "dashed", "dotted", "dashdot"])
 
+# Set scaling of xs according to MnMp ratio of 2+1
+scaling = 4.17333 # From Zanon EM values
+
 fig, axs = plt.subplots(2, 3, figsize=(10, 4.5), sharex=True, layout="constrained")
 for i, state in enumerate(states):
     ax: mplaxes.Axes = axs.flat[i]
     face = rebin if isRebin[i] else dd
+    face.fExps[state][:, 1:3] *= scaling
     face.plot_exp(state, ax=ax)
     ax.set_prop_cycle(colors + ls)
+    for model in face.fSFs[state]:
+        if model.fGraph is not None:
+            model.fGraph[:, 1] *= scaling
     face.plot_models(state, ax=ax, lw=0.85)
     face.format_ax(state, ax)
     ex, sigma = fit.get(state)
@@ -73,8 +80,8 @@ for i, state in enumerate(states):
             columnspacing=1,
         )
 
-for ax in axs[1, :]:
-    ax.set_ylim(0, 3)
+# for ax in axs[1, :]:
+#     ax.set_ylim(0, 3)
 for ax in axs.flat:
     ax.set_ylabel("")
 for ax in axs.flat:

@@ -76,7 +76,10 @@ class BetaFinder:
                 for sf in self.fSFs
             ]
             spline = phys.create_spline3(self.fBetas, sfs_it)
-            value = phys.find_root(spline, 1, [min(self.fBetas), max(self.fBetas)])
+            try:
+                value = phys.find_root(spline, 1, [min(self.fBetas), max(self.fBetas)])
+            except ValueError:
+                continue
             values.append(value)
         # Get mean and std_dev
         mean = np.mean(values)
