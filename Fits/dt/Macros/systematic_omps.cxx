@@ -9,14 +9,14 @@ void systematic_omps()
 
     Angular::Comparator comp {"g.s", gexp};
     // Incoming
-    comp.Add("Daeh + Pang", "../Inputs/Daeh/gs/fort.204");
-    comp.Add("Haixia + Pang", "../Inputs/Haixia/gs/fort.204");
-    comp.Add("DA1p + Pang", "../Inputs/DA1p/gs/fort.204");
-    // Outgoing
-    // comp.Add("Daeh + Pang", "../Inputs/Daeh/gs/fort.204");
-    comp.Add("Daeh + HT1P", "../Inputs/HT1p/gs/fort.204");
+    comp.Add("Daeh + Pang", "../Inputs/Sys/Daeh_Pang/fort.202");
+    comp.Add("Daeh + HT1p", "../Inputs/Sys/Daeh_HT1p/fort.202");
+    comp.Add("DA1p + Pang", "../Inputs/Sys/DA1p_Pang/fort.202");
+    comp.Add("DA1p + HT1p", "../Inputs/Sys/DA1p_HT1p/fort.202");
+    comp.Add("Haixia + Pang", "../Inputs/Sys/Haixia_Pang/fort.202");
+    comp.Add("Haixia + HT1p", "../Inputs/Sys/Haixia_HT1p/fort.202");
     comp.Fit();
-    comp.Draw("Systematic omps");
+    comp.Draw("Systematic omps", false, true, 3, nullptr, true);
     comp.Write("g0", "./Outputs/systematic_omps.root");
 
 }

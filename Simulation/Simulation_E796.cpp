@@ -570,6 +570,8 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
     outTree->Branch("RPx", &rpx_tree);
     int silIdx_tree {};
     outTree->Branch("SilIdx", &silIdx_tree);
+    double esil0_tree {};
+    outTree->Branch("ESil0", &esil0_tree);
     // Lorentz vectors
     std::vector<ROOT::Math::XYZTVector> lor_tree {};
     outTree->Branch("Lor", &lor_tree);
@@ -899,6 +901,7 @@ void Simulation_E796(const std::string& beam, const std::string& target, const s
             theta3Lab_tree = theta3Lab * TMath::RadToDeg();
             rpx_tree = vertex.X();
             silIdx_tree = silIndex0;
+            esil0_tree = eLoss0;
             beta_tree = *kingen.GetBeta();
             outTree->Fill();
         }

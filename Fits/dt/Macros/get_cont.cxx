@@ -1,14 +1,21 @@
 #include "ActKinematics.h"
+#include "ActMergerData.h"
+
 #include "ROOT/RDF/HistoModels.hxx"
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
 #include "TCanvas.h"
 #include "TROOT.h"
+#include "TString.h"
+#include "TVirtualPad.h"
 
 #include "FitInterface.h"
 #include "FitUtils.h"
 #include "Interpolators.h"
+
+#include <memory>
+#include <vector>
 
 #include "../../../Selector/Selector.h"
 #include "../../FitHist.h"
@@ -26,10 +33,28 @@ void get_cont()
     ROOT::RDataFrame dt {"Sel_Tree", "../../../PostAnalysis/RootFiles/Pipe3/tree_20O_2H_3H_front_juan_RPx.root"};
     auto hExdt {dt.Histo1D(E796Fit::Exdt, "Ex")};
 
+    auto file {std::make_unique<TFile>("../Outputs/fit_juan_RPx.root")};
+    auto* gfit {file->Get<TGraph>("GraphGlobal")};
+    file->Close();
+
     // Get kinematic lines
     ROOT::RDF::TH2DModel mKin {"hKin", "Kinematics;#theta_{lab} [#circ];E_{lab} [MeV]", 300, 0, 60, 300, 0, 15};
     auto hKinpd {df.Histo2D(mKin, "fThetaLight", "EVertex")};
     auto hKindt {dt.Histo2D(mKin, "fThetaLight", "EVertex")};
+
+    // Get evolution of contamination with cut in EVertex
+    std::vector<TH1D*> hexs {};
+    double emin {2};
+    double emax {12};
+    double estep {1};
+    for(double e = emin; e <= emax; e += estep)
+    {
+        auto node {dt.Filter([=](ActRoot::MergerData& d) { return d.fSilEs.front() < e; }, {"MergerData"})};
+        auto hEx {node.Histo1D(E796Fit::Exdt, "Ex")};
+        auto* clone {(TH1D*)hEx->Clone()};
+        clone->SetTitle(TString::Format("E < %.2f", e));
+        hexs.push_back(clone);
+    }
 
     auto* c0 {new TCanvas {"c0", "get pd cont"}};
     c0->DivideSquare(4);
@@ -38,10 +63,15 @@ void get_cont()
     hExdt->DrawNormalized();
     hEx->SetLineColor(kRed);
     hEx->DrawNormalized("same", 0.25);
+    auto cte {hExdt->Integral()};
+    gfit->Scale(1. / cte);
+    gfit->SetLineWidth(1);
+    gfit->SetLineColor(kMagenta);
+    gfit->Draw("l");
     c0->cd(2);
     ActPhysics::Kinematics kin {"20O(d,t)@700|16"};
     auto* gdt {kin.GetKinematicLine3()};
-    kin = ActPhysics::Kinematics{"20O(p,d)@700"};
+    kin = ActPhysics::Kinematics {"20O(p,d)@700"};
     auto* gpd {kin.GetKinematicLine3()};
     hKindt->DrawClone("colz");
     hKinpd->DrawClone("colz same");
@@ -49,6 +79,15 @@ void get_cont()
     gdt->Draw("l");
     gpd->SetLineColor(kRed);
     gpd->Draw("l");
+
+    auto* c1 {new TCanvas {"c1", "Evolution of contamination"}};
+    c1->DivideSquare(hexs.size());
+    for(int i = 0; i < hexs.size(); i++)
+    {
+        c1->cd(i + 1);
+        gPad->SetLogy();
+        hexs[i]->Draw();
+    }
 
     // gSelector->SetFlag("juan_RPx");
     // Interpolators::Sigmas sigmas {gSelector->GetSigmasFile("2H", "3H").Data()};

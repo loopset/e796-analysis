@@ -66,7 +66,7 @@ void Ang(bool isLab = false)
 
     // Fitter
     Angular::Fitter fitter {&ivs};
-    fitter.SetAllowFreeMean(true, {"v5", "v7"});
+    fitter.SetAllowFreeMean(true, {"v5", "v6", "v7"});
     fitter.SetAllowFreeSigma(true, {"g0"});
     // fitter.SetAllowFreeGamma(true, {"v1"});
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
@@ -82,7 +82,7 @@ void Ang(bool isLab = false)
     inter.Read("./Outputs/interface.root");
     auto peaks {inter.GetPeaks()};
     // Remove contamination
-    for(const auto& s : {"v8", "v9", "v10", "v11"})
+    for(const auto& s : {"v8", "v9", "v10", "v11", "v12"})
         peaks.erase(std::remove(peaks.begin(), peaks.end(), s), peaks.end());
 
     // Efficiency
@@ -105,6 +105,8 @@ void Ang(bool isLab = false)
         xs.TrimX("v3", 13.5, false);
         xs.TrimX("v4", 7.5);
         xs.TrimX("v4", 13.5, false);
+        // xs.TrimX("v5", 11.75, false);
+        xs.TrimX("v5", 8);
         xs.TrimX("v7", 7);
         // xs.TrimX("v8", 6.5);
         // xs.TrimX("v8", 11.5, false);

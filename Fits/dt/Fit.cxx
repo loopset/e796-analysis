@@ -35,8 +35,9 @@ void Fit()
     // ROOT::RDataFrame pd {"Sel_Tree", "./Inputs/Cont/tree_20O_d_d_as_d_t.root"};
     // auto hpd {pd.Histo1D(E796Fit::Exdt, "Ex")};
     // ROOT::RDataFrame ddphase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -4)};
-    // auto hPSdd {ddphase.Histo1D(E796Fit::Exdt, "Eex", "weight")};
+    // auto hPSdd {ddphase.Filter("ESil0 > 8.5").Histo1D(E796Fit::Exdt, "Eex", "weight")};
     // Fitters::TreatPS(hEx.GetPtr(), hPSdd.GetPtr());
+    // Fitters::FitPS(hPSdd.GetPtr(), "pol6", false, true);
     // // Contamination from 20O(p,d)
     // std::vector<double> conts {0, 1.4, 3.2, 4.5};
     // std::vector<ROOT::RDF::RResultPtr<TH1D>> hconts;
@@ -58,21 +59,21 @@ void Fit()
     double sigma {0.364}; // common guess for all states
     double offset {0.0};  // != 0 only when using ExLegacy
     inter.AddState("g0", {400, 0 - offset, sigma}, "5/2+");
-    inter.AddState("g1", {10, 1.4 - offset, sigma}, "1/2+");
+    inter.AddState("g1", {10, 1.8 - offset, sigma}, "1/2+");
     inter.AddState("g2", {110, 3.2 - offset, sigma}, "(1/2,3/2)-");
-    inter.AddState("v0", {60, 4.6 - offset, sigma, 0.1}, "3/2-");
-    inter.AddState("v1", {60, 6.7 - offset, sigma, 0.845}, "?");
-    inter.AddState("v2", {60, 7.9 - offset, sigma, 0.1}, "?");
-    inter.AddState("v3", {60, 8.9 - offset, sigma, 0.1}, "?");
-    inter.AddState("v4", {60, 10.7 - offset, sigma, 0.1}, "?");
-    inter.AddState("v5", {40, 12.3 - offset, sigma, 0.1}, "?");
-    inter.AddState("v6", {40, 13.9 - offset, sigma, 0.1}, "?");
-    inter.AddState("v7", {20, 14.9 - offset, sigma, 0.1}, "?");
-    inter.AddState("v8", {20, 16.2 - offset, sigma, 0.}, "Cont0");
-    inter.AddState("v9", {20, 17. - offset, sigma, 0.}, "Cont1");
+    inter.AddState("v0", {60, 4.7 - offset, sigma, 0.1}, "3/2-");
+    inter.AddState("v1", {60, 6.8 - offset, sigma, 0.845}, "?");
+    inter.AddState("v2", {60, 8.1 - offset, sigma, 0.1}, "?");
+    inter.AddState("v3", {60, 9.0 - offset, sigma, 0.1}, "?");
+    inter.AddState("v4", {60, 10.8 - offset, sigma, 0.1}, "?");
+    inter.AddState("v5", {40, 12.5 - offset, sigma, 0.1}, "?");
+    inter.AddState("v6", {40, 14.0 - offset, sigma, 0.1}, "?");
+    inter.AddState("v7", {20, 15.0 - offset, sigma, 0.1}, "?");
+    inter.AddState("v8", {20, 16.3 - offset, sigma, 0.}, "Cont0");
+    inter.AddState("v9", {20, 17.5 - offset, sigma, 0.}, "Cont1");
     inter.AddState("v10", {20, 20.1 - offset, sigma, 0.}, "Cont2");
-    inter.AddState("v11", {20, 22.6 - offset, sigma, 0.}, "Cont3");
-    inter.AddState("v12", {20, 18.4 - offset, sigma, 0.}, "Cont3");
+    inter.AddState("v11", {20, 22.8 - offset, sigma, 0.}, "Cont3");
+    inter.AddState("v12", {20, 18.6 - offset, sigma, 0.}, "Cont3");
     inter.AddState("ps0", {1.5});
     inter.AddState("ps1", {0.1});
     // inter.AddState("ps2", {0.1});
@@ -96,13 +97,11 @@ void Fit()
     inter.SetBounds("v5", 3, {0, 0.25});
     inter.SetBounds("v6", 3, {0, 0.1});
     inter.SetBounds("v7", 3, {0, 0.1});
-    for(const auto& s : {"v8", "v9", "v10", "v11"})
+    for(const auto& s : {"v8", "v9", "v10", "v11", "v12"})
     {
         // inter.SetFix(s, 1, true);
         inter.SetFix(s, 3, true);
     }
-    // inter.SetBounds("v12", 2, {0, .5});
-    inter.SetBounds("v12", 3, {0, 0.0});
     inter.Write("./Outputs/interface.root");
 
     // Fitting range

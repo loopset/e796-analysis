@@ -31,12 +31,12 @@ void Rebin_Ang()
     auto hEx {df.Histo1D(E796Fit::Exdt, "Ex")};
     ROOT::RDataFrame phase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 1, 0)};
     ROOT::RDataFrame phase2 {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "3H", 0, 2, 0)};
-    // ROOT::RDataFrame pd {"Sel_Tree", "./Inputs/Cont/tree_20O_d_d_as_d_t.root"};
+    // ROOT::RDataFrame ddphase {"SimulationTTree", gSelector->GetSimuFile("20O", "2H", "2H", 0, -4)};
 
     // Init intervals
-    double thetaMin {5.5};
-    double thetaMax {14.};
-    double thetaStep {1.5};
+    double thetaMin {4.5};
+    double thetaMax {14.5};
+    double thetaStep {2};
     int nps {2 + 0}; // 2 nps + 0 contamination
     Angular::Intervals ivs {thetaMin, thetaMax, E796Fit::Exdt, thetaStep, nps};
     // Fill
@@ -46,6 +46,9 @@ void Rebin_Ang()
                   {"theta3CM", "Eex", "weight"});
     phase2.Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(1, thetacm, ex, weight); },
                    {"theta3CM", "Eex", "weight"});
+    // ddphase.Filter("EVertex > 8").Foreach([&](double thetacm, double ex, double weight) { ivs.FillPS(2, thetacm, ex,
+    // weight); },
+    //                {"theta3CM", "Eex", "weight"});
     // pd.Foreach([&](double thetaCM, double ex) { ivs.FillPS(2, thetaCM, ex, 1); }, {"ThetaCM", "Ex"});
     ivs.TreatPS(10, 0.2, {0, 1}); // disable smoothing for contamination ps
     ivs.Write("./Outputs/rebin/ivs.root");
@@ -54,9 +57,11 @@ void Rebin_Ang()
     // Fitter
     Angular::Fitter fitter {&ivs};
     // fitter.SetAllowFreeMean(true, {"v5", "v6", "v7"});
-    fitter.SetAllowFreeMean(true, {"v5", "v10"});
+    fitter.SetAllowFreeMean(true, {"v5", "v6", "v7"});
     fitter.SetFreeMeanRange(0.75);
     fitter.SetAllowFreeSigma(true, {"g0"});
+    // fitter.SetManualPar("v5_Lg", 0);
+    // fitter.SetManualPar("v6_Lg", 0);
     fitter.Configure(TString::Format("./Outputs/fit_%s.root", gSelector->GetFlag().c_str()).Data());
     fitter.Run();
     fitter.Draw();
@@ -69,7 +74,7 @@ void Rebin_Ang()
     inter.Read("./Outputs/interface.root");
     auto peaks {inter.GetPeaks()};
     // Remove contamination
-    for(const auto& s : {"v8", "v9", "v11"})
+    for(const auto& s : {"v8", "v9", "v10", "v11", "v12"})
         peaks.erase(std::remove(peaks.begin(), peaks.end(), s), peaks.end());
 
     // Efficiency
@@ -95,14 +100,14 @@ void Rebin_Ang()
     xs.TrimX("v5", 6.5);
     xs.TrimX("v5", 12, false);
     // xs.TrimX("v10", 8);
-    xs.TrimX("v12", 6.5);
+    // xs.TrimX("v12", 6.5);
     // xs.TrimX("v3", 13.5, false);
     // xs.TrimX("v4", 8);
     // xs.TrimX("v5", 8);
     // xs.TrimX("v6", 12.5, false);
-    // for(const auto& state : {"v7"})
+    // for(const auto& state : {"v5", "v6", "v7"})
     // {
-    //     xs.TrimX(state, 8);
+    //     xs.TrimX(state, 6.5);
     //     xs.TrimX(state, 12.5, false);
     // }
     // xs.TrimX("v4", 13.5, false);

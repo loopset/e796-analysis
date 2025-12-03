@@ -17,7 +17,7 @@ rsfs = SFInterface("../../Fits/dt/Outputs/rebin_sfs.root")
 
 # List of states per figure
 # states = [["g0", "g1", "g2", "v0"], ["v1", "v2", "v3", "v4"], ["v5", "v6", "v7", "v8"]]
-states = [["g0", "g1", "g2", "v0", "v1", "v2"], ["v3", "v4", "v5", "v6", "v7", "v12"]]
+states = [["g0", "g1", "g2", "v0", "v1", "v2"], ["v3", "v4", "v5", "v6", "v7"]]
 which = {
     "g0": sfs,
     "g1": sfs,
@@ -28,7 +28,7 @@ which = {
     "v3": rsfs,
     "v4": rsfs,
     "v5": rsfs,
-    "v6": rsfs,
+    "v6": sfs,
     "v7": rsfs,
     "v12": rsfs,
 }
@@ -44,7 +44,6 @@ withl0 = {
     "v5": True,
     "v6": True,
     "v7": True,
-    "v12": True,
 }
 
 # X axis limits
@@ -89,7 +88,12 @@ for i, state in enumerate(sfs.fSFs):
         ax.tick_params(axis="x", which="both", bottom=False, top=True)
         ax.spines.bottom.set_visible(False)
         ax.plot([0, 1], [0, 0], transform=ax.transAxes, **abreak)  # type: ignore
-    elif 10 <= i <= 11:
+    elif i == 9:
+        ax.tick_params(axis="x", which="both", bottom=True, top=False)
+        ax.spines.top.set_visible(False)
+        ax.plot([0], [0], transform=ax.transAxes, **abreak)  # type: ignore
+        ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak)  # type: ignore
+    elif i == 10:
         ax.tick_params(axis="x", which="both", bottom=True, top=False, labelbottom=True)
         ax.spines.top.set_visible(False)
         # ax.plot([0], [0], transform=ax.transAxes, **abreak)  # type: ignore
@@ -116,11 +120,11 @@ for i, state in enumerate(sfs.fSFs):
     # Text annotation
     ex, _ = fit.get(state)
     text = (
-        (r"E$_{\mathrm{x}} = $ " + f"{un.nominal_value(ex):.2f}")
+        (r"$E_{x} = $" + f"{un.nominal_value(ex):.2f}")
         if state != "g0"
         else "g.s"
     )
-    pos = (0.65, 0.85) if state != "g0" else (0.4, 0.85)
+    pos = (0.65, 0.85)
     ax.annotate(
         text,
         xy=pos,
@@ -139,13 +143,13 @@ for i, state in enumerate(sfs.fSFs):
         handles = models
 
 # Hide last one
-# axs.flat[-1].axis("off")
-axs.flat[0].legend(
+axs.flat[-1].axis("off")
+axs.flat[-1].legend(
     handles,
     [r"$L = 0$", r"$L = 1$", r"$L = 2$"],
     labelspacing=0.075,
     borderpad=0.2,
-    loc="upper right",
+    loc="center",
 )
 
 # Figure settings
@@ -168,4 +172,6 @@ fig.text(
     va="center",
     fontsize=18,
 )
+
+fig.savefig(sty.thesis + "19O_ang.pdf", dpi=300)
 plt.show()
