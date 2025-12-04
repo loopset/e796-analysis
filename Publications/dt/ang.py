@@ -89,7 +89,7 @@ for i, state in enumerate(sfs.fSFs):
         ax.spines.bottom.set_visible(False)
         ax.plot([0, 1], [0, 0], transform=ax.transAxes, **abreak)  # type: ignore
     elif i == 9:
-        ax.tick_params(axis="x", which="both", bottom=True, top=False)
+        ax.tick_params(axis="x", which="both", bottom=True, top=False, labelbottom=True)
         ax.spines.top.set_visible(False)
         ax.plot([0], [0], transform=ax.transAxes, **abreak)  # type: ignore
         ax.plot([0, 1], [1, 1], transform=ax.transAxes, **abreak)  # type: ignore
