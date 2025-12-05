@@ -1,6 +1,6 @@
 from collections import defaultdict
 import pickle
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Tuple, Any
 
 from matplotlib import hatch
 import pyphysics as phys
@@ -26,7 +26,7 @@ for file in files:
     if match:
         ex = float(f"{match.group(1)}.{match.group(2)}")
     else:
-        ex = 0
+        continue
     exs.append(ex)
     # Parse file
     data = phys.parse_txt(file)
@@ -36,13 +36,20 @@ for file in files:
 sorted_ex = sorted(zip(exs, comps), key=lambda x: x[0])
 exs[:], comps[:] = zip(*sorted_ex)
 # Add theoretical predictions and fit
+otherIdx = 0
 for i, comp in enumerate(comps):
-    comp.add_model("mairle", f"./Inputs/DaehPang/fort.2{i + 2:02d}")
+    if exs[i] < 11.00:
+        file = f"./Inputs/DaehPang/fort.2{i + 2:02d}"
+    else:
+        file = f"./Inputs/DaehPang2/fort.2{otherIdx + 3:02d}"
+        otherIdx += 1
+    print(f"Ex : {exs[i]}, file : {file}")
+    comp.add_model("mairle", file)
     comp.fit(scale_covar=True)
 
-# Add manual states
-exs_man = [11.41, 12.12, 12.76]
-sfs_man = [0.04, 0.24, 0.17]
+# Add manual states that do not have angular distribution
+exs_man = [11.41, 12.12, 12.76, 18.14]
+sfs_man = [0.04, 0.24, 0.17, 0.17]
 for ex, sf in zip(exs_man, sfs_man):
     exs.append(ex)
     # Fake data
@@ -61,32 +68,58 @@ qd32 = phys.QuantumNumbers(0, 2, 1.5)
 qs12 = phys.QuantumNumbers(1, 0, 0.5)
 qp12 = phys.QuantumNumbers(0, 1, 0.5)
 qp32 = phys.QuantumNumbers(0, 1, 1.5)
-assignments = [qd52, qs12, qp12, None, qp32, qd32, qp32, qp12, qp32, qp32, qp12]
-assignments_manual = [qp32, qp32, qp32]
-assignments.extend(assignments_manual)
+
+assignments: Dict[float, Tuple[phys.QuantumNumbers | None, float]] = {
+    0: (qd52, 1.53),
+    0.87: (qs12, 0.21),
+    3.06: (qp12, 1.08),
+    3.84: (None, np.nan),
+    4.55: (qp32, 0.12),
+    5.08: (qd32, 0.10),
+    5.38: (qp32, 0.53),
+    5.94: (qp12, 0.06),
+    8.21: (qp32, 0.15),
+    8.70: (qp32, 0.10),
+    9.18: (qp12, 0.10),
+    11.08: (qp12, 0.96),
+    11.41: (qp32, 0.04),
+    12.12: (qp32, 0.24),
+    12.47: (qp32, 0.24),
+    12.76: (qp32, 0.17),
+    12.95: (qs12, 0.19),
+    13.64: (qd52, 0.29),
+    16.58: (qp32, 0.93),
+    18.14: (qp32, 0.17),
+}
+
+
+def find_q_paper(
+    dic: Dict[float, Any], ex: float, tol: float = 0.1
+) -> Tuple[phys.QuantumNumbers | None, float | None]:
+    match = next((v for k, v in dic.items() if abs(k - ex) <= tol), None)
+    if match is None:
+        return (None, None)
+    else:
+        return match
+
 
 # Our reanalysis
 reana: phys.SMDataDict = defaultdict(list)
-for i in range(len(exs)):
-    q = assignments[i]
-    if q is None:
+mairle: phys.SMDataDict = defaultdict(list)
+for i, ex in enumerate(exs):
+    q, paper = find_q_paper(assignments, ex)
+    if q is None or paper is None:
+        print("Cannot locate assignment for ex : ", ex)
         continue
-    ex = exs[i]
+    ## Reanalysis
     sf = comps[i].get_sf("mairle")
     reana[q].append(phys.ShellModelData(ex, sf))
+    ## Mairlie's paper
+    mairle[q].append(phys.ShellModelData(ex, paper))
+
+## Write to disk
 with open("./Outputs/reanalysis.pkl", "wb") as f:
     pickle.dump(reana, f)
-
-# Mairle's original results
-sfs_mairle = [1.53, 0.21, 1.08, np.nan, 0.12, 0.10, 0.53, 0.06, 0.15, 0.10, 0.10, 0.04, 0.24, 0.17]
-mairle: phys.SMDataDict = defaultdict(list)
-for i in range(len(exs)):
-    q = assignments[i]
-    if q is None:
-        continue
-    ex = exs[i]
-    sf = sfs_mairle[i]
-    mairle[q].append(phys.ShellModelData(ex, sf))
 with open("./Outputs/mairle.pkl", "wb") as f:
     pickle.dump(mairle, f)
 
@@ -100,10 +133,8 @@ for i, (ex, comp) in enumerate(zip(exs, comps)):
     idx = i % imax
     ax: mplaxes.Axes = axs.flat[idx]  # type: ignore
     comp.draw(ax=ax)
-    ax.set_title(
-        f"Ex = {ex:.2f} MeV"
-        + (f" {assignments[i].format()}" if assignments[i] is not None else "")
-    )
+    q, _ = find_q_paper(assignments, ex)
+    ax.set_title(f"Ex = {ex:.2f} MeV" + (f" {q.format()}" if q is not None else ""))
     ax.set_yscale("log")
 
 # Comparison

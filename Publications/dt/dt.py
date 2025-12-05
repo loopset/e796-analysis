@@ -36,17 +36,17 @@ assignments = {
     "v1": (rebin, qp32),
     "v2": (rebin, qp32),
     "v3": (rebin, qp32),
-    "v4": (rebin, qp12),  # start of T=5/2 states
+    "v4": (rebin, qp32),
     "v5": (rebin, qp32),
     "v6": (rebin, qp32),
-    "v7": (rebin, qp12),  # state at 15 MeV. Next are background
+    "v7": (rebin, qp12),  # state at 15 MeV is 19N gs = 0p1/2
 }
 
 # Systematic uncertainty percent
 percentSys = 0.2
 
 
-def build_df(withSys=False) -> pd.DataFrame:
+def build_df(withSys=False, corrOffset: bool = True) -> pd.DataFrame:
     table = {"name": [], "ex": [], "sf": [], "model": [], "chi": []}
     for state, (sfs, q) in assignments.items():
         ex, sigma = fit.get(state)
@@ -58,15 +58,22 @@ def build_df(withSys=False) -> pd.DataFrame:
             continue
         val = sf.fSF
         if withSys:
-            unc = math.sqrt(val.s**2 + (percentSys * val.n) ** 2)
-            val.std_dev = unc  # type: ignore
+            val += un.ufloat(0, percentSys * val.n, "sys_preliminary")  # type: ignore
         table["sf"].append(val)
         table["model"].append(str(sf.fName))
         table["chi"].append(sf.fChi)
+    if corrOffset:
+        offset, _ = fit.get("g0")
+        table["ex"] = [
+            ex - un.ufloat(un.nominal_value(offset), un.std_dev(offset), "offset_gs")
+            for ex in table["ex"]
+        ]
     return pd.DataFrame(table)
 
 
-def build_sm(withSys=False) -> Dict[phys.QuantumNumbers, List[phys.ShellModelData]]:
+def build_sm(
+    withSys=False, corrOffset: bool = True
+) -> Dict[phys.QuantumNumbers, List[phys.ShellModelData]]:
     ret = defaultdict(list)
     for state, (sfs, q) in assignments.items():
         ex, sigma = fit.get(state)
@@ -75,10 +82,22 @@ def build_sm(withSys=False) -> Dict[phys.QuantumNumbers, List[phys.ShellModelDat
             continue
         val = sf.fSF
         if withSys:
-            unc = math.sqrt(val.s**2 + (percentSys * val.n) ** 2)
-            val.std_dev = unc  # type: ignore
+            val += un.ufloat(0, percentSys * val.n, "sys_preliminary")  # type: ignore
         data = phys.ShellModelData(ex, val)
         ret[q].append(data)
+    if corrOffset:
+        offset, _ = fit.get("g0")
+        for q, lis in ret.items():
+            ret[q] = [
+                phys.ShellModelData(
+                    sm.Ex
+                    - un.ufloat(
+                        un.nominal_value(offset), un.std_dev(offset), "offset_gs"
+                    ),
+                    sm.SF,
+                )
+                for sm in lis
+            ]
     return ret
 
 
@@ -87,7 +106,7 @@ def split_isospin(df: phys.SMDataDict) -> Tuple[phys.SMDataDict, phys.SMDataDict
     t52 = defaultdict(list)
     for k, vals in df.items():
         for val in vals:
-            if un.nominal_value(val.Ex) < 10:
+            if un.nominal_value(val.Ex) < 15:  # First analogous state appears at 15 MeV
                 t32[k].append(val)
             else:
                 t52[k].append(val)

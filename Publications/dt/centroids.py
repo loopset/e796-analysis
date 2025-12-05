@@ -32,22 +32,8 @@ sfo = phys.ShellModel(
     ]
 )
 
-## Settings for SFO-tls
-# Sum over all states until T = 5/2 arrives
-## Ex max determined from vertical.py
-# sfo.set_max_Ex(13.5)
-sfo.set_max_Ex(12.5)
+sfo.set_max_Ex(15.5)
 sfo.set_min_SF(0.05)
-
-## Isospin
-# T = 3/2
-for key, vals in exp.items():
-    vals[:] = [val for val in vals if un.nominal_value(val.Ex) < 10]
-# df = pd.read_excel("../../Fits/dt/Inputs/SM_fited/o19-isospin-ok.xlsx")
-# sfo.add_isospin("../../Fits/dt/Inputs/SM_fited/summary_O19_sfotls_mod.txt", df)
-df = pd.read_excel("../../Fits/dt/Inputs/SFO_tls_2/o19-isospin-ok.xlsx")
-sfo.add_isospin("../../Fits/dt/Inputs/SFO_tls_2/summary_O19_sfotls_modtsp3015.txt", df)
-sfo.set_allowed_isospin(1.5)
 
 
 strens = []
@@ -77,7 +63,8 @@ for i, (ste, cent) in enumerate(zip(strens, cents)):
     for q, y in ste.items():
         if q == phys.QuantumNumbers(0, 2, 1.5):
             continue
-        print(f"Centroid {q.format()} = {cent[q]}")
+        print(f"Centroid {q.format_simple()} = {cent[q]}")
+        print(f"  Strength = {ste[q]}")
         ax.bar(
             x=un.nominal_value(cent[q]),
             height=un.nominal_value(y),
@@ -111,5 +98,5 @@ ax.annotate(
 
 fig.tight_layout()
 fig.savefig("./Outputs/centroids.png", dpi=300)
-fig.savefig("/media/Data/Docs/EuNPC/figures/centroids.png", dpi=600)
+fig.savefig("/media/Data/Docs/SSW/figures/centroids.png", dpi=600)
 plt.show()

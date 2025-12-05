@@ -111,7 +111,7 @@ void Rebin_Ang()
     //     xs.TrimX(state, 12.5, false);
     // }
     // xs.TrimX("v4", 13.5, false);
-    // xs.TrimX("v7", 7.5);
+    xs.TrimX("v7", 7.5);
     //////////////////////////////////////
     // // PID mais pequeno
     // for(const auto& state : {"v0", "v1", "v2", "v3", "v4"})

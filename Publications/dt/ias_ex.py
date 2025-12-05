@@ -44,7 +44,7 @@ hgs.reset()
 hgs.fill(exdt[exdt.Ex < excut].Ex)
 hgs *= gsfactor
 # Transform Juan's to (d,t) by a shift
-bediff = 11.  # MeV difference
+bediff = 14.9  # MeV difference
 hdiff = hist.Hist.new.Reg(nbins, xmin, xmax).Double()
 values = hjuan.values()
 for i, value in enumerate(values):
@@ -81,9 +81,9 @@ ax.set_xlim(-3, 40)
 # for state in ["v4", "v5", "v6", "v7"]:
 #     ex = df[df["name"] == state]["ex"].iloc[0]
 #     ax.axvline(un.nominal_value(ex), 0, 0.75, color="crimson", ls="dashed", lw=1.5)  # type: ignore
+ax.axvline(bediff, color="green", ls="--", lw=1.25)
 fig.tight_layout()
-fig.savefig("/media/Data/Docs/EuNPC/figures/d_3He_comparison.png", dpi=300)
-
+fig.savefig("/media/Data/Docs/SSW/figures/ias.png", dpi=300)
 
 ## Miscellanea
 # Read data
@@ -92,7 +92,7 @@ sfs = SFInterface(
     "../../Fits/dt/Outputs/rebin_sfs.root"
 )  ## rebinned cause t5/2 employ rebinned data
 
-states = ["v4", "v5", "v6", "v7"]
+states = ["v7"]
 
 # Built dataset
 ex = [fit.get(state)[0] for state in states]

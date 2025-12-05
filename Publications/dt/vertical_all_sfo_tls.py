@@ -58,8 +58,8 @@ for model in [plain, sfo, sfo2]:
 expt52: phys.SMDataDict = defaultdict(list)
 for key, vals in exp.items():
     # T = 3/2
-    exp[key] = [val for val in vals if un.nominal_value(val.Ex) < 10]
-    expt52[key] = [val for val in vals if un.nominal_value(val.Ex) > 10]
+    exp[key] = [val for val in vals if un.nominal_value(val.Ex) < 14.5]
+    expt52[key] = [val for val in vals if un.nominal_value(val.Ex) > 14.5]
 # And copy with isospin 5/2 and mixture (t == -1)
 theot52, theotmix = [], []
 for theo in [plain, sfo, sfo2]:
@@ -181,7 +181,7 @@ handles_hatch = [
     # Patch(fc="none", ec=color, hatch=r"\\\\", label="T = mix"),
 ]
 second_leg = ax.legend(
-    handles=handles_hatch, loc="lower left", fontsize=14, bbox_to_anchor=(0.05, 0.6)
+    handles=handles_hatch, loc="lower left", fontsize=14, bbox_to_anchor=(0.025, 0.6)
 )
 ax.add_artist(main_leg)
 # Tick parameters
@@ -201,16 +201,16 @@ fig.tight_layout()
 fig.savefig("./Outputs/vertical.pdf")
 fig.savefig("./Outputs/vertical.png", dpi=300)
 
-## Plot lines separating T states for EuNPC presentation
-ys = [9.7, 15.6, 13.9, 12.65]
-sepx = []
-sepy = []
-width = 0.75
-for i, y in enumerate(ys):
-    sepx.extend([(i + 0.5) - width / 2, (i + 0.5) + width / 2])
-    sepy.extend([y] * 2)
-ax.plot(sepx, sepy, color="purple", marker="none", ls="dashed", lw=1.25, zorder=0)
-fig.tight_layout()
-fig.savefig("./Outputs/vertical_sep.png", dpi=300)
+# ## Plot lines separating T states for EuNPC presentation
+# ys = [9.7, 15.6, 13.9, 12.65]
+# sepx = []
+# sepy = []
+# width = 0.75
+# for i, y in enumerate(ys):
+#     sepx.extend([(i + 0.5) - width / 2, (i + 0.5) + width / 2])
+#     sepy.extend([y] * 2)
+# ax.plot(sepx, sepy, color="purple", marker="none", ls="dashed", lw=1.25, zorder=0)
+# fig.tight_layout()
+# fig.savefig("./Outputs/vertical_sep.png", dpi=300)
 
 plt.show()

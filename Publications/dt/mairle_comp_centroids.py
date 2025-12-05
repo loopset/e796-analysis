@@ -69,7 +69,7 @@ def do_cumulative(data: phys.SMDataDict) -> List:
         all = data[q]
         # Max in Ex
         # maxEx = un.nominal_value(max(all, key=lambda x: x.Ex).Ex)  # type: ignore
-        maxEx = 15
+        maxEx = 19
         for ex in np.arange(maxEx, step=0.2):  # type: ignore
             aux: phys.SMDataDict = {}
             aux[q] = [e for e in all if e.Ex <= ex]  # type: ignore
@@ -119,7 +119,7 @@ ourp32 = 14  # percent
 ax.axvline(ourp32, color=sty.barplot[dt.qp32]["ec"], ls="--")
 # Ex cut
 ax = axs[0, 1]
-ourMaxEx = 12.5  # MeV
+ourMaxEx = 15.5 # MeV + 0.5 just in case
 ax.axvline(ourMaxEx, color="crimson", ls="--")
 
 
@@ -239,5 +239,5 @@ ax.annotate(
 
 
 fig.tight_layout()
-fig.savefig("./Outputs/mairle_comparison.pdf", dpi=300)
+# fig.savefig("./Outputs/mairle_comparison.pdf", dpi=300)
 plt.show()

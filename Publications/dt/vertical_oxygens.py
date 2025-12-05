@@ -66,7 +66,7 @@ labels = [
 models = [exp16, o16_sfo, mairle, mairle_sfo, exp, exp_sfo]
 # Set limits for models
 for i, m in enumerate(models):
-    if isinstance(m, phys.ShellModel) and i != 0:
+    if isinstance(m, phys.ShellModel) and i % 2 != 0: # only for theoretical datasets
         m.set_min_SF(0.075)
         m.set_max_Ex(18)
 
