@@ -42,14 +42,25 @@ assignments = {
     "v7": (rebin, qp12),  # state at 15 MeV is 19N gs = 0p1/2
 }
 
-# Systematic uncertainty percent
-percentSys = 0.2
+
+# Systematic uncertainties
+sysNorm = 0.0325
+sysOMP = 0.11
+sysRWS = 0.1  # preliminary
 
 
-def build_df(withSys=False, corrOffset: bool = True) -> pd.DataFrame:
+def apply_systematics(x: un.Variable) -> un.Variable:
+    sf = un.nominal_value(x)
+    norm = sf * sysNorm
+    omp = sf * sysOMP
+    rws = sf * sysRWS
+    return x + un.ufloat(0, norm, "sys_norm") + un.ufloat(0, omp, "sys_omp") + un.ufloat(0, rws, "sys_rws")  # type: ignore
+
+
+def build_df(withSys: bool = True, corrOffset: bool = True) -> pd.DataFrame:
     table = {"name": [], "ex": [], "sf": [], "model": [], "chi": []}
     for state, (sfs, q) in assignments.items():
-        ex, sigma = fit.get(state)
+        ex, _ = fit.get(state)
         sf = next((e for e in sfs.get(state) if e.fName == equiv[q]), None)
         # Write data
         table["name"].append(state)
@@ -58,46 +69,31 @@ def build_df(withSys=False, corrOffset: bool = True) -> pd.DataFrame:
             continue
         val = sf.fSF
         if withSys:
-            val += un.ufloat(0, percentSys * val.n, "sys_preliminary")  # type: ignore
+            val = apply_systematics(val)
         table["sf"].append(val)
         table["model"].append(str(sf.fName))
         table["chi"].append(sf.fChi)
     if corrOffset:
         offset, _ = fit.get("g0")
         table["ex"] = [
-            ex - un.ufloat(un.nominal_value(offset), un.std_dev(offset), "offset_gs")
+            ex - un.ufloat(un.nominal_value(offset), un.std_dev(offset), "sys_offset")
             for ex in table["ex"]
         ]
     return pd.DataFrame(table)
 
 
-def build_sm(
-    withSys=False, corrOffset: bool = True
-) -> Dict[phys.QuantumNumbers, List[phys.ShellModelData]]:
+def build_sm(withSys: bool = True, corrOffset: bool = True) -> phys.SMDataDict:
     ret = defaultdict(list)
-    for state, (sfs, q) in assignments.items():
-        ex, sigma = fit.get(state)
-        sf = next((e for e in sfs.get(state) if e.fName == equiv[q]), None)
-        if sf is None:
-            continue
-        val = sf.fSF
-        if withSys:
-            val += un.ufloat(0, percentSys * val.n, "sys_preliminary")  # type: ignore
-        data = phys.ShellModelData(ex, val)
-        ret[q].append(data)
-    if corrOffset:
-        offset, _ = fit.get("g0")
-        for q, lis in ret.items():
-            ret[q] = [
-                phys.ShellModelData(
-                    sm.Ex
-                    - un.ufloat(
-                        un.nominal_value(offset), un.std_dev(offset), "offset_gs"
-                    ),
-                    sm.SF,
-                )
-                for sm in lis
-            ]
+    # Create dataframe
+    df = build_df(withSys, corrOffset)
+    for i, row in df.iterrows():
+        ex = row["ex"]
+        sf = row["sf"]
+        data = phys.ShellModelData(ex, sf)
+        tup = assignments.get(row["name"], None)
+        if tup is None:
+            raise ValueError(f"Cannot locate name col in df for {row['name']} state")
+        ret[tup[1]].append(data)
     return ret
 
 
@@ -147,11 +143,11 @@ def plot_bars(
     width: float = 0.6,
     height: float = 0.25,
     **kwargs,
-) -> None:
+) -> list:
     nmodels = len(models)
     left_padding = 0.075
     right_padding = 0.075
-
+    texts = []
     for i, data in enumerate(models):
         for q, vals in data.items():
             if q == phys.QuantumNumbers.from_str("0d3/2"):
@@ -192,7 +188,7 @@ def plot_bars(
                     **kwargs,
                 )
                 ## Annotate C2S
-                ax.annotate(
+                tl = ax.annotate(
                     f"{sf:.2f}",
                     xy=(left - left_padding, ex),
                     ha="center",
@@ -201,18 +197,20 @@ def plot_bars(
                 )
                 ## Annotate Jpi
                 pi = "+" if q.l != 1 else "-"
-                ax.annotate(
+                tr = ax.annotate(
                     f"${q.get_j_fraction()}^{{{pi}}}_{{{j}}}$",
                     xy=(left + width + right_padding, ex),
                     ha="center",
                     va="center",
                     fontsize=10,
                 )
+                texts.append(tl)
+                texts.append(tr)
     # Some axis settings
     ax.set_xticks([i + 0.5 for i in range(nmodels)], labels)
     ax.set_xlim(0, nmodels)
-    ax.tick_params(axis="x", which="both", bottom=False, top=False, pad=15)
+    ax.tick_params(axis="x", which="both", bottom=False, top=False, pad=7)
     ax.tick_params(axis="y", which="both", right=False)
     for spine in ["bottom", "top", "right"]:
         ax.spines[spine].set_visible(False)
-    return None
+    return texts
