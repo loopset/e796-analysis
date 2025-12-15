@@ -1,15 +1,21 @@
 from collections import defaultdict
+
+import matplotlib as mpl
 import pyphysics as phys
 import matplotlib.pyplot as plt
 import matplotlib.axes as mplaxes
+from matplotlib.patches import Patch
 import uncertainties as un
+import numpy as np
 from pathlib import Path
 import re
 
 import sys
 
 sys.path.append("../")
+sys.path.append("./")
 import styling as sty
+import dt
 
 exps = {
     "g0": phys.parse_txt("../../Fits/dt/Outputs/xs/g0_xs.dat", 3),
@@ -66,4 +72,49 @@ ax.set_xlabel(r"$r_{WS}$ [fm]")
 ax.set_ylabel(r"$C^2S$")
 fig.tight_layout()
 fig.savefig(sty.thesis + "systematic_rws.pdf", dpi=300)
+
+# Another sort of figure
+fig, ax = plt.subplots(figsize=(5, 3.5))
+ax: mplaxes.Axes
+# Pick selected rw
+rws = [1.25, 1.28, 1.33]
+colors = [
+    plt.colormaps.get("Blues")(np.linspace(0.25, 0.75, 3)),  # type: ignore
+    plt.colormaps.get("Reds")(np.linspace(0.25, 0.75, 3)),  # type: ignore
+    plt.colormaps.get("Greens")(np.linspace(0.25, 0.75, 3)),  # type: ignore
+]
+hatches = ["---", "\\\\\\", "///"]
+width = 0.2
+for i, key in enumerate(files.keys()):
+    for j, rw in enumerate(rws):
+        val = files[key][rw]
+        val = dt.apply_systematics(val, False)
+        ax.bar(
+            i + (j - 1) * width,
+            width=width,
+            height=un.nominal_value(val),
+            yerr=un.std_dev(val),
+            ec=colors[i][-(j + 1)],
+            fc="none",
+            hatch=hatches[j],
+        )
+ax.set_ylabel(r"$C^{2}S$")
+x = np.array(range(3))
+ax.set_xticks(x)
+ax.set_xticklabels(["g.s", r"$1/2^+_1$", r"$1/2^-_1$"])
+# Theoretical values
+theos = [3.50, 0.15, 0.85]
+for i, theo in enumerate(theos):
+    ax.plot([i - 2 * width, i + 2 * width], [theo] * 2, color=colors[i][-1], ls="--")
+
+# Custom legend
+labels = ["1.25", "1.28", "1.33"]
+patches = []
+for label, hatch in zip(labels, hatches):
+    patch = Patch(fc="none", ec="gray", hatch=hatch, label=label)
+    patches.append(patch)
+ax.legend(handles=patches, title=r"$r_{ws}$ / fm", title_fontsize=16)
+
+fig.tight_layout()
+fig.savefig(sty.thesis + "systematic_rws_reduced.pdf", dpi=300)
 plt.show()

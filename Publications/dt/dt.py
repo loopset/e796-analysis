@@ -49,16 +49,35 @@ sysOMP = 0.11
 sysRWS = 0.1  # preliminary
 
 
-def apply_systematics(x: un.Variable) -> un.Variable:
+def apply_systematics(x: un.Variable, withRWS: bool = True) -> un.Variable:
     sf = un.nominal_value(x)
     norm = sf * sysNorm
     omp = sf * sysOMP
-    rws = sf * sysRWS
+    rws = 0
+    if withRWS:
+        rws = sf * sysRWS
     return x + un.ufloat(0, norm, "sys_norm") + un.ufloat(0, omp, "sys_omp") + un.ufloat(0, rws, "sys_rws")  # type: ignore
+
+
+def parse_iter_v567() -> Dict[str, un.Variable]:
+    import ROOT as r
+
+    r.PyConfig.DisableRootLogon = True  # type: ignore
+    file = r.TFile("/media/Data/E796v2/Publications/dt/Inputs/iter_v567.root")  # type: ignore
+    states = ["v5", "v6", "v7"]
+    ret = {}
+    for state in states:
+        h = file.Get(f"hSF{state}1")  # l = 1
+        val = un.ufloat(h.GetMean(), h.GetStdDev())
+        ret[state] = val
+    return ret
 
 
 def build_df(withSys: bool = True, corrOffset: bool = True) -> pd.DataFrame:
     table = {"name": [], "ex": [], "sf": [], "model": [], "chi": []}
+    # Parse special SF results for v5...7
+    special = ["v5", "v6", "v7"]
+    iterv567 = parse_iter_v567()
     for state, (sfs, q) in assignments.items():
         ex, _ = fit.get(state)
         sf = next((e for e in sfs.get(state) if e.fName == equiv[q]), None)
@@ -68,6 +87,9 @@ def build_df(withSys: bool = True, corrOffset: bool = True) -> pd.DataFrame:
         if sf is None:
             continue
         val = sf.fSF
+        # Override for special states
+        if state in special:
+            val = iterv567[state]
         if withSys:
             val = apply_systematics(val)
         table["sf"].append(val)
@@ -126,12 +148,16 @@ def get_centroids(
     zero = 0
     ret = {}
     for q, vals in data.items():
+        ret[q] = 0
         num = 0
         den = 0
         for val in vals:
             num += (2 * q.j + 1) * val.SF * (val.Ex - zero)  # type: ignore
             den += (2 * q.j + 1) * val.SF  # type: ignore
-        ret[q] = num / den
+        try:
+            ret[q] = num / den
+        except ZeroDivisionError:
+            ret[q] = 0
     return ret
 
 
@@ -198,7 +224,7 @@ def plot_bars(
                 ## Annotate Jpi
                 pi = "+" if q.l != 1 else "-"
                 tr = ax.annotate(
-                    f"${q.get_j_fraction()}^{{{pi}}}_{{{j}}}$",
+                    f"${q.get_j_fraction()}^{{{pi}}}_{{{j + 1}}}$",
                     xy=(left + width + right_padding, ex),
                     ha="center",
                     va="center",
@@ -209,7 +235,7 @@ def plot_bars(
     # Some axis settings
     ax.set_xticks([i + 0.5 for i in range(nmodels)], labels)
     ax.set_xlim(0, nmodels)
-    ax.tick_params(axis="x", which="both", bottom=False, top=False, pad=7)
+    ax.tick_params(axis="x", which="both", bottom=False, top=False, pad=10)
     ax.tick_params(axis="y", which="both", right=False)
     for spine in ["bottom", "top", "right"]:
         ax.spines[spine].set_visible(False)

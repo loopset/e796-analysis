@@ -15,7 +15,7 @@ sys.path.append("../")
 import styling as sty
 import dt
 
-df = dt.build_df(True)[["ex", "sf", "model"]]
+df = dt.build_df()[["ex", "sf", "model"]]
 
 
 def parity(q: phys.QuantumNumbers):

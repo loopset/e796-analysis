@@ -1,4 +1,5 @@
 #include "TCanvas.h"
+#include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TPaveStats.h"
@@ -16,6 +17,7 @@
 
 #include <functional>
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -157,6 +159,16 @@ void iter_v567()
             }
         }
     }
+
+    gSystem->cd(pwd);
+    // Write to disk
+    auto fout {std::make_unique<TFile>("../../../Publications/dt/Inputs/iter_v567.root", "recreate")};
+    for(const auto& map : hs)
+    {
+        for(const auto& [_, h] : map)
+            h->Write();
+    }
+    fout->Close();
 
     std::vector<int> colors {46, 8, 9};
     // Draw

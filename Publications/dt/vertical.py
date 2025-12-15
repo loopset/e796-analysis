@@ -29,6 +29,17 @@ sfo = phys.ShellModel(
     ]
 )
 sfo.add_isospin("../../Fits/dt/Inputs/SM/summary_O19_psdmk2_sfotls.txt")
+
+## Firstly modified SFO-tls
+sfo1 = phys.ShellModel(
+    [
+        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
+        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
+    ]
+)
+df1 = pd.read_excel("../../Fits/dt/Inputs/SM_fited/o19-isospin-ok.xlsx")
+sfo1.add_isospin("../../Fits/dt/Inputs/SM_fited/summary_O19_sfotls_mod.txt", df1)
+
 ## Secondly modified SFO-tls
 sfo2 = phys.ShellModel(
     [
@@ -49,7 +60,7 @@ for key, vals in exp.items():
     expt52[key] = [val for val in vals if un.nominal_value(val.Ex) > exT]
 
 # Settings
-theos = [sfo, sfo2]
+theos = [sfo, sfo1, sfo2]
 for model in theos:
     model.set_max_Ex(20)
     model.set_min_SF(0.09)
@@ -62,8 +73,8 @@ for theo in theos:
     theo.set_allowed_isospin(1.5)
     theos52.append(clone)
 
-fig, ax = plt.subplots(figsize=(9, 6))
-labels = ["Exp", "SFO-tls", "Mod2\nSFO-tls"]
+fig, ax = plt.subplots(figsize=(9, 5.5))
+labels = ["Exp", "SFO-tls", "Mod1 SFO-tls", "Mod2 SFO-tls"]
 # T = 3/2
 t32 = dt.plot_bars([exp, *[m.data for m in theos]], labels, ax=ax)
 # T = 5 / 2
@@ -92,7 +103,7 @@ second_leg = ax.legend(
 ax.add_artist(main_leg)
 
 # Axis settings
-ax.set_ylim(-0.1, 22.5)
+ax.set_ylim(-0.5, 22.5)
 ax.set_ylabel(r"$E_{x}$ [MeV]")
 
 fig.tight_layout()
@@ -108,4 +119,5 @@ adjust_text(
     # arrowprops=dict(arrowstyle="-", color="crimson", ls="dotted"),
 )
 
+fig.savefig(sty.thesis + "vertical.pdf", dpi=300)
 plt.show()

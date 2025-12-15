@@ -80,7 +80,7 @@ barplot = {
         fc="none", ec="green", hatch=r"--"
     ),
     pyphysics.QuantumNumbers.from_str("0p3/2"): dict(
-        fc="none", ec="dimgray", hatch="//"
+        fc="none", ec="slategrey", hatch="//"
     ),
     pyphysics.QuantumNumbers.from_str("0d5/2"): dict(
         fc="none", ec="dodgerblue", hatch=".."

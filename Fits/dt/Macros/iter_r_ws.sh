@@ -14,7 +14,7 @@ echo "In dir: ${current_dir}"
 full_file="${current_dir}/${file}"
 
 # Define values of the real potential
-rs=(1.1 1.15 1.2 1.25 1.3 1.35 1.4 1.45 1.5 1.55)
+rs=(1.1 1.15 1.2 1.25 1.28 1.3 1.33 1.35 1.4 1.45 1.5 1.55)
 # Scaling factor between real and SO potential
 # 1.1 / 1.25
 scale=$(awk 'BEGIN{printf "%.4f\n", (1.10/1.25)}')

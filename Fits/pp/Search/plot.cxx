@@ -91,7 +91,7 @@ BetaSearch FindBeta(TGraphErrors* g)
 void plot()
 {
     // Set states
-    std::vector<std::string> states {"g1_Khan", "g3_Khan", "g1_BG", "g3_BG"};
+    std::vector<std::string> states {"g1_Khan", "g3_Khan", "g1_BG", "g2_BG", "g3_BG"};
     std::vector<Angular::Comparator> comps;
     std::vector<TGraphErrors*> gexps;
     std::vector<TGraphErrors*> gs;

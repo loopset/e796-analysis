@@ -15,7 +15,8 @@ void plot()
 {
     // Read E.Khan data
     auto* gel {new TGraphErrors {"./elastic.dat", "%lg %lg"}};
-    auto* gin {new TGraphErrors {"./inelastic.dat", "%lg %lg"}};
+    // auto* gin {new TGraphErrors {"./inelastic.dat", "%lg %lg"}};
+    auto* gin {new TGraphErrors {"./3minus.dat", "%lg %lg"}};
 
     Angular::Comparator comp {"E.Khan g.s", gel};
     comp.Add("BG", "../Inputs/g0_Khan/fort.201");
@@ -60,7 +61,8 @@ void plot()
         idx++;
     }
     // Our data
-    std::vector<std::string> pp {"../Outputs/xs/g0_xs.dat", "../Outputs/xs/g1_xs.dat"};
+    // std::vector<std::string> pp {"../Outputs/xs/g0_xs.dat", "../Outputs/xs/g1_xs.dat"};
+    std::vector<std::string> pp {"../Outputs/xs/g0_xs.dat", "../Outputs/xs/g3_xs.dat"};
     idx = 0;
     for(const auto& file : pp)
     {

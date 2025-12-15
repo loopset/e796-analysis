@@ -45,7 +45,7 @@ print(f"E. Khan MnMp 2+1 : {ekhan:.2uS}")
 print(f"E. Khan MnMp 2+1 gen : {ekhan_gen:.2uS}")
 
 # Determine which value to use!
-isGen = True
+isGen = False
 print(f"Which formula ? {'Simple' if not isGen else 'Generalised'}")
 
 roots = {}
