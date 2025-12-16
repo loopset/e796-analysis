@@ -97,8 +97,8 @@ void Rebin_Ang()
     xs.TrimX("v3", 7);
     xs.TrimX("v3", 13.5, false);
     xs.TrimX("v4", 6.5);
-    xs.TrimX("v5", 6.5);
-    xs.TrimX("v5", 12, false);
+    // xs.TrimX("v5", 6.5);
+    xs.TrimX("v5", 12.5, false);
     // xs.TrimX("v10", 8);
     // xs.TrimX("v12", 6.5);
     // xs.TrimX("v3", 13.5, false);
@@ -111,7 +111,7 @@ void Rebin_Ang()
     //     xs.TrimX(state, 12.5, false);
     // }
     // xs.TrimX("v4", 13.5, false);
-    xs.TrimX("v7", 7.5);
+    xs.TrimX("v7", 8);
     //////////////////////////////////////
     // // PID mais pequeno
     // for(const auto& state : {"v0", "v1", "v2", "v3", "v4"})

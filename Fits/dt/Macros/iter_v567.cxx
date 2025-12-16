@@ -90,6 +90,14 @@ void iter_v567()
             for(const auto& peak : {"v5", "v6", "v7"})
                 xs.TrimX(peak, 12.5, false);
         },
+        [](Angular::DifferentialXS& xs)
+        {
+            for(const auto& peak : {"v5", "v6", "v7"})
+            {
+                xs.TrimX(peak, 8);
+                xs.TrimX(peak, 12.5, false);
+            }
+        },
     };
 
     // Get current dir

@@ -156,6 +156,27 @@ axs[0].legend(handles=handles)
 for ax in axs:
     ax.set_ylim(0)
 
+# Build df
+stedf = pd.DataFrame()
+for q in [dt.qd52, dt.qs12, dt.qp12, dt.qp32]:
+    dic = {"q": q.format_simple()}
+    for i, lis in enumerate(strens):
+        dic[labels[i]] = [lis[q]]  # type: ignore
+    stedf = pd.concat([stedf, pd.DataFrame(dic)], ignore_index=True)
+
+maxste = [4, 2, 2, 4]
+for i, col in enumerate(labels):
+    stedf[f"{col} ratio"] = stedf[col] / maxste
+
+def fmt(x):
+    if isinstance(x, str):
+        return x
+    if hasattr(x, "nominal_value"):
+        return f"{x:.2uS}"
+    else:
+        return f"{x:.2f}"
+stedf = stedf.map(fmt)
+print(stedf)
 
 # Independent figure with centroids
 fig, ax = plt.subplots(figsize=(7, 4))
@@ -164,8 +185,8 @@ for i, (ste, cent) in enumerate(zip(strens, cents)):
     for q, y in ste.items():
         if q == phys.QuantumNumbers(0, 2, 1.5):
             continue
-        print(f"Centroid {q.format_simple()} = {cent[q]}")
-        print(f"  Strength = {ste[q]}")
+        # print(f"Centroid {q.format_simple()} = {cent[q]}")
+        # print(f"  Strength = {ste[q]}")
         ax.bar(
             x=un.nominal_value(cent[q]),
             height=un.nominal_value(y),

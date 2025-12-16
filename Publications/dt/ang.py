@@ -7,17 +7,17 @@ import matplotlib.pyplot as plt
 import sys
 
 sys.path.append("../")
+sys.path.append("./")
 import styling as sty
+import dt
 
 # Read data
+df = dt.build_df()
 fit = FitInterface("../../Fits/dt/Outputs/fit_juan_RPx.root")
 sfs = SFInterface("../../Fits/dt/Outputs/sfs.root")
 sfs.remove_model("g0", "l = 2 ZR 2FNR")
 rsfs = SFInterface("../../Fits/dt/Outputs/rebin_sfs.root")
 
-# List of states per figure
-# states = [["g0", "g1", "g2", "v0"], ["v1", "v2", "v3", "v4"], ["v5", "v6", "v7", "v8"]]
-states = [["g0", "g1", "g2", "v0", "v1", "v2"], ["v3", "v4", "v5", "v6", "v7"]]
 which = {
     "g0": sfs,
     "g1": sfs,
@@ -28,7 +28,7 @@ which = {
     "v3": rsfs,
     "v4": rsfs,
     "v5": rsfs,
-    "v6": sfs,
+    "v6": rsfs,
     "v7": rsfs,
     "v12": rsfs,
 }
@@ -118,7 +118,7 @@ for i, state in enumerate(sfs.fSFs):
     models = obj.plot_models(state, ax)
 
     # Text annotation
-    ex, _ = fit.get(state)
+    ex = df.loc[df["name"] == state]["ex"].values[0]
     text = (
         (r"$E_{x} = $" + f"{un.nominal_value(ex):.2f}")
         if state != "g0"

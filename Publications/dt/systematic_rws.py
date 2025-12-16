@@ -86,9 +86,14 @@ colors = [
 hatches = ["---", "\\\\\\", "///"]
 width = 0.2
 for i, key in enumerate(files.keys()):
+    print(f"------- State : {key}")
+    ref = 0
     for j, rw in enumerate(rws):
         val = files[key][rw]
         val = dt.apply_systematics(val, False)
+        if j == 0:
+            ref = val
+        val /= ref  # type: ignore
         ax.bar(
             i + (j - 1) * width,
             width=width,
@@ -98,14 +103,13 @@ for i, key in enumerate(files.keys()):
             fc="none",
             hatch=hatches[j],
         )
-ax.set_ylabel(r"$C^{2}S$")
+        print(f"  -> Quotient i / 0 : {un.nominal_value(val) * 100:.2f}")
+
+ax.set_ylabel(r"$C^{2}S / C^{2}S_{1.25}$")
 x = np.array(range(3))
 ax.set_xticks(x)
 ax.set_xticklabels(["g.s", r"$1/2^+_1$", r"$1/2^-_1$"])
-# Theoretical values
-theos = [3.50, 0.15, 0.85]
-for i, theo in enumerate(theos):
-    ax.plot([i - 2 * width, i + 2 * width], [theo] * 2, color=colors[i][-1], ls="--")
+ax.axhline(1, color="crimson", ls="--", lw=0.75)
 
 # Custom legend
 labels = ["1.25", "1.28", "1.33"]
@@ -113,7 +117,8 @@ patches = []
 for label, hatch in zip(labels, hatches):
     patch = Patch(fc="none", ec="gray", hatch=hatch, label=label)
     patches.append(patch)
-ax.legend(handles=patches, title=r"$r_{ws}$ / fm", title_fontsize=16)
+ax.legend(handles=patches, title=r"$r_{0}$ / fm", title_fontsize=16, ncols = 3)
+ax.set_ylim(0, 1.75)
 
 fig.tight_layout()
 fig.savefig(sty.thesis + "systematic_rws_reduced.pdf", dpi=300)

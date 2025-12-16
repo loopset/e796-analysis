@@ -63,7 +63,7 @@ for key, vals in exp.items():
 theos = [sfo, sfo1, sfo2]
 for model in theos:
     model.set_max_Ex(20)
-    model.set_min_SF(0.09)
+    model.set_min_SF(0.07)
 
 # Clone and set isospin
 theos52 = []
