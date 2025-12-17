@@ -1,16 +1,10 @@
-from cProfile import label
 from typing import List, Dict, Union
 
-import matplotlib as mpl
 import pyphysics as phys
-from pyphysics.actroot_interface import FitInterface, SFInterface
 
 import matplotlib.pyplot as plt
 import matplotlib.axes as mplaxes
 import uncertainties as unc
-import uncertainties.unumpy as unp
-import numpy as np
-import ROOT as r
 
 import sys
 
@@ -32,34 +26,39 @@ add.data = {
     dt.qp32: [],
 }
 
-# Path to theoretical files
-path = "../../Fits/dt/"
 # SFO-tls
-sfotls = phys.ShellModel(
+sfo0 = phys.ShellModel(
     [
         "../../Fits/dt/Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1p.txt",
         "../../Fits/dt/Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1n.txt",
     ]
 )
 # Modified SFO-tls
-mod_sfotls = phys.ShellModel(
+sfo1 = phys.ShellModel(
     [
         "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
         "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
     ]
 )
+# Modified2 SFO-tls
+sfo2 = phys.ShellModel(
+    [
+        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1n.txt",
+        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1p.txt",
+    ]
+)
 # Modify all sms applying the same cuts
-for sm in [sfotls, mod_sfotls]:
+for sm in [sfo0, sfo1, sfo2]:
     sm.set_max_Ex(16.5)
-    sm.set_min_SF(0.09)
+    sm.set_min_SF(0.04)
 
 # Binding energies
-snadd = r.ActPhysics.Particle("21O").GetSn()  # type: ignore
-snrem = r.ActPhysics.Particle("20O").GetSn()  # type: ignore
+snadd = phys.Particle("21O").get_sn()
+snrem = phys.Particle("20O").get_sn()
 
 # Run Barager's formula
-labels = ["Exp", "SFO-tls", "Mod1\nSFO-tls"]
-removals = [exp, sfotls, mod_sfotls]
+labels = ["Exp", "SFO-tls", "Mod1\nSFO-tls", "Mod2\nSFO-tls"]
+removals = [exp, sfo0, sfo1, sfo2]
 bars: List[phys.Barager] = []
 for i, removal in enumerate(removals):
     b = phys.Barager()
@@ -67,10 +66,6 @@ for i, removal in enumerate(removals):
     b.set_adding(add, snadd)
     b.do_for([dt.qd52, dt.qs12, dt.qp12, dt.qp32])
     bars.append(b)
-
-# Write to file
-# bars[0].write("./Inputs/dt_barager.pkl")
-
 
 # Compute centroids
 centroids: List[Dict[phys.QuantumNumbers, Union[float, unc.UFloat]]] = []
@@ -80,10 +75,9 @@ for rem in removals:
         data = rem.data
     centroids.append(dt.get_centroids(data))
 
-# Plotting
-fig, axs = plt.subplots(1, 2, figsize=(9, 5))
 # ESPES
-ax: mplaxes.Axes = axs[0]
+fig, ax = plt.subplots(1, 1, figsize=(5.5, 4.25))
+ax: mplaxes.Axes
 for q in [dt.qd52, dt.qs12, dt.qp12, dt.qp32]:
     y = []
     ey = []
@@ -100,24 +94,26 @@ for q in [dt.qd52, dt.qs12, dt.qp12, dt.qp32]:
         markersize=5,
         label=q.format(),
     )
-ax.legend(loc="lower left", bbox_to_anchor=(0, 1.01, 1, 0.075), ncols=2, fontsize=12)
+ax.legend(ncols=2)
 ax.set_ylabel("ESPE [MeV]")
+fig.tight_layout()
+fig.savefig(sty.thesis + "espes.pdf", dpi=300)
 
 # Gaps
-ax = axs[1]
+# ax = axs[1]
 
-gap_labels = ["N = 8", "S.O splitting"]
-for i in range(2):
-    y = []
-    ey = []
-    for j, bar in enumerate(bars):
-        if i == 0:
-            gap = bar.get_gap(dt.qd52, dt.qp12)
-        else:
-            gap = bar.get_gap(dt.qp12, dt.qp32)
-        y.append(unc.nominal_value(gap))
-        ey.append(unc.std_dev(gap))
-    ax.errorbar(labels, y, yerr=ey, marker="o", markersize=5, label=gap_labels[i])
+# gap_labels = ["N = 8", "S.O splitting"]
+# for i in range(2):
+#     y = []
+#     ey = []
+#     for j, bar in enumerate(bars):
+#         if i == 0:
+#             gap = bar.get_gap(dt.qd52, dt.qp12)
+#         else:
+#             gap = bar.get_gap(dt.qp12, dt.qp32)
+#         y.append(unc.nominal_value(gap))
+#         ey.append(unc.std_dev(gap))
+#     ax.errorbar(labels, y, yerr=ey, marker="o", markersize=5, label=gap_labels[i])
 
 # # Draw also centroids
 # for i in range(2):
@@ -132,15 +128,15 @@ for i in range(2):
 #         ey.append(unc.std_dev(gap))
 #     ax.errorbar(labels, y, yerr=ey, marker="s", markersize=5, ls="--", alpha=0.75)
 
-ax.set_ylabel("Gap [MeV]")
-ax.annotate(
-    "Dashed: using centroids\ninstead of ESPEs",
-    xy=(0.5, 0.75),
-    xycoords="axes fraction",
-    fontsize=12,
-    ha="center",
-    va="center",
-)
+# ax.set_ylabel("Gap [MeV]")
+# ax.annotate(
+#     "Dashed: using centroids\ninstead of ESPEs",
+#     xy=(0.5, 0.75),
+#     xycoords="axes fraction",
+#     fontsize=12,
+#     ha="center",
+#     va="center",
+# )
 # # Draw Juan's results
 # d3He_exp = unc.ufloat(5.30, 0.10)
 # d3He_sfo = 5
@@ -160,8 +156,7 @@ ax.annotate(
 #     alpha=0.75,
 #     label="SFO-tls (d,$^{3}$He)",
 # )
-ax.legend(loc="lower left", bbox_to_anchor=(0, 1.01, 1, 0.075), ncols=2, fontsize=12)
+# ax.legend(loc="lower left", bbox_to_anchor=(0, 1.01, 1, 0.075), ncols=2, fontsize=12)
 
-fig.tight_layout()
 # fig.savefig("./Outputs/gap.pdf")
 plt.show()

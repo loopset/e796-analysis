@@ -46,7 +46,7 @@ assignments = {
 # Systematic uncertainties
 sysNorm = 0.0325
 sysOMP = 0.11
-sysRWS = 0.1  # preliminary
+sysRWS = 0.13
 
 
 def apply_systematics(x: un.Variable, withRWS: bool = True) -> un.Variable:
@@ -68,7 +68,7 @@ def parse_iter_v567() -> Dict[str, un.Variable]:
     ret = {}
     for state in states:
         h = file.Get(f"hSF{state}1")  # l = 1
-        val = un.ufloat(h.GetMean(), h.GetStdDev())
+        val = un.ufloat(h.GetMean(), h.GetStdDev(), "iter_v567")
         ret[state] = val
     return ret
 
@@ -80,6 +80,7 @@ def build_df(withSys: bool = True, corrOffset: bool = True) -> pd.DataFrame:
     iterv567 = parse_iter_v567()
     for state, (sfs, q) in assignments.items():
         ex, _ = fit.get(state)
+        ex.tag = "stat_ex"  # type: ignore
         sf = next((e for e in sfs.get(state) if e.fName == equiv[q]), None)
         # Write data
         table["name"].append(state)
@@ -87,6 +88,7 @@ def build_df(withSys: bool = True, corrOffset: bool = True) -> pd.DataFrame:
         if sf is None:
             continue
         val = sf.fSF
+        val.tag = "stat_sf"
         # Override for special states
         if state in special:
             val = iterv567[state]
@@ -101,6 +103,9 @@ def build_df(withSys: bool = True, corrOffset: bool = True) -> pd.DataFrame:
             ex - un.ufloat(un.nominal_value(offset), un.std_dev(offset), "sys_offset")
             for ex in table["ex"]
         ]
+        # Bugfix: g0 systematic error due to offset is null! bc we're substracting the same variable
+        # so they're correlated
+        table["ex"][0] = un.ufloat(0, un.std_dev(offset), "stat_ex")
     return pd.DataFrame(table)
 
 
@@ -240,3 +245,9 @@ def plot_bars(
     for spine in ["bottom", "top", "right"]:
         ax.spines[spine].set_visible(False)
     return texts
+
+
+def print_uncs(x: un.Variable):
+    print(f"Variable: {x:.2uS}")
+    for v, u in x.error_components().items():
+        print(f"  -> {v.tag} : {u:.6f}")
