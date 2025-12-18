@@ -57,7 +57,7 @@ snadd = phys.Particle("21O").get_sn()
 snrem = phys.Particle("20O").get_sn()
 
 # Run Barager's formula
-labels = ["Exp", "SFO-tls", "Mod1\nSFO-tls", "Mod2\nSFO-tls"]
+labels = ["Exp", "SFO-tls", "Mod1", "Mod2"]
 removals = [exp, sfo0, sfo1, sfo2]
 bars: List[phys.Barager] = []
 for i, removal in enumerate(removals):
@@ -67,6 +67,8 @@ for i, removal in enumerate(removals):
     b.do_for([dt.qd52, dt.qs12, dt.qp12, dt.qp32])
     bars.append(b)
 
+qs = [dt.qd52, dt.qs12, dt.qp12, dt.qp32]
+
 # Compute centroids
 centroids: List[Dict[phys.QuantumNumbers, Union[float, unc.UFloat]]] = []
 for rem in removals:
@@ -75,20 +77,32 @@ for rem in removals:
         data = rem.data
     centroids.append(dt.get_centroids(data))
 
+# Compute ESPES
+espes: List[Dict[phys.QuantumNumbers, Union[float, unc.Variable]]] = []
+for bar in bars:
+    dic = {}
+    for q in qs:
+        dic[q] = bar.get_ESPE(q)
+    espes.append(dic)
+
+pairs = [(dt.qs12, dt.qd52), (dt.qd52, dt.qp12), (dt.qp12, dt.qp32)]
+gaps: List[List[Union[float, unc.Variable]]] = []
+# Compute gaps
+for bar in bars:
+    lis = []
+    for top, bottom in pairs:
+        gap = bar.get_gap(top, bottom)
+        lis.append(gap)
+    gaps.append(lis)
+
+fig, axs = plt.subplots(1, 2, figsize=(8, 3.5), constrained_layout=True)
 # ESPES
-fig, ax = plt.subplots(1, 1, figsize=(5.5, 4.25))
-ax: mplaxes.Axes
-for q in [dt.qd52, dt.qs12, dt.qp12, dt.qp32]:
-    y = []
-    ey = []
-    for bar in bars:
-        espe = bar.get_ESPE(q)
-        y.append(unc.nominal_value(espe))
-        ey.append(unc.std_dev(espe))
+ax: mplaxes.Axes = axs[0]
+for q in qs:
     ax.errorbar(
         labels,
-        y,
-        yerr=ey,
+        [unc.nominal_value(dic[q]) for dic in espes],
+        yerr=[unc.std_dev(dic[q]) for dic in espes],
         color=sty.barplot.get(q, {}).get("ec"),
         marker="s",
         markersize=5,
@@ -96,67 +110,23 @@ for q in [dt.qd52, dt.qs12, dt.qp12, dt.qp32]:
     )
 ax.legend(ncols=2)
 ax.set_ylabel("ESPE [MeV]")
-fig.tight_layout()
-fig.savefig(sty.thesis + "espes.pdf", dpi=300)
+
 
 # Gaps
-# ax = axs[1]
+ax = axs[1]
+gaplabels = ["N = 14", "N = 8", "N = 6"]
+gapcolors = ["hotpink", "deepskyblue", "darkorange"]
+for i, label in enumerate(gaplabels):
+    ax.errorbar(
+        labels,
+        [unc.nominal_value(lis[i]) for lis in gaps],
+        yerr=[unc.std_dev(lis[i]) for lis in gaps],
+        label=label,
+        color=gapcolors[i],
+        **sty.errorbar_line
+    )
+ax.set_ylabel("Gap [MeV]")
+ax.legend()
 
-# gap_labels = ["N = 8", "S.O splitting"]
-# for i in range(2):
-#     y = []
-#     ey = []
-#     for j, bar in enumerate(bars):
-#         if i == 0:
-#             gap = bar.get_gap(dt.qd52, dt.qp12)
-#         else:
-#             gap = bar.get_gap(dt.qp12, dt.qp32)
-#         y.append(unc.nominal_value(gap))
-#         ey.append(unc.std_dev(gap))
-#     ax.errorbar(labels, y, yerr=ey, marker="o", markersize=5, label=gap_labels[i])
-
-# # Draw also centroids
-# for i in range(2):
-#     y = []
-#     ey = []
-#     for j, cent in enumerate(centroids):
-#         if i == 0:
-#             gap = cent.get(dt.qd52) - cent.get(dt.qp12)  # type: ignore
-#         else:
-#             gap = cent.get(dt.qp12) - cent.get(dt.qp32)  # type: ignore
-#         y.append(abs(unc.nominal_value(gap)))
-#         ey.append(unc.std_dev(gap))
-#     ax.errorbar(labels, y, yerr=ey, marker="s", markersize=5, ls="--", alpha=0.75)
-
-# ax.set_ylabel("Gap [MeV]")
-# ax.annotate(
-#     "Dashed: using centroids\ninstead of ESPEs",
-#     xy=(0.5, 0.75),
-#     xycoords="axes fraction",
-#     fontsize=12,
-#     ha="center",
-#     va="center",
-# )
-# # Draw Juan's results
-# d3He_exp = unc.ufloat(5.30, 0.10)
-# d3He_sfo = 5
-# ax.fill_betweenx(
-#     [d3He_exp.n - d3He_exp.s, d3He_exp.n + d3He_exp.s],
-#     x1=-0.5,
-#     x2=0.5,
-#     color="turquoise",
-#     alpha=0.75,
-#     label="Exp (d,$^{3}$He)",
-# )
-# ax.hlines(
-#     d3He_sfo,
-#     xmin=1.5,
-#     xmax=3.5,
-#     color="turquoise",
-#     alpha=0.75,
-#     label="SFO-tls (d,$^{3}$He)",
-# )
-# ax.legend(loc="lower left", bbox_to_anchor=(0, 1.01, 1, 0.075), ncols=2, fontsize=12)
-
-# fig.savefig("./Outputs/gap.pdf")
+fig.savefig(sty.thesis + "espes.pdf", dpi=300)
 plt.show()

@@ -1,17 +1,15 @@
 import copy
-import enum
 from typing import Dict, List, Tuple, Union
 import pyphysics as phys
 import hist
 import matplotlib.pyplot as plt
 import matplotlib.axes as mplaxes
-from matplotlib.patches import ConnectionPatch
 import numpy as np
 import uncertainties as un
 import uncertainties.unumpy as unp
 import pandas as pd
-from collections import defaultdict
 from matplotlib.lines import Line2D
+import pickle
 import sys
 
 sys.path.append("./")
@@ -79,6 +77,11 @@ for d in [exp, *[m.data for m in theos]]:
 cents = []
 for d in [exp, *[m.data for m in theos]]:
     cents.append(dt.get_centroids(d))
+
+# Write to disk
+with open("./Inputs/strength_centroids.pkl", "wb") as f:
+    pickle.dump((strens, cents), f)
+
 
 # Compute directly gaps, assuming no population in (d,p) reactions
 # as Bea's paper proves
