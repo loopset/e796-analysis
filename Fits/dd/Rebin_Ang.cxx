@@ -6,6 +6,7 @@
 
 #include "AngDifferentialXS.h"
 #include "AngFitter.h"
+#include "AngGlobals.h"
 #include "AngIntervals.h"
 #include "FitInterface.h"
 #include "Interpolators.h"
@@ -20,6 +21,8 @@
 
 void Rebin_Ang()
 {
+    Angular::ToggleHessErrors();
+
     ROOT::EnableImplicitMT();
 
     ROOT::RDataFrame df {"Sel_Tree", gSelector->GetAnaFile(3, "20O", "2H", "2H")};

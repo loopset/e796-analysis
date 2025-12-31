@@ -22,6 +22,8 @@
 
 void Ang(bool isLab = false)
 {
+    Angular::ToggleHessErrors();
+
     if(isLab)
         Angular::ToggleIsLab();
 
