@@ -26,7 +26,7 @@ p = un.ufloat(mean, sigma)
 print(f"Mean + std = {p:.2uS}")
 
 
-fig, ax = plt.subplots(figsize=(4, 4))
+fig, ax = plt.subplots(figsize=(4.5, 3.5))
 ax.plot(df["Run"], df["Pressure"], marker="o", ms=4, ls="-")
 ax.set_ylim(930, 970)
 ax.axhline(mean, color="crimson", ls="--", lw=1.5)
@@ -34,7 +34,7 @@ ax.annotate(
     rf"$\mu$ = {mean:.1f} mbar", xy=(0.25, 0.85), xycoords="axes fraction", **sty.ann
 )
 ax.annotate(
-    rf"$\sigma$ = {sigma:.1f} mbar", xy=(0.25, 0.8), xycoords="axes fraction", **sty.ann
+    rf"$\sigma$ = {sigma:.1f} mbar", xy=(0.25, 0.775), xycoords="axes fraction", **sty.ann
 )
 
 ax.set_xlabel("Run number")

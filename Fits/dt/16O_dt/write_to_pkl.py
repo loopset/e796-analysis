@@ -8,8 +8,8 @@ qp32 = phys.QuantumNumbers(0, 1, 1.5)
 
 # Experimental dataset
 exp = phys.ShellModel()
-exp.data[qp12] = [phys.ShellModelData(0, 0)]
-exp.data[qp32] = [phys.ShellModelData(6.196, 0)]
+exp.data[qp12] = [phys.ShellModelData(0, 1)] # toy value of SF = 1 so that centroid is non null
+exp.data[qp32] = [phys.ShellModelData(6.196, 1)]
 
 # SFO-tls
 sfo = phys.ShellModel()

@@ -48,9 +48,9 @@ sfo2 = phys.ShellModel(
     ]
 )
 # Modify all sms applying the same cuts
-for sm in [sfo0, sfo1, sfo2]:
-    sm.set_max_Ex(16.5)
-    sm.set_min_SF(0.04)
+# for sm in [sfo0, sfo1, sfo2]:
+#     sm.set_max_Ex(16.5)
+#     sm.set_min_SF(0.04)
 
 # Binding energies
 snadd = phys.Particle("21O").get_sn()
