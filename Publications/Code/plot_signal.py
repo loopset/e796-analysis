@@ -19,7 +19,7 @@ def noisy_gaussian(x):
 x = np.linspace(0, 150, 1000)
 y = noisy_gaussian(x)
 
-fig, ax = plt.subplots(1, 1, figsize=(4.5, 4.5))
+fig, ax = plt.subplots(1, 1, figsize=(4.5, 3.5))
 ax: mplaxes.Axes
 ax.plot(x, y, color="black", lw=1.25)
 ax.set_xlabel("Time bucket")

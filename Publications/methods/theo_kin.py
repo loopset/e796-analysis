@@ -8,9 +8,9 @@ import sys
 sys.path.append("../")
 import styling as sty
 
-channels = ["(p,p)", "(d,d)", "(d,t)"]
+channels = ["(p,p)", "(p,d)", "(d,d)", "(d,t)"]
 exs = [0, 5]
-colors = ["C0", "C1", "C2"]
+colors = ["C0", "C3" ,"C1", "C2"]
 ls = ["solid", "dashed"]
 
 fig, ax = plt.subplots(figsize=(4.5, 3.5), constrained_layout=True)
@@ -23,18 +23,22 @@ for i, channel in enumerate(channels):
             aux = "_"
         ax.plot(kin[0], kin[1], color=colors[i], ls=ls[j], label=aux)
 
-leg = ax.legend(loc=(0.025, 0.45))
+leg = ax.legend(loc=(0.025, 0.425))
 ax.add_artist(leg)
 
 ax.legend(
     handles=[
         Line2D([], [], color="black", label="g.s."),
-        Line2D([], [], color="black", ls="--", label=r"$E_x = 5$ MeV"),
+        Line2D([], [], color="black", ls="--", label=r"5 MeV"),
     ],
-    loc=(0.025, 0.25),
+    # loc=(0.025, 0.25),
+    handlelength=1.5,
+    handletextpad=0.5,
+    loc="upper right",
+    title=r"E$_x$"
 )
-ax.annotate(r"$^{20}$O", xy=(0.1, 0.8), xycoords="axes fraction", **sty.ann)
-ax.set_xlim(0, 90)
+ax.annotate(r"$^{20}$O", xy=(0.1, 0.835), xycoords="axes fraction", **sty.ann)
+ax.set_xlim(0, 95)
 ax.set_ylim(0, 50)
 ax.set_xlabel(r"$\theta_{lab}$ [$\circ$]")
 ax.set_ylabel(r"E$_{lab}$ [MeV]")

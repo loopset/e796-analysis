@@ -7,3 +7,4 @@ include(${ACTROOT}/Scripts.cmake)
 
 #And call function
 add_userlibrary(NAME UserAction SOURCES UserAction.h UserAction.cxx LINK ActAlgorithm)
+add_userlibrary(NAME Task0 SOURCES Task0.h Task0.cxx LINK ActAlgorithm)
