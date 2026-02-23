@@ -149,7 +149,7 @@ ax.annotate(
 )
 
 # Annotations
-ax.annotate(rf"g.s $\times$ {gsfactor:.2f}", xy=(1.4, 180), **sty.ann)
+ax.annotate(rf"g.s. $\times$ {gsfactor:.2f}", xy=(1.4, 180), **sty.ann)
 
 
 # Legend — compact half/half handler

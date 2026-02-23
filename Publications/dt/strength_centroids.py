@@ -78,11 +78,6 @@ cents = []
 for d in [exp, *[m.data for m in theos]]:
     cents.append(dt.get_centroids(d))
 
-# Write to disk
-with open("./Inputs/strength_centroids.pkl", "wb") as f:
-    pickle.dump((strens, cents), f)
-
-
 # Compute directly gaps, assuming no population in (d,p) reactions
 # as Bea's paper proves
 gaps = []
@@ -218,26 +213,25 @@ for theo in theos:
     clone.set_max_Ex(16.5)
     clone.set_min_SF(0.04)
     gatedtheos.append(clone)
-gatedstrens = []
-gatedcents = []
+gatedstrens = [strens[0]]
+gatedcents = [cents[0]]
 for d in [m.data for m in gatedtheos]:
     gatedstrens.append(dt.get_strengths(d))
     gatedcents.append(dt.get_centroids(d))
 
+# Write GATED to disk
+with open("./Inputs/strength_centroids.pkl", "wb") as f:
+    pickle.dump((gatedstrens, gatedcents), f)
+
+
 # plt.close("all")
 # Independent figure with centroids
-fig = plt.figure(figsize=(8.5, 4.5), constrained_layout=True)
-# use 6 columns: bottom three subplots each take 2 cols; top center spans 4 cols (1:5)
-gs = fig.add_gridspec(2, 6, height_ratios=[1, 1])
-axtop = fig.add_subplot(gs[0, 1:5])
-axsbot = [
-    fig.add_subplot(gs[1, 0:2], sharex=axtop, sharey=axtop),
-    fig.add_subplot(gs[1, 2:4], sharex=axtop, sharey=axtop),
-    fig.add_subplot(gs[1, 4:6], sharex=axtop, sharey=axtop),
-]
+fig, axs = plt.subplots(3, 1, figsize=(6, 5.5), sharex=True, constrained_layout=True)
 
 
-def plot_centroids(ste, cent, ax: mplaxes.Axes, **kwargs) -> List[Tuple[float, float]]:
+def plot_centroids(
+    ste, cent, ax: mplaxes.Axes, withLabel=False, **kwargs
+) -> List[Tuple[float, float]]:
     ret = []
     width = 0.5
     for q, x in cent.items():
@@ -250,7 +244,7 @@ def plot_centroids(ste, cent, ax: mplaxes.Axes, **kwargs) -> List[Tuple[float, f
             yerr=un.std_dev(y) if un.std_dev(y) > 0 else None,
             width=width,
             align="center",
-            label=q.format(),
+            label=q.format() if withLabel else None,
             **sty.barplot[q],
             **kwargs,
         )
@@ -259,35 +253,34 @@ def plot_centroids(ste, cent, ax: mplaxes.Axes, **kwargs) -> List[Tuple[float, f
     return ret
 
 
-# Top: experimental
-plot_centroids(strens[0], cents[0], axtop)
-# Bottom: models
-# Gated
-for i in range(3):
-    ax = axsbot[i]
+# Experimental
+ax: mplaxes.Axes = axs[0]
+plot_centroids(strens[0], cents[0], ax, withLabel=True)
+
+# Theo WITH threshold
+for i, ax in enumerate(axs[1:], start=1):
     plot_centroids(gatedstrens[i], gatedcents[i], ax)
-# Full strength
-for i in range(1, 4):
-    ax = axsbot[i - 1]
-    plot_centroids(strens[i], cents[i], ax, ls="--", alpha=0.75)
+# # Theo withouth threshold
+# for i, ax in enumerate(axs[1:], 1):
+#     plot_centroids(strens[i], cents[i], ax, ls="--", alpha=0.75)
 
-# Axis settings
-axtop.set_ylim(0, 4)
-axtop.set_ylabel(r"$\sum C^2S$")
-# axsbot[0].set_ylabel(r"$\sum C^2S$")
-axsbot[1].set_xlabel(r"$E_{x}$ [MeV]")
-leg = axtop.legend(loc="center left", bbox_to_anchor=(1, 0.5))
-leg.set_in_layout(False)
-
-# Annotations
-pos = (0.5, 0.85)
-axtop.annotate(
-    labels[0], xy=pos, xycoords="axes fraction", **sty.ann, fontweight="bold"
-)
-for i, axb in enumerate(axsbot):
-    axb.annotate(
-        labels[i + 1], xy=pos, xycoords="axes fraction", **sty.ann, fontweight="bold"
+# Common settings
+for i, ax in enumerate(axs):
+    ax.set_ylim(0, 4)
+    ax.set_xlim(ax.get_xlim()[0], 15)
+    if i == 0:
+        leg = ax.legend(loc="center right")
+        # leg.set_in_layout(False)
+    # Annotations
+    pos = (0.5, 0.85)
+    ax.annotate(
+        labels[i], xy=pos, xycoords="axes fraction", **sty.ann, fontweight="bold"
     )
+
+fig.supxlabel(
+    r"$\langle E_{x}\rangle$ [MeV]", x=0.55, fontsize=plt.rcParams["axes.labelsize"]
+)
+fig.supylabel(r"$\sum C^2S$", fontsize=plt.rcParams["axes.labelsize"])
 
 fig.savefig(sty.thesis + "centroids.pdf", dpi=300)
 

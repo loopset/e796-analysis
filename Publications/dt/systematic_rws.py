@@ -108,7 +108,7 @@ for i, key in enumerate(files.keys()):
 ax.set_ylabel(r"$C^{2}S / C^{2}S_{1.25}$")
 x = np.array(range(3))
 ax.set_xticks(x)
-ax.set_xticklabels(["g.s", r"$1/2^+_1$", r"$1/2^-_1$"])
+ax.set_xticklabels(["g.s.", r"$1/2^+_1$", r"$1/2^-_1$"])
 ax.axhline(1, color="crimson", ls="--", lw=0.75)
 
 # Custom legend

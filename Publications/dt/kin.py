@@ -31,7 +31,7 @@ h.fill(exp["fThetaLight"], exp["EVertex"])
 exs = [0, 3.15, 4.62, 14.94]
 
 # Figure
-fig, ax = plt.subplots(1, 1, figsize=(5.5, 4.25))
+fig, ax = plt.subplots(1, 1, figsize=(5.5, 3.75))
 ax: mplaxes.Axes
 h.plot(ax=ax, **sty.base2d)
 for ex in exs:
@@ -39,7 +39,7 @@ for ex in exs:
     label = f"{ex:.1f}" if ex > 0 else "g.s"
     ax.plot(theo[0], theo[1], label=label)
 # Legend
-ax.legend(title=r"$E_{x} / MeV$", title_fontsize=12)
+ax.legend(title=r"$E_{x}$ / MeV", title_fontsize=12)
 ## Annotations
 ax.annotate(
     rf"$^{{20}}$O(d,t)",

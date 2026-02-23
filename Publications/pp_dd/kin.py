@@ -38,14 +38,14 @@ for file in files:
 exs = [0, 1.68, 4.1, 5.6]
 
 # Figure
-fig, axs = plt.subplots(1, 2, figsize=(9, 4.5))
+fig, axs = plt.subplots(1, 2, figsize=(9, 4))
 for i, ax in enumerate(axs):
     ax: mplaxes.Axes = axs[i]
     hs[i].plot(ax=ax, **sty.base2d)
     # (p,p)
     if i == 0:
         ax.set_xlim(40, 110)
-        ax.set_ylim(2, 8)
+        ax.set_ylim(2, 12)
         for ex in exs[:2]:
             theo = phys.Kinematics(f"20O(p,p)@700|{ex}").get_line3()
             ax.plot(theo[0], theo[1])
@@ -54,7 +54,14 @@ for i, ax in enumerate(axs):
         ax.set_ylim(2, 12)
         for ex in exs:
             theo = phys.Kinematics(f"20O(d,d)@700|{ex}").get_line3()
-            ax.plot(theo[0], theo[1])
+            aux = "g.s." if ex == 0 else f"{ex:.1f}"
+            ax.plot(theo[0], theo[1], label=aux)
+        ax.legend(
+            loc="center right",
+            title=r"$E_{x}$ / MeV",
+            title_fontsize=12,
+            handlelength=1.5,
+        )
 
     ## Annotations
     ax.annotate(

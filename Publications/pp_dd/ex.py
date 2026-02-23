@@ -75,6 +75,11 @@ for i, fit in enumerate(fits):
         **sty.ann,
     )
 
+# Sn
+for ax in axs:
+    ax.axvline(7.61, ls="--", color="purple")
+    ax.annotate(r"$S_n = 7.6$ MeV", xy=(9.25, 250), **sty.ann)
+
 ax = axs.flat[-1]
 ax.annotate(rf"g.s. $\times$ {scalegs}", xy=(-1.2, 230), **sty.ann)
 ax.annotate(rf"$1^{{st}}\times$ {scales[0]}", xy=(2.7, 230), **sty.ann)

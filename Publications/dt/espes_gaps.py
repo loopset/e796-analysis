@@ -1,3 +1,4 @@
+import pickle
 from typing import List, Dict, Union
 
 import pyphysics as phys
@@ -48,9 +49,9 @@ sfo2 = phys.ShellModel(
     ]
 )
 # Modify all sms applying the same cuts
-# for sm in [sfo0, sfo1, sfo2]:
-#     sm.set_max_Ex(16.5)
-#     sm.set_min_SF(0.04)
+for sm in [sfo0, sfo1, sfo2]:
+    sm.set_max_Ex(16.5)
+    sm.set_min_SF(0.04)
 
 # Binding energies
 snadd = phys.Particle("21O").get_sn()
@@ -94,6 +95,10 @@ for bar in bars:
         gap = bar.get_gap(top, bottom)
         lis.append(gap)
     gaps.append(lis)
+
+# Write ESPES and gaps to disk
+with open("./Inputs/espes_gaps.pkl", "wb") as f:
+    pickle.dump((espes, gaps), f)
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 3.5), constrained_layout=True)
 # ESPES
