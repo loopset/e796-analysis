@@ -110,14 +110,19 @@ result = df2.loc[:, df2.columns.get_level_values(1).isin(["Exp", "0", "1"])]
 print(result.to_latex())
 
 ####################### Gaps with Baranger's formula
+with open("./Inputs/espes_gaps_nogates.pkl", "rb") as f:
+    _, nogaps = pickle.load(f)
 top = ["6", "8", "14"]
+bottom = ["yes", "no"]
+cols = pd.MultiIndex.from_product([top, bottom], names=["gap", "cond"])
 idxs = ["Exp", "SFO-tls", "Mod1", "Mod2"]
 contents = []
 for i, model in enumerate(gaps):
     aux = []
-    for gap in model[::-1]:  # they are in reversed order
-        aux.append(gap)
+    for gated, notgated in zip(model[::-1], nogaps[i][::-1]):
+        aux.append(gated)
+        aux.append(notgated)
     contents.append(aux)
-df3 = pd.DataFrame(contents, columns=top, index=idxs)
+df3 = pd.DataFrame(contents, columns=cols, index=idxs)
 df3 = df3.map(fmt)
 print(df3.to_latex())

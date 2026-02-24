@@ -78,6 +78,10 @@ cents = []
 for d in [exp, *[m.data for m in theos]]:
     cents.append(dt.get_centroids(d))
 
+# Write GATED to disk
+with open("./Inputs/strength_centroids_nogates.pkl", "wb") as f:
+    pickle.dump((strens, cents), f)
+
 # Compute directly gaps, assuming no population in (d,p) reactions
 # as Bea's paper proves
 gaps = []
