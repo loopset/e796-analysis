@@ -20,33 +20,8 @@ import styling as sty
 ## Experimental dataset
 exp = dt.build_sm()
 
-# Unmodified SFO-tls
-sfo = phys.ShellModel(
-    [
-        "../../Fits/dt/Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1n.txt",
-        "../../Fits/dt/Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1p.txt",
-    ]
-)
-# Modified1 SFO-tls
-sfo1 = phys.ShellModel(
-    [
-        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
-        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
-    ]
-)
-# Modified2 SFO-tls
-sfo2 = phys.ShellModel(
-    [
-        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1n.txt",
-        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1p.txt",
-    ]
-)
-
-expMaxE = 15.1
 maxE = 25
-# sfo.set_max_Ex(16.5)
-# sfo2.set_max_Ex(14.75)
-theos = [sfo, sfo1, sfo2]
+theos = dt.build_theos(gated=False)
 asf = hist.axis.Regular(200, 0, 1, name="sf", label="C2S")
 # amodel = hist.axis.StrCategory(["0", "1", "2"], name="m")
 aq = hist.axis.StrCategory(
@@ -166,7 +141,7 @@ for i, q in enumerate(qs):
         ax.set_ylabel(r"$\sum$C$^2$S / max [%]")
     ax.set_xlim(0, maxE)
     ax.set_ylim(0)
-    ax.axvline(expMaxE, ls="--", color="orange")
+    ax.axvline(dt.maxEx, ls="--", color="orange")
 
 # Axis settings
 handles = []
@@ -210,13 +185,8 @@ stedf = stedf.map(fmt)
 print(stedf)
 
 ################################### Centroids
-# Theo models up to same Ex and threshold in C2S
-gatedtheos = []
-for theo in theos:
-    clone = copy.deepcopy(theo)
-    clone.set_max_Ex(16.5)
-    clone.set_min_SF(0.04)
-    gatedtheos.append(clone)
+# Theo models up to the IAS Ex and threshold in C2S
+gatedtheos = dt.build_theos(gated=True)
 gatedstrens = [strens[0]]
 gatedcents = [cents[0]]
 for d in [m.data for m in gatedtheos]:

@@ -14,6 +14,15 @@ import glob
 import os
 import re
 
+import sys
+import os
+cwd = os.getcwd()
+os.chdir("/media/Data/E796v2/Publications/dt/")
+sys.path.append("./")
+import dt
+
+os.chdir(cwd)
+
 files = glob.glob("./Inputs/exp/*.txt")
 pattern = re.compile(r"ex_(\d+)_(\d{2})\.txt$")
 
@@ -113,6 +122,8 @@ for i, ex in enumerate(exs):
         continue
     ## Reanalysis
     sf = comps[i].get_sf("mairle")
+    ## Apply systematic error
+    sf = dt.apply_systematics(sf) #type: ignore
     reana[q].append(phys.ShellModelData(ex, sf))
     ## Mairlie's paper
     mairle[q].append(phys.ShellModelData(ex, paper))

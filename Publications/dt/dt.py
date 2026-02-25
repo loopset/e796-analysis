@@ -6,6 +6,7 @@ from pyphysics.actroot_interface import FitInterface, SFInterface
 import pandas as pd
 import uncertainties as un
 from matplotlib.axes import Axes
+import pickle
 
 import sys
 
@@ -173,6 +174,7 @@ def plot_bars(
     first_call: bool = True,
     width: float = 0.6,
     height: float = 0.25,
+    ilabel: int = 0,
     **kwargs,
 ) -> list:
     nmodels = len(models)
@@ -192,7 +194,7 @@ def plot_bars(
                 color = sty.barplot.get(q, {}).get("ec")
                 ec = color if "hatch" in kwargs else "none"
                 label = None
-                if first_call and (i == 0 and j == 0):
+                if first_call and (i == ilabel and j == 0):
                     label = q.format()
                 ## background bar
                 ax.barh(
@@ -251,3 +253,73 @@ def print_uncs(x: un.Variable):
     print(f"Variable: {x:.2uS}")
     for v, u in x.error_components().items():
         print(f"  -> {v.tag} : {u:.6f}")
+
+
+def build_theos(gated: bool = False, c2s_thresh: float = 0.04) -> List[phys.ShellModel]:
+    path = "/media/Data/E796v2/Fits/dt/Inputs/"
+    sfo = phys.ShellModel(
+        [
+            path + "SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1n.txt",
+            path + "SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1p.txt",
+        ]
+    )
+    # Modified1 SFO-tls
+    sfo1 = phys.ShellModel(
+        [
+            path + "SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
+            path + "SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
+        ]
+    )
+    # Modified2 SFO-tls
+    sfo2 = phys.ShellModel(
+        [
+            path + "SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1n.txt",
+            path + "SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1p.txt",
+        ]
+    )
+    models = [sfo, sfo1, sfo2]
+    if not gated:
+        return models
+
+    # If gated, find Ex of IAS state
+    for i, model in enumerate(models):
+        ps = model.data[qp12]
+        # In Ex range
+        inrange = [val for val in ps if 14 <= un.nominal_value(val.Ex) <= 17]
+        # Max C2S
+        ias = max(inrange, key=lambda val: un.nominal_value(val.SF))
+        # And set that max Ex
+        model.set_max_Ex(un.nominal_value(ias.Ex) + 0.05)  # +0.1 just of float safety
+        model.set_min_SF(c2s_thresh)
+        print(f"Model {i}  IAS Ex : {ias.Ex}")
+    return models
+
+
+# Define max Ex measured in 20(d,t)19O
+maxEx = 15.04
+
+# Threshold in C2S
+minC2S = 0.04
+
+
+def build_mairle_theos(gated: bool = False) -> List[phys.ShellModel]:
+    path = "/media/Data/E796v2/Fits/dt/Mairle_18Odt/Inputs/"
+    sfo = phys.ShellModel(
+        [
+            path + "SFO-tls/log_O18_O17_psdmk2_sfotls_tr_m0p_m1n.txt",
+            path + "SFO-tls/log_O18_O17_psdmk2_sfotls_tr_m0p_m1p.txt",
+        ]
+    )
+    # Mod1 SFO-tls
+    with open(path + "/SFO-tls_mod1/mod1.pkl", "rb") as f:
+        sfo1 = pickle.load(f)
+
+    models = [sfo, sfo1]
+    if not gated:
+        return models
+
+    # Gate with same conditions as for 20O
+    for i, model in enumerate(models):
+        model.set_max_Ex(maxEx + 0.05)
+        model.set_min_SF(minC2S)
+    return models

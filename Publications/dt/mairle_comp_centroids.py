@@ -31,19 +31,11 @@ with open("../../Fits/dt/Mairle_18Odt/Outputs/mairle.pkl", "rb") as f:
     mairle = pickle.load(f)
 
 # Read theoretical
-files = [
-    "../../Fits/dt/Mairle_18Odt/Inputs/SFO-tls/mod1.pkl",
-    "../../Fits/dt/Mairle_18Odt/Inputs/SFO-tls/mod2.pkl",
-]
-theos: List[phys.SMDataDict] = []
-for file in files:
-    with open(file, "rb") as f:
-        sm = pickle.load(f)
-        theos.append(sm.data)
+theos = [m.data for m in dt.build_mairle_theos(gated=False)]
 
 # Build models
 models = [mairle, reana] + theos
-labels = ["Paper", "Reana", "Theo1", "Theo2"]
+labels = ["Paper", "Reana", "SFO-tls", "Mod1"]
 
 # Styles
 styles = {
@@ -112,14 +104,14 @@ axs[0, 1].legend(loc="lower left", bbox_to_anchor=(1.05, 0.25), ncols=1)
 # Plot things
 ax: mplaxes.Axes = axs[0, 0]
 # 0p1/2
-ourp12 = 61  # percent
+ourp12 = 77 # percent
 ax.axvline(ourp12, color=sty.barplot[dt.qp12]["ec"], ls="--")
 # 0p3/2
-ourp32 = 14  # percent
+ourp32 = 26  # percent
 ax.axvline(ourp32, color=sty.barplot[dt.qp32]["ec"], ls="--")
 # Ex cut
 ax = axs[0, 1]
-ourMaxEx = 15.5 # MeV + 0.5 just in case
+ourMaxEx = 15.1 # MeV + 0.1 just in case
 ax.axvline(ourMaxEx, color="crimson", ls="--")
 
 
@@ -209,10 +201,10 @@ axs[1, 1].legend(loc="lower left", bbox_to_anchor=(1.05, 0.25), ncols=1)
 
 # Gap 20O
 # Experimental gap
-ax.axhline(3.79, ls="--", color="dodgerblue", lw=1.5)
+ax.axhline(2.76, ls="--", color="dodgerblue", lw=1.5)
 ax.annotate(
     r"Exp $^{20}$O gap",
-    xy=(-0.25, 3.95),
+    xy=(-0.25, 3),
     ha="center",
     va="center",
     fontsize=12,
@@ -220,10 +212,10 @@ ax.annotate(
 )
 
 # Theoretical gap
-ax.axhline(4.35, ls="--", color="crimson", lw=1.5)
+ax.axhline(4.14, ls="--", color="crimson", lw=1.5)
 ax.annotate(
-    r"SFO-tls-2 $^{20}$O gap",
-    xy=(-0.25, 4.5),
+    r"Mod1 $^{20}$O gap",
+    xy=(-0.25, 4.3),
     ha="center",
     va="center",
     fontsize=12,

@@ -23,37 +23,11 @@ import dt
 # Experimental dt data: removing reaction
 exp = dt.build_sm()
 
-# SFO-tls
-sfo0 = phys.ShellModel(
-    [
-        "../../Fits/dt/Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1p.txt",
-        "../../Fits/dt/Inputs/SM/log_O20_O19_psdmk2_sfotls_tr_j0p_m1n.txt",
-    ]
-)
-# Modified SFO-tls
-sfo1 = phys.ShellModel(
-    [
-        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
-        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
-    ]
-)
-# Modified2 SFO-tls
-sfo2 = phys.ShellModel(
-    [
-        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1n.txt",
-        "../../Fits/dt/Inputs/SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1p.txt",
-    ]
-)
+notgated = dt.build_theos(gated=False)
+notgated.insert(0, exp)  # type: ignore
 
-# Not gated
-notgated = []
-for sm in [sfo0, sfo1, sfo2]:
-    notgated.append(copy.deepcopy(sm))
-
-# Modify all sms applying the same cuts
-for sm in [sfo0, sfo1, sfo2]:
-    sm.set_max_Ex(16.5)
-    sm.set_min_SF(0.04)
+gated = dt.build_theos(gated=True)
+gated.insert(0, exp)  # type: ignore
 
 # Binding energies
 snadd = phys.Particle("21O").get_sn()
@@ -71,7 +45,7 @@ qs = [dt.qd52, dt.qs12, dt.qp12, dt.qp32]
 
 
 # Function to compute gaps
-def compute(data: List[phys.ShellModel]):
+def compute(data: List[Union[phys.SMDataDict, phys.ShellModel]]):
     bars: List[phys.Barager] = []
     for i, removal in enumerate(data):
         b = phys.Barager()
@@ -113,12 +87,10 @@ def compute(data: List[phys.ShellModel]):
 labels = ["Exp", "SFO-tls", "Mod1", "Mod2"]
 
 # With gates
-gated = [exp, sfo0, sfo1, sfo2]
-espes, gaps = compute(gated)
+espes, gaps = compute(gated)  # type: ignore
 
 # NO GATES
-notgated.insert(0, exp)
-noespes, nogaps = compute(notgated)
+noespes, nogaps = compute(notgated)  # type: ignore
 
 # Write ESPES and gaps to disk
 with open("./Inputs/espes_gaps.pkl", "wb") as f:
@@ -163,7 +135,7 @@ fig.savefig(sty.thesis + "espes.pdf", dpi=300)
 
 # New figures for gaps
 # plt.close("all")
-fig, axs = plt.subplots(1, 3, figsize=(8, 2.75), constrained_layout=True)
+fig, axs = plt.subplots(1, 3, figsize=(9, 2.75), constrained_layout=True)
 
 markers = [None, "s", "o", "*"]
 colors = ["green", "dodgerblue", "crimson"]
@@ -208,6 +180,7 @@ axs[0].legend(
     ],
     handlelength=1.5,
     fontsize=12,
+    loc="center left"
 )
 
 # Common settings
@@ -222,5 +195,7 @@ for i, ax in enumerate(axs):
     ax.annotate(
         rf"$N = {labels[i]}$", xy=(0.5, 0.925), xycoords="axes fraction", **sty.ann
     )
+    if i == 0:
+        ax.set_ylabel(r"$\Delta_N$ [MeV]")
 fig.savefig(sty.thesis + "gaps.pdf", dpi=300)
 plt.show()

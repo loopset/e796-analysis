@@ -49,14 +49,7 @@ latex = df[["ex", "Jpi", "sf"]].map(fmt).to_latex(index=False)
 print(latex)
 
 # Mod1 SFO-tls
-sfo1 = phys.ShellModel(
-    [
-        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1n.txt",
-        "../../Fits/dt/Inputs/SM_fited/log_O20_O19_sfotls_mod_tr_j0p_m1p.txt",
-    ]
-)
-sfo1.set_max_Ex(16)
-sfo1.set_min_SF(0.07)  # same as in vertical.pdf
+sfo1 = dt.build_theos(gated=True, c2s_thresh=0.07)[1]  # threshold as in vertical fig
 lis = []
 for q, vals in sfo1.data.items():
     for val in vals:
@@ -72,9 +65,11 @@ print(dfsfo.to_latex(index=False))
 
 
 #################### Centroid/strength table
-with open("./Inputs/strength_centroids.pkl", "rb") as f:
+# gates = ""
+gates = ""
+with open(f"./Inputs/strength_centroids{gates}.pkl", "rb") as f:
     stes, cents = pickle.load(f)
-with open("./Inputs/espes_gaps.pkl", "rb") as f:
+with open(f"./Inputs/espes_gaps{gates}.pkl", "rb") as f:
     espes, gaps = pickle.load(f)
 
 # Build df
@@ -104,9 +99,9 @@ for q in qs:
         lespes.append(espes[i][q])
 contents.append(lespes)
 
-df2 = pd.DataFrame(contents, columns=cols, index=idxs)
-df2 = df2.map(fmt)
+df2 = pd.DataFrame(contents, columns=cols, index=idxs).map(fmt)
 result = df2.loc[:, df2.columns.get_level_values(1).isin(["Exp", "0", "1"])]
+print(("=") * 20, "Centroid ESPE with ", gates, ("=") * 20)
 print(result.to_latex())
 
 ####################### Gaps with Baranger's formula
@@ -123,6 +118,32 @@ for i, model in enumerate(gaps):
         aux.append(gated)
         aux.append(notgated)
     contents.append(aux)
-df3 = pd.DataFrame(contents, columns=cols, index=idxs)
-df3 = df3.map(fmt)
+df3 = pd.DataFrame(contents, columns=cols, index=idxs).map(fmt)
+print(("=") * 20, "Gaps with ESPEs", ("=") * 10)
 print(df3.to_latex())
+
+############################## N=6 evolution
+with open("./Inputs/evolution.pkl", "rb") as f:
+    stes, cents, gaps = pickle.load(f)
+top = ["16O", "18O", "20O"]
+bottom = ["Exp", "SFO-tls", "Mod1"]
+cols = pd.MultiIndex.from_product([top, bottom], names=["nucleus", "model"])
+idxs = ["ste 0p1/2", "cent 0p1/2", "ste 0p3/2", "cent 0p3/2", "gap"]
+contents = []
+# 0p1/2
+for lis in [stes, cents]:
+    aux = []
+    for val in lis:
+        aux.append(val[dt.qp12])
+    contents.append(aux)
+# 0p3/2
+for lis in [stes, cents]:
+    aux = []
+    for val in lis:
+        aux.append(val[dt.qp32])
+    contents.append(aux)
+# Gaps
+contents.append(gaps)
+df4 = pd.DataFrame(contents, columns=cols, index=idxs).map(fmt)
+print(("=") * 20, "Gaps for 16-20O", ("=") * 10)
+print(df4.to_latex())
