@@ -60,6 +60,7 @@ for beta2 in $beta2s; do
             vals[i] = gensub(/^[ \t]+|[ \t]+$/, "", "g", vals[i]);  # Trim leading/trailing whitespace
         }
         ri = vals[2] * 20^(1.0/3)
+        # ri = 1.17 * 20^(1.0/3)
     }
     if ($0 ~ "&POT kp=1 type=11 " par "=") {
         count++
