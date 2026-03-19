@@ -1,44 +1,41 @@
-#include "ActDataManager.h"
-#include "ActKinematics.h"
-#include "ActMergerData.h"
-#include "ActTPCData.h"
-#include "ActTypes.h"
-
+#include "ROOT/RDF/RInterface.hxx"
 #include "ROOT/RDataFrame.hxx"
 #include "Rtypes.h"
 
 #include "TCanvas.h"
-#include "TF1.h"
-#include "TGraphErrors.h"
-#include "TH1.h"
-#include "TMath.h"
+#include "TChain.h"
+#include "TStyle.h"
 
-#include <algorithm>
-#include <cmath>
+#include <iostream>
+#include <string>
+#include <utility>
 #include <vector>
+
 void test()
 {
-    ActRoot::DataManager dataman {"./configs/data.conf"};
-    dataman.SetRuns(155, 156);
-    auto chain {dataman.GetChain()};
-    auto chain2 {dataman.GetChain(ActRoot::ModeType::EFilter)};
-    chain->AddFriend(chain2.get());
+    std::string path {"/media/miguel/bea/"};
+    std::vector<std::pair<std::string, std::string>> files {
+        {"/media/miguel/bea/r0101_000a_merged.root", "/media/miguel/bea/r0101_000a_merged_align.root"},
+        // {"/media/miguel/bea/r0119_000a_merged.root", "/media/miguel/bea/r0119_000a_merged_align.root"}
+    };
 
+    auto* chain {new TChain {"AD"}};
+    auto* other {new TChain {"nAD"}};
+    int idx {0};
+    for(const auto& pair : files)
+    {
+        chain->Add(pair.first.c_str());
+        other->Add(pair.second.c_str());
+    }
+    std::cout<<"Chain entries : "<<chain->GetEntries()<<'\n';
+    std::cout<<"Other entries : "<<other->GetEntries()<<'\n';
+    chain->AddFriend(other);
+
+    // ROOT::EnableImplicitMT();
     ROOT::RDataFrame df {*chain};
-    auto gated {df.Filter("fLightIdx != -1")};
-    auto def {gated.Define("ZsSize",
-                           [](ActRoot::TPCData& tpc, ActRoot::MergerData& merger)
-                           {
-                               std::vector<int> sizes;
-                               for(const auto& voxel : tpc.fClusters[merger.fLightIdx].GetRefToVoxels())
-                               {
-                                   sizes.push_back(voxel.GetZs().size());
-                               }
-                               auto min = *std::max_element(sizes.begin(), sizes.end());
-                               return min;
-                           },
-                           {"TPCData", "MergerData"})};
-    auto h2d {def.Histo2D({"h2d", ";SP.Z [mm];Zs size", 300, 0, 300, 40, 0, 40}, "fSP.fCoordinates.fZ", "ZsSize")};
+    // df.Describe().Print();
+    auto h {df.Histo2D({"hdf", "DF canvas", 750, 0, 500, 1000, 0, 500}, "E_align", "DE_align")};
 
-    h2d->DrawClone("colz");
+    gStyle->SetPalette(kBird);
+    h->DrawClone("colz");
 }

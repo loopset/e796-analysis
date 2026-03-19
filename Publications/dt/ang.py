@@ -146,7 +146,7 @@ for i, state in enumerate(sfs.fSFs):
 axs.flat[-1].axis("off")
 axs.flat[-1].legend(
     handles,
-    [r"$L = 0$", r"$L = 1$", r"$L = 2$"],
+    [r"$\mathit{l} = 0$", r"$\mathit{l} = 1$", r"$\mathit{l} = 2$"],
     labelspacing=0.075,
     borderpad=0.2,
     loc="center",

@@ -31,7 +31,7 @@ h.fill(exp["fThetaLight"], exp["EVertex"])
 exs = [0, 3.15, 4.62, 14.94]
 
 # Figure
-fig, ax = plt.subplots(1, 1, figsize=(5.5, 3.75))
+fig, ax = plt.subplots(1, 1, figsize=(5.5, 4))
 ax: mplaxes.Axes
 h.plot(ax=ax, **sty.base2d)
 for ex in exs:
@@ -43,11 +43,12 @@ ax.legend(title=r"$E_{x}$ / MeV", title_fontsize=12)
 ## Annotations
 ax.annotate(
     rf"$^{{20}}$O(d,t)",
-    xy=(0.15, 0.9),
+    xy=(0.15, 0.8),
     xycoords="axes fraction",
     fontweight="bold",
     **sty.ann,
 )
+phys.utils.annotate_subplots([ax])
 
 fig.tight_layout()
 fig.savefig(sty.thesis + "20O_dt_kin.pdf", dpi=300)

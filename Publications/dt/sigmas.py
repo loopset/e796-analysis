@@ -34,7 +34,7 @@ frees = [free]
 # Limits
 xlim = (-0.5, 3.8)
 
-fig, ax = plt.subplots(figsize=(4.5, 3.5))
+fig, ax = plt.subplots(figsize=(5.5, 4))
 ls = []
 for fit in fits:
     fit: np.polynomial.Polynomial
@@ -43,7 +43,7 @@ for fit in fits:
     ls.append(ax.plot(x, y, ls="--", label="Simu. trend"))
 
 for i, free in enumerate(frees):
-    xfree = np.array(list(free.fEx.values()))
+    xfree = np.array(list(free.fEx.values())) + 0.09 # correct offset
     yfree = np.array(list(free.fSigmas.values()))
     mask = unp.nominal_values(xfree) < 6.2
     ax.errorbar(
@@ -60,6 +60,7 @@ ax.set_ylim(0, 0.7)
 ax.set_xlabel(r"$E_{x}$ [MeV]")
 ax.set_ylabel(r"$\sigma$ [MeV]")
 ax.legend(loc="lower left", ncols=1)
+phys.utils.annotate_subplots([None, ax])
 
 fig.tight_layout()
 fig.savefig(sty.thesis + "exp_sigmas_dt.pdf", dpi=300)
