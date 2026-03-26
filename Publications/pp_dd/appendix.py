@@ -5,6 +5,7 @@ from matplotlib.axes import Axes
 import matplotlib.colors as mplcolor
 import os
 import numpy as np
+import uncertainties as un
 from numpy.typing import NDArray
 
 import sys
@@ -58,13 +59,13 @@ for i, ax in enumerate(axs):
     #     bottom[:, 0], bottom[:, 1], top[:, 1], color=f"C{i + 1}", alpha=0.75
     # )
     ax.set_prop_cycle(color=colors[i])
-    for line in arrays[i]:
+    for line in arrays[i][::2]:
         ax.plot(line[:, 0], line[:, 1])
     ax.set_xlim(5, 50)
 
 phys.utils.annotate_subplots(axs, x=0.825)
 
-pos = [[(20, 60), (20, 0)], [(30, 10), (30, 0.5)]]
+pos = [[(20, 70), (20, 0)], [(30, 30), (30, 0.5)]]
 for i, ax in enumerate(axs):
     ax.annotate(
         labels[i],
@@ -88,5 +89,41 @@ fig.supylabel(
     r"$d\sigma/d\Omega$ [$mb\cdot sr^{-1}$]", fontsize=plt.rcParams["axes.labelsize"]
 )
 
-fig.savefig(sty.thesis + "inelastic_explanation.pdf", dpi=300)
+# fig.savefig(sty.thesis + "inelastic_explanation.pdf", dpi=300)
+
+# Example of beta determination
+finder = phys.BetaFinder(
+    "../../Fits/dd/Outputs/xs/g1_xs.dat", "../../Fits/dd/Search/g1_Daeh/l2/", "202",
+)
+
+plt.close("all")
+fig, ax = plt.subplots(figsize=(4, 3.5))
+finder.plot(ax=ax, marker="o", ms=4, mec="orange", mfc="none", color="orange")
+ax.set_ylim(0, 2)
+ax.set_ylabel("Scaling factor")
+ax.set_xlabel(r"$\beta_{\mathit{l}}$")
+# Hline
+ax.axhline(1, color="black", ls="--")
+# Annotation
+# ax.vlines([un.nominal_value(finder.fBeta)], ymin=[0], ymax=[1], color="darkorange")
+ax.plot(
+    [un.nominal_value(finder.fBeta)],
+    [1],
+    marker="*",
+    ms=12,
+    mfc="none",
+    mec="crimson",
+    zorder=3,
+)
+ax.annotate(
+    r"Exp. $\beta$",
+    xy=(un.nominal_value(finder.fBeta) + 0.015, 1 - 0.05),
+    xytext=(0.5, 0.6),
+    **sty.ann,
+    arrowprops=sty.arrowprops,
+)
+
+fig.tight_layout()
+fig.savefig(sty.thesis + "inelastic_explanation_2.pdf", dpi=300)
+
 plt.show()

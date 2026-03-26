@@ -28,7 +28,7 @@ h = (
 h.fill(exp["fThetaLight"], exp["EVertex"])
 
 ## States to draw
-exs = [0, 3.15, 4.62, 14.94]
+exs = [0, 3.25, 4.72, 15.04]
 
 # Figure
 fig, ax = plt.subplots(1, 1, figsize=(5.5, 4))
@@ -36,7 +36,7 @@ ax: mplaxes.Axes
 h.plot(ax=ax, **sty.base2d)
 for ex in exs:
     theo = phys.Kinematics(f"20O(d,t)@700|{ex}").get_line3()
-    label = f"{ex:.1f}" if ex > 0 else "g.s"
+    label = f"{ex:.1f}" if ex > 0 else "g.s."
     ax.plot(theo[0], theo[1], label=label)
 # Legend
 ax.legend(title=r"$E_{x}$ / MeV", title_fontsize=12)

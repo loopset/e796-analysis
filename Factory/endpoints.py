@@ -1,5 +1,6 @@
 import sys
 import time
+import pyphysics as phys
 
 sys.path.append("../Python/")
 from interfaces import TPCDataInterface
@@ -13,6 +14,9 @@ from scipy.spatial import KDTree
 from sklearn.decomposition import PCA
 from collections import defaultdict
 
+# data = TPCDataInterface("./Inputs/multifragmentation.root", [0])
+# data = TPCDataInterface("./Inputs/3body.root", [0])
+# data = TPCDataInterface("./Inputs/low_angle.root", [0])
 data = TPCDataInterface("./Inputs/base.root", [1])
 
 # fig, ax = plt.subplots(1, 1, figsize=(7, 5))
@@ -152,14 +156,35 @@ ax1, ax2 = axs
 ax1: plt.Axes
 ax2: plt.Axes
 plt.sca(ax1)
-ax1.imshow(grid.T, cmap="managua_r", origin="lower")
+ax1.imshow(grid.T, cmap="managua_r", origin="lower", rasterized=True)
 # data.draw()
-for endp in endpoints:
-    pos = g.nodes[endp]["pos"]
-    ax1.scatter(pos[0], pos[1], color="orange", marker="*", s=75, zorder=4)
-ax1.scatter(best_xy[:, 0] + 0.5, best_xy[:, 1] + 0.5, color="red")
+# for endp in endpoints:
+#     pos = g.nodes[endp]["pos"]
+#     ax1.scatter(pos[0], pos[1], color="orange", marker="*", s=75, zorder=4)
+ax1.scatter(
+    best_xy[:, 0] + 0.5, best_xy[:, 1] + 0.5, s=16, color="red", label="Common path"
+)
 # ax1.scatter(best_xy_common[:, 0] + 0.5, best_xy_common[:, 1] + 0.5, color="dodgerblue")
+
+# Annotate
+ax1.annotate(
+    "Reaction point",
+    xy=(53, 30),
+    xytext=(35, 20),
+    ha="center",
+    va="center",
+    fontsize=14,
+    arrowprops=dict(arrowstyle="->")
+)
+ax1.set_xlabel("X [pad]")
+ax1.set_ylabel("Y [pad]")
+
+ax1.legend()
 #########
 nx.draw(g, ax=ax2, node_size=10)
+ax2.set_title("Undirected graph")
+
+fig.tight_layout()
+fig.savefig("graph.png", dpi=300)
 
 plt.show()

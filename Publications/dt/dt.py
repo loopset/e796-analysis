@@ -278,6 +278,9 @@ def build_theos(gated: bool = False, c2s_thresh: float = 0.04) -> List[phys.Shel
         ]
     )
     models = [sfo, sfo1, sfo2]
+
+    for model in models:
+        model.set_max_Ex(20)
     if not gated:
         return models
 
