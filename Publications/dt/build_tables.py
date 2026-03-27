@@ -66,7 +66,7 @@ print(dfsfo.to_latex(index=False))
 
 #################### Centroid/strength table
 # gates = ""
-gates = ""
+gates = "_nogates"
 with open(f"./Inputs/strength_centroids{gates}.pkl", "rb") as f:
     stes, cents = pickle.load(f)
 with open(f"./Inputs/espes_gaps{gates}.pkl", "rb") as f:

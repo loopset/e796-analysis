@@ -255,6 +255,9 @@ def print_uncs(x: un.Variable):
         print(f"  -> {v.tag} : {u:.6f}")
 
 
+maxExtheo = 20
+
+
 def build_theos(gated: bool = False, c2s_thresh: float = 0.04) -> List[phys.ShellModel]:
     path = "/media/Data/E796v2/Fits/dt/Inputs/"
     sfo = phys.ShellModel(
@@ -279,8 +282,12 @@ def build_theos(gated: bool = False, c2s_thresh: float = 0.04) -> List[phys.Shel
     )
     models = [sfo, sfo1, sfo2]
 
+    # Force an agreement between Exs of theo models
+    if not gated:
+        print(f"Setting maxExtheo = {maxExtheo:.1f}")
     for model in models:
-        model.set_max_Ex(20)
+        model.set_max_Ex(maxExtheo)
+
     if not gated:
         return models
 

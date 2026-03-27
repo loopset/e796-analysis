@@ -20,7 +20,6 @@ import styling as sty
 ## Experimental dataset
 exp = dt.build_sm()
 
-maxE = 25
 theos = dt.build_theos(gated=False)
 asf = hist.axis.Regular(200, 0, 1, name="sf", label="C2S")
 # amodel = hist.axis.StrCategory(["0", "1", "2"], name="m")
@@ -36,7 +35,6 @@ aq = hist.axis.StrCategory(
 hsf = hist.Hist(asf, aq)
 
 for i, theo in enumerate(theos):
-    theo.set_max_Ex(maxE)
     h = hist.Hist.new.Reg(200, 0, 1.5, label=r"$C^2S$").Double()
     if i == 1:  # fill distribution of C2S
         for q, lis in theo.data.items():
@@ -77,7 +75,7 @@ def do_cumulative(
         if lis is None:
             return {}
         ret[q] = ()
-        ex = np.arange(0, maxE, 0.1)
+        ex = np.arange(0, dt.maxExtheo + 5, 0.1)
         y = []
         z = []
         for e in ex:
@@ -135,11 +133,11 @@ for i, q in enumerate(qs):
         xy=(0.85, 0.1),
         xycoords="axes fraction",
         color=color,
-        **sty.ann,
+        **{**sty.ann, "fontsize": 16},
     )
     if i == 0:
         ax.set_ylabel(r"$\sum$C$^2$S / max [%]")
-    ax.set_xlim(0, maxE)
+    ax.set_xlim(0, dt.maxExtheo + 2)
     ax.set_ylim(0)
     ax.axvline(dt.maxEx, ls="--", color="orange")
 

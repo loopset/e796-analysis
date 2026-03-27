@@ -39,7 +39,7 @@ ls = []
 for fit in fits:
     fit: np.polynomial.Polynomial
     fit.domain = xlim  # type:ignore
-    x, y = fit.linspace()
+    x, y = fit.linspace(n=1000)
     ls.append(ax.plot(x, y, ls="--", label="Simu. trend"))
 
 for i, free in enumerate(frees):

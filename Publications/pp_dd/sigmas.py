@@ -40,7 +40,7 @@ ls = []
 for fit in fits:
     fit: np.polynomial.Polynomial
     fit.domain = xlim  # type:ignore
-    x, y = fit.linspace()
+    x, y = fit.linspace(n=1000)
     ls.append(ax.plot(x, y, ls="--"))
 
 for i, free in enumerate(frees):
@@ -60,7 +60,7 @@ ax.set_xlim(*xlim)
 ax.set_ylim(0, 0.5)
 ax.set_xlabel(r"$E_{x}$ [MeV]")
 ax.set_ylabel(r"$\sigma$ [MeV]")
-ax.legend(loc="lower left", ncols=2)
+ax.legend(loc="lower left", ncols=2, handletextpad=0.0)
 
 fig.tight_layout()
 fig.savefig(sty.thesis + "exp_sigmas_pp_dd.pdf", dpi=300)

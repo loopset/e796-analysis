@@ -180,7 +180,7 @@ axs[0].legend(
     ],
     handlelength=1.5,
     fontsize=12,
-    loc="center left"
+    loc="upper left"
 )
 
 # Common settings
