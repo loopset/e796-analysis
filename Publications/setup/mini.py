@@ -189,14 +189,26 @@ bg.annotate(
     fontstyle=fontstyle1,
 )
 
+# right.annotate(
+#     r"$^{20}O$",
+#     xy=(64, 20),
+#     xytext=(90, 20),
+#     ha="center",
+#     va="center",
+#     fontsize=fontsize,
+#     fontweight=fontweight,
+#     fontstyle=fontstyle1,
+#     arrowprops=dict(arrowstyle="->", lw=1),
+# )
+
 # Save!
 plt.savefig("./Outputs/mini_setup.pdf", dpi=300, bbox_inches=None, pad_inches=0.0)
-plt.savefig(
-    "/media/Data/Docs/EuNPC/figures/mini_setup.png",
-    dpi=600,
-    bbox_inches=None,
-    pad_inches=0,
-)
+# plt.savefig(
+#     "/media/Data/Docs/EuNPC/figures/mini_setup.png",
+#     dpi=600,
+#     bbox_inches=None,
+#     pad_inches=0,
+# )
 
 # fig, ax = plt.subplots()
 # h = ev.fHist.project("X", "Z")

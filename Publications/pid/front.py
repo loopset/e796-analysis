@@ -1,34 +1,38 @@
+from typing import List
 import pyphysics as phys
-import uproot
 import hist
-import matplotlib.pyplot as plt
+import uproot
+
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.axes as mplaxes
+import matplotlib.ticker as mpltick
+import matplotlib.colors as mplcolor
 
 import sys
 
 sys.path.append("../")
-from histos import mPID
-from styling import base2d
+import styling as sty
+
+df = uproot.open("../pid/Inputs/pid_front.root:PID_Tree").arrays(["ESil0", "fQave"])  # type: ignore
+
+# Histogram models
+ebins = (400, 0, 40)
+qbins = (800, 0, 2000)
+
+h = (
+    hist.Hist.new.Reg(*ebins, label=r"E$_{sil}$ [MeV]")
+    .Reg(*qbins, label=r"$\Delta$E$_{gas}$ [arb. unit]")
+    .Double()
+)
+h.fill(df["ESil0"], df["fQave"])
+
+# Plot
+fig, ax = plt.subplots(figsize=(5, 4))
+h.plot(ax=ax, **sty.base2d)
 
 
-data = uproot.open("./Inputs/pid_front.root:PID_Tree").arrays(["ESil0", "fQave"])  # type: ignore
-
-# Read cuts
-which = ["2H", "3H"]
-cuts = []
-for w in which:
-    name = f"../../PostAnalysis/Cuts/LightPID/pid_{w}.root"
-    file = uproot.open(name)
-    cuts.append(file["CUTG"].values())
-    
-
-hPID = hist.Hist.new.Reg(*mPID[0], label=r"$\Delta$E$_{\text{Sil}}$ [MeV]").Reg(*mPID[1], label=r"$\Delta$E$_{\text{gas}}$ [arb. unit]").Double()
-hPID.fill(data.ESil0, data.fQave)
-
-fig, ax = plt.subplots(1, 1, figsize=(5,5))
-hPID.plot(**base2d)
-
-
+# Annotate pids
 def annotate(label: str, pos: tuple, l: float, a: float):
     xt = pos[0] + l * np.cos(np.radians(a))
     yt = pos[1] + l * np.sin(np.radians(a))
@@ -36,30 +40,25 @@ def annotate(label: str, pos: tuple, l: float, a: float):
         label,
         xy=pos,
         xytext=(xt, yt),
-        ha="center",
-        va="center",
-        arrowprops=dict(arrowstyle="-"),
-        fontsize=16,
         weight="bold",
+        **sty.ann,
+        arrowprops=sty.arrowprops,
     )
 
 
-labels = ["p", "d", "t", "3He", r"$\mathbf{\alpha}$"]
-poss = [(7.4, 190), (9.7, 250), (11.1, 315), (24, 590), (30.5, 615)]
-d = 20
+parts = ["p", "d", "t", r"$^{3}He$", r"$\mathbf{\alpha}$"]
+## Transfer settings
+pos = [(7.4, 200), (9.20, 250), (10.98, 317), (24, 600), (30.5, 621)]
+d = 30
 a = -75
-ds = [d, d, d, 200, 200]
+ds = [d, d, d, 300, 300]
 ass = [a, a, a, -90, -90]
-for i, l in enumerate(labels):
-    annotate(l, poss[i], ds[i], ass[i])
-# Draw cuts
-for cut in cuts[1:]:
-    ax.plot(cut[0], cut[1], lw=1.25, ls="--", color="crimson", alpha=0.75)
+for i, part in enumerate(parts):
+    annotate(part, pos[i], ds[i], ass[i])
 
-# Axis limits
-# ax.set_xlim(0, 17)
-# ax.set_ylim(0, 950)
+# Common settings
+ax.locator_params(nbins=4)
+
 fig.tight_layout()
-fig.savefig("./Outputs/pid_front.pdf")
-fig.savefig("/media/Data/Docs/EuNPC/figures/pid_front.png", dpi=600)
+fig.savefig("./Outputs/pid_front.pdf", dpi=300)
 plt.show()
