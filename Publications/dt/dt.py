@@ -21,6 +21,7 @@ qp12 = phys.QuantumNumbers(0, 1, 0.5)
 qp32 = phys.QuantumNumbers(0, 1, 1.5)
 qd52 = phys.QuantumNumbers(0, 2, 2.5)
 qs12 = phys.QuantumNumbers(1, 0, 0.5)
+qd32 = phys.QuantumNumbers(0, 2, 1.5)
 
 equiv = {
     qp12: "l = 1",
@@ -74,11 +75,16 @@ def parse_iter_v567() -> Dict[str, un.Variable]:
     return ret
 
 
-def build_df(withSys: bool = True, corrOffset: bool = True) -> pd.DataFrame:
+def build_df(
+    withSys: bool = True, corrOffset: bool = True, dividebyRs: bool = False
+) -> pd.DataFrame:
     table = {"name": [], "ex": [], "sf": [], "model": [], "chi": []}
     # Parse special SF results for v5...7
     special = ["v5", "v6", "v7"]
     iterv567 = parse_iter_v567()
+    accepted_rs = un.ufloat(0.6, 0.1, "accepted_rs")
+    if dividebyRs:
+        print(f"Dividing by accepted Rs : {accepted_rs:.2uS}")
     for state, (sfs, q) in assignments.items():
         ex, _ = fit.get(state)
         ex.tag = "stat_ex"  # type: ignore
@@ -95,6 +101,8 @@ def build_df(withSys: bool = True, corrOffset: bool = True) -> pd.DataFrame:
             val = iterv567[state]
         if withSys:
             val = apply_systematics(val)
+        if dividebyRs:
+            val /= accepted_rs  # type: ignore
         table["sf"].append(val)
         table["model"].append(str(sf.fName))
         table["chi"].append(sf.fChi)
@@ -110,10 +118,12 @@ def build_df(withSys: bool = True, corrOffset: bool = True) -> pd.DataFrame:
     return pd.DataFrame(table)
 
 
-def build_sm(withSys: bool = True, corrOffset: bool = True) -> phys.SMDataDict:
+def build_sm(
+    withSys: bool = True, corrOffset: bool = True, dividebyRs: bool = False
+) -> phys.SMDataDict:
     ret = defaultdict(list)
     # Create dataframe
-    df = build_df(withSys, corrOffset)
+    df = build_df(withSys, corrOffset, dividebyRs)
     for i, row in df.iterrows():
         ex = row["ex"]
         sf = row["sf"]
@@ -175,11 +185,12 @@ def plot_bars(
     width: float = 0.6,
     height: float = 0.25,
     ilabel: int = 0,
+    left_padding: float = 0.075,
+    right_padding: float = 0.075,
+    ann_fontsize: int = 10,
     **kwargs,
 ) -> list:
     nmodels = len(models)
-    left_padding = 0.075
-    right_padding = 0.075
     texts = []
     for i, data in enumerate(models):
         for q, vals in data.items():
@@ -226,19 +237,20 @@ def plot_bars(
                     xy=(left - left_padding, ex),
                     ha="center",
                     va="center",
-                    fontsize=10,
-                )
-                ## Annotate Jpi
-                pi = "+" if q.l != 1 else "-"
-                tr = ax.annotate(
-                    f"${q.get_j_fraction()}^{{{pi}}}_{{{j + 1}}}$",
-                    xy=(left + width + right_padding, ex),
-                    ha="center",
-                    va="center",
-                    fontsize=10,
+                    fontsize=ann_fontsize,
                 )
                 texts.append(tl)
-                texts.append(tr)
+                ## Annotate Jpi
+                if right_padding != -1:
+                    pi = "+" if q.l != 1 else "-"
+                    tr = ax.annotate(
+                        f"${q.get_j_fraction()}^{{{pi}}}_{{{j + 1}}}$",
+                        xy=(left + width + right_padding, ex),
+                        ha="center",
+                        va="center",
+                        fontsize=ann_fontsize,
+                    )
+                    texts.append(tr)
     # Some axis settings
     ax.set_xticks([i + 0.5 for i in range(nmodels)], labels)
     ax.set_xlim(0, nmodels)

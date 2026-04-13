@@ -18,7 +18,7 @@ import dt
 
 ################## Ex and C2S table
 
-df = dt.build_df()[["ex", "sf", "model"]]
+df = dt.build_df(dividebyRs=True)[["ex", "sf", "model"]]
 
 
 def parity(q: phys.QuantumNumbers):
@@ -38,7 +38,7 @@ df["Jpi"] = [
 
 def fmt(val):
     if hasattr(val, "nominal_value"):
-        return f"{val:.2uS}"
+        return f"{val:.1uS}"
     elif isinstance(val, float):
         return f"{val:.2f}"
     else:
@@ -52,6 +52,8 @@ print(latex)
 sfo1 = dt.build_theos(gated=True, c2s_thresh=0.07)[1]  # threshold as in vertical fig
 lis = []
 for q, vals in sfo1.data.items():
+    if q == dt.qd32:
+        continue
     for val in vals:
         lis.append((val.Ex, rf"${q.get_j_fraction()}^{{{parity(q)}}}$", val.SF))
 lis = sorted(lis, key=lambda x: x[0])
@@ -65,8 +67,8 @@ print(dfsfo.to_latex(index=False))
 
 
 #################### Centroid/strength table
-# gates = ""
-gates = "_nogates"
+gates = ""
+# gates = "_nogates"
 with open(f"./Inputs/strength_centroids{gates}.pkl", "rb") as f:
     stes, cents = pickle.load(f)
 with open(f"./Inputs/espes_gaps{gates}.pkl", "rb") as f:
@@ -99,10 +101,20 @@ for q in qs:
         lespes.append(espes[i][q])
 contents.append(lespes)
 
-df2 = pd.DataFrame(contents, columns=cols, index=idxs).map(fmt)
-result = df2.loc[:, df2.columns.get_level_values(1).isin(["Exp", "0", "1"])]
+df2 = pd.DataFrame(contents, columns=cols, index=idxs)
+result = df2.loc[:, df2.columns.get_level_values(1).isin(["Exp", "0", "1"])].map(fmt)
 print(("=") * 20, "Centroid ESPE with ", gates, ("=") * 20)
 print(result.to_latex())
+
+# Strengths
+df2_ste_exp = df2.loc["Ste"].xs("Exp", level="m") / un.ufloat(0.6, 0.1)
+df2_ste_mod1 = df2.loc["Ste"].xs("1", level="m")
+df2_ste = pd.concat([df2_ste_exp, df2_ste_mod1], axis=1)
+maxx = [6, 2, 2, 4]
+df2_ste["Frac exp"] = df2_ste_exp / maxx * 100
+df2_ste["Frac mod1"] = df2_ste_mod1 / maxx * 100
+print("Strengths corrected for Rs Exp | Mod1")
+print(df2_ste.map(fmt).to_latex())
 
 ####################### Gaps with Baranger's formula
 with open("./Inputs/espes_gaps_nogates.pkl", "rb") as f:
