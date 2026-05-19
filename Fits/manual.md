@@ -73,7 +73,7 @@ The form of the OMP employed by FRESCO is:
 $$V(r) = -V_Vf(r, r_V, a_V) - iW_Vf(r, r_W, a_W)$$
 $$ -i4a_SW_S\frac{d}{dr}f(r, r_S, a_S)$$
 $$-(V_{so} + iW_{so})\left(\frac{\hbar}{m_{\pi}c}\right)^2(2\vec{l}\cdot\vec{s})\frac{1}{r}\frac{d}{dr}f(r, r_{so}, a_{so})$$
-where the $f(r, r_i, a_i)$ are usually **Wood-Saxon** functions (`shape=0`). Note the $(\hbar/m_{\pi}c)^2 \simeq 2$ and $\vec{s} = \hbar/2 \vec{\sigma}$ factors when comparing with OMP parametrisations found in the literature.
+where the $f(r, r_i, a_i)$ are usually **Wood-Saxon** functions (`shape=0`). Note the $(\hbar/m_{\pi}c)^2 \simeq 2$ factor and the relation $\vec{s} = \hbar/2 \vec{\sigma}$ for $s=1/2$ (proton, triton) and $\vec{s} = \hbar \vec{\sigma}$ for $s=1$ (deuton) particles when comparing with OMP parametrisations found in the literature.
 
 The different `type`s are:
 

@@ -4,6 +4,9 @@
 
 #include "TCanvas.h"
 #include "TChain.h"
+#include "TF1.h"
+#include "TF1Convolution.h"
+#include "TMath.h"
 #include "TStyle.h"
 
 #include <iostream>
@@ -11,31 +14,34 @@
 #include <utility>
 #include <vector>
 
+double func(double* x, double* p)
+{
+    if(x[0] < 2)
+        return 0;
+    else
+        return TMath::BreitWigner(x[0], 4, 0.5);
+}
+
 void test()
 {
-    std::string path {"/media/miguel/bea/"};
-    std::vector<std::pair<std::string, std::string>> files {
-        {"/media/miguel/bea/r0101_000a_merged.root", "/media/miguel/bea/r0101_000a_merged_align.root"},
-        // {"/media/miguel/bea/r0119_000a_merged.root", "/media/miguel/bea/r0119_000a_merged_align.root"}
-    };
+    // Gauss
+    auto* fg {new TF1 {"g", "TMath::Gaus(x, 0, 0.1)", -5, 10}};
+    // Lorentz
+    // auto* fl {new TF1 {"l", "TMath::BreitWigner(x, 4, 0.5)", -5, 10}};
+    auto* fl {new TF1 {"l", func, -5, 10, 0}};
 
-    auto* chain {new TChain {"AD"}};
-    auto* other {new TChain {"nAD"}};
-    int idx {0};
-    for(const auto& pair : files)
-    {
-        chain->Add(pair.first.c_str());
-        other->Add(pair.second.c_str());
-    }
-    std::cout<<"Chain entries : "<<chain->GetEntries()<<'\n';
-    std::cout<<"Other entries : "<<other->GetEntries()<<'\n';
-    chain->AddFriend(other);
+    // Convolution
+    auto* conv {new TF1Convolution {fl, fg}};
+    conv->SetNofPointsFFT(1000);
+    auto* fwrap {new TF1 {"fwrap", *conv, -5, 10, conv->GetNpar()}};
+    fwrap->SetNpx(1000);
 
-    // ROOT::EnableImplicitMT();
-    ROOT::RDataFrame df {*chain};
-    // df.Describe().Print();
-    auto h {df.Histo2D({"hdf", "DF canvas", 750, 0, 500, 1000, 0, 500}, "E_align", "DE_align")};
-
-    gStyle->SetPalette(kBird);
-    h->DrawClone("colz");
+    // Draw
+    auto* c0 {new TCanvas {"c0", "Conv canvas"}};
+    fl->SetLineColor(8);
+    fl->Draw();
+    fg->SetLineColor(kRed);
+    fg->Draw("same");
+    fwrap->SetLineColor(kBlue);
+    fwrap->Draw("same");
 }
