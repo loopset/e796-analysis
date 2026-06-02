@@ -166,4 +166,5 @@ ax.legend(
     fontsize=12,
 )
 fig.savefig("./Outputs/ex.pdf", dpi=300)
+fig.savefig("./Outputs/ex.png", dpi=300)
 plt.show()
