@@ -36,6 +36,7 @@ ax.set_ylim(0, 100)
 
 for i, q in enumerate(qs):
     y = divided[q]
+    color = sty.barplot[q]["ec"]
     ax.bar(
         i,
         height=un.nominal_value(y),  # type: ignore
@@ -43,7 +44,10 @@ for i, q in enumerate(qs):
         width=0.25,
         align="center",
         label=q.format(),
-        **sty.barplot[q],
+        fc=color,
+        ec=color,
+        alpha=0.5,
+        # **sty.barplot[q],
     )
     fig.savefig(f"./Outputs/strength_{i}.png", dpi=300)
 
