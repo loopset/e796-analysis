@@ -27,11 +27,11 @@ ax.set_ylim(0, 6)
 ax.set_xlim(-0.5, 2.5)
 
 # Mn/Mp = 1
-ax.axhline(1, ls="--", color="black")
+ax.axhline(1.5, ls="--", color="black")
 
 # Spans
-ax.axhspan(0, 1, color="crimson", alpha=0.1)
-ax.axhspan(1, 6, color="dodgerblue", alpha=0.1)
+ax.axhspan(0, 1.5, color="crimson", alpha=0.1)
+ax.axhspan(1.5, 6, color="dodgerblue", alpha=0.1)
 
 # Savefig
 fig.savefig("./Outputs/mnmp.png", dpi=300)
