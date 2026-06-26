@@ -24,7 +24,7 @@ qd52 = phys.QuantumNumbers(0, 2, 2.5)
 qs12 = phys.QuantumNumbers(1, 0, 0.5)
 qs = [qd52, qs12, qp12, qp32]
 
-maxoccupancies = {qd52: 4, qs12: 2, qp12: 2, qp32: 4}
+maxoccupancies = {qd52: 6, qs12: 2, qp12: 2, qp32: 4}
 divided = {q: v / maxoccupancies[q] * 100 for q, v in stes[0].items()}
 
 fig, ax = plt.subplots(1, 1, figsize=(4, 3), constrained_layout=True)
