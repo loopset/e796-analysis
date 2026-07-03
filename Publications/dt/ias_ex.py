@@ -18,6 +18,8 @@ import styling as sty
 import dt
 import histos
 
+plt.rcParams["axes.labelsize"] = 16
+
 ## Ex comparison
 hjuan = uproot.open("./Inputs/Ex_and_fitted_states_Extended_update.root")["htot"].to_hist()  # type: ignore
 hjuan.axes[0].label = r"E$_{\text{x}}$ [MeV]"
@@ -44,7 +46,7 @@ hgs.reset()
 hgs.fill(exdt[exdt.Ex < excut].Ex)
 hgs *= gsfactor
 # Transform Juan's to (d,t) by a shift
-bediff = 14.9  # MeV difference
+bediff = 15.1  # MeV difference
 hdiff = hist.Hist.new.Reg(nbins, xmin, xmax).Double()
 values = hjuan.values()
 for i, value in enumerate(values):
@@ -57,10 +59,9 @@ hdiff *= jfactor
 
 
 # Plot
-fig, ax = plt.subplots(1, 1, figsize=(6, 4))
+fig, ax = plt.subplots(1, 1, figsize=(5, 3))
 ax: mplaxes.Axes
 ## (d,t)
-ax.set_title("$^{20}$O(d,t)")
 hgs[:gsbin].plot(ax=ax, label=r"(d,t)", color="dodgerblue", **sty.base1d)  # type: ignore
 hdt[gsbin:].plot(ax=ax, color="dodgerblue", **sty.base1d)  # type: ignore
 hdiff.plot(ax=ax, color="crimson", label=r"(d,$^3$He)", **sty.base1d)
@@ -83,7 +84,8 @@ ax.set_xlim(-3, 40)
 #     ax.axvline(un.nominal_value(ex), 0, 0.75, color="crimson", ls="dashed", lw=1.5)  # type: ignore
 ax.axvline(bediff, color="green", ls="--", lw=1.25)
 fig.tight_layout()
-fig.savefig("/media/Data/Docs/SSW/figures/ias.png", dpi=300)
+# fig.savefig("/media/Data/Docs/SSW/figures/ias.png", dpi=300)
+fig.savefig("./Outputs/ias_ex.png", dpi=300)
 
 ## Miscellanea
 # Read data
@@ -186,7 +188,7 @@ ax.set_xlabel(r"E$_{\mathrm{x}}$ [MeV]")
 ax.set_ylabel(r"C$^{2}$S")
 
 fig.tight_layout()
-fig.savefig("./Outputs/d_3he_isospin.pdf")
+# fig.savefig("./Outputs/d_3he_isospin.pdf")
 # plt.close(fig)
 
 plt.show()

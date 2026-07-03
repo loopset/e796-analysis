@@ -75,6 +75,7 @@ void Ang(bool isLab = false)
     fitter.Run();
     fitter.Draw();
     fitter.DrawCounts();
+
     if(!isLab)
         fitter.Write("./Outputs/fitter.root");
 
