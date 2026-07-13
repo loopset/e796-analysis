@@ -81,8 +81,8 @@ width = 0.9
 left.plot([0.5] * 2, [0.5 - width / 2, 0.5 + width / 2], color="orchid", lw=4)
 
 # Front silicons
-top.plot([0.5 - width / 2, 0.5 + width / 2], [0.5] * 2, color="orange", lw=4)
-top.plot([0.5 - width / 2, 0.5 + width / 2], [0.7] * 2, color="gold", lw=4)
+top.plot([0.5 - width / 2, 0.5 + width / 2], [0.6] * 2, color="orange", lw=4)
+# top.plot([0.5 - width / 2, 0.5 + width / 2], [0.7] * 2, color="gold", lw=4)
 
 # CFA
 cfa_x = 0.6
@@ -107,7 +107,7 @@ fontstyle1 = "normal"
 fontstyle2 = "italic"
 bg.annotate(
     "",
-    xy=(0.35, 0.9),
+    xy=(0.35, 0.915),
     xytext=(0.35, 0.76),
     arrowprops=dict(
         arrowstyle="<->", facecolor="black", shrinkA=0.0, shrinkB=0, lw=1.5
@@ -131,8 +131,8 @@ bg.annotate(
     va="center",
 )
 bg.annotate(
-    "Left\nsilicons",
-    xy=(0.1, 0.15),
+    "Left\nSi detectors",
+    xy=(0.125, 0.15),
     fontsize=fontsize,
     fontweight=fontweight,
     fontstyle=fontstyle2,
@@ -140,8 +140,8 @@ bg.annotate(
     va="center",
 )
 bg.annotate(
-    "Front\nsilicons",
-    xy=(0.175, 0.925),
+    "Front\nSi detectors",
+    xy=(0.165, 0.925),
     fontsize=fontsize,
     fontweight=fontweight,
     fontstyle=fontstyle2,

@@ -101,6 +101,11 @@ for idx, data in enumerate([stes[0], adding]):
             alpha=0.5 if idx == 0 else 1,
         )
         bottoms[q] = y
+
+# Draw reduction line
+ax.axhline(60, color="dimgray", ls="--", zorder=1)
+ax.axhspan(50, 70, color="dimgray", alpha=0.2, ec="none", zorder=1)
+
 fig.savefig("./Outputs/strength_both.png", dpi=300)
 
 plt.show()

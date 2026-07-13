@@ -131,7 +131,7 @@ bg.annotate(
     va="center",
 )
 bg.annotate(
-    "Left\nsilicons",
+    "Left\nSi layer",
     xy=(0.1, 0.15),
     fontsize=fontsize,
     fontweight=fontweight,
@@ -140,7 +140,7 @@ bg.annotate(
     va="center",
 )
 bg.annotate(
-    "Front\nsilicons",
+    "Front\nSi layers",
     xy=(0.175, 0.925),
     fontsize=fontsize,
     fontweight=fontweight,

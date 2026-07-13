@@ -1,0 +1,50 @@
+16C(d,t)15C 17 AMeV FR DWBA HaixiaAn+GDP08
+NAMELIST
+ &FRESCO hcm=0.075 rmatch=60 rintp=0.075 hnl=0.075 rnl=5.0 centre=0.0
+         jtmin=0.0 jtmax=30
+         absend=-0.0100 jump(1:6:1)= 0  0  0  0  0  0 jbord(1:6)=0  0  0  0  0.0  0.0
+	 kqmax=0
+	 thmin=0.0 thmax=-180.0 thinc=1.0 cutl=-1.6 cutr=0 cutc=0 ips=0.0000 
+         it0=1 iter=1 iblock=0 pade=0 nnu=36 chans=1 smats=2 nlpl=1
+         xstabl=1 elab(1:4)=34  0  0  0 nlab(1:3)= 0  0  0 
+         unitmass=1.000000 finec=137.03599  /
+
+ &PARTITION namep='deuteron' massp=2.0136 zp=1 namet='16C' masst=16.0114 zt=6 qval=0.000 pwf=F nex=1 /
+ &STATES jp=1.0 bandp=+1 ep=0.0   cpot=1  jt=0.0 bandt=+1 et=0.0 /
+
+ &PARTITION namep='triton' massp=3.0155 zp=1 namet='15C' masst=15.0073 zt=6 qval=2.007 pwf=F nex=2 /
+ &STATES jp=0.5 bandp=+1 ep=0.0   cpot=4  jt=0.5 bandt=+1 et=0.0 /
+ &STATES           copyp=+1       cpot=4  jt=2.5 bandt=+1 et=0.74 /
+
+&partition /
+ 
+ &POT kp=1 type=0  ap=0 at=16 rc=1.303 ac=0.0 /
+ &POT kp=1 type=1 shape=0 p1=85.047 p2=1.149 p3=0.751 p4=3.219 p5=1.345 p6=0.603 /
+ &POT kp=1 type=2 shape=0                             p4=9.790 p5=1.394 p6=0.687 /
+ &POT kp=1 type=3 shape=0 p1=1.779 p5=0.972 p6=1.011 /
+
+ &POT kp=2 type=0  ap=0 at=1 rc=2.0 /
+ &POT kp=2 type=1 shape=0  p1=172.88  p2=0.56 p3=0.69 /
+ &POT kp=2 type=1 shape=2 p1=-198.812 p2=0.0  p3=0.64 /
+
+ &POT kp=3 type=0  ap=0 at=15 rc=1.25 ac=0.0 /
+ &POT kp=3 type=1 shape=0 p1=50.0 p2=1.25 p3=0.65 /
+ &POT kp=3 type=3 shape=0 p1=6.0  p2=1.25 p3=0.65 /
+
+ &POT kp=4 type=0  ap=0 at=15 rc=1.289 ac=0.0 /
+ &POT kp=4 type=1 shape=0 p1=113.696 p2=1.105 p3=0.82  p4=3.498 p5=1.257 p6=0.84 /
+ &POT kp=4 type=2 shape=0                             p4=13.775 p5=1.257 p6=0.84 /
+
+&pot /
+
+ &OVERLAP kn1=1 kn2=1 ic1=2 ic2=1 in=-1 kind=0 nn=1 l=0 lmax=0 sn=0.5 j=0.5 kbpot=2 krpot=0 be=6.2572 isc=1 ipc=4 nfl=0 /
+ &OVERLAP kn1=2 kn2=2 ic1=1 ic2=2 in=-2 kind=0 nn=2 l=0 lmax=0 sn=0.5 j=0.5 kbpot=3 krpot=0 be=4.250  isc=1 ipc=4 nfl=-22 /
+ &OVERLAP kn1=3 kn2=3 ic1=1 ic2=2 in=-2 kind=0 nn=1 l=2 lmax=0 sn=0.5 j=2.5 kbpot=3 krpot=0 be=4.990  isc=1 ipc=4 nfl=0 /
+&overlap /
+
+&COUPLING
+ icto=-2 icfrom=1 kind=7 ip1=1 ip2=0 ip3=0 /
+ &CFP in=1 ib=1 ia=1 kn=1 a=1.140175 /
+ &CFP in=2 ib=1 ia=1 kn=2 a=1.0 /
+ &CFP in=2 ib=1 ia=2 kn=3 a=1.0 /
+&coupling /
