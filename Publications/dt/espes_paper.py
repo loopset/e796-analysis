@@ -74,12 +74,14 @@ for i in [0, 1, 2]:
     plot(ax, data=espe_gated[i], idx=i)
 # NO GATED
 for i in [1, 2]:
-    plot(ax, data=espe_nogated[i], idx=i, ls="--", qargs=[dt.qp12, dt.qp32])
+    plot(ax, data=espe_nogated[i], idx=i, ls="--", qargs=[dt.qp12, dt.qp32], alpha=0.75)
 
 # Axis settings
 ax.set_xticks(list(range(len(labels))), labels)
 ax.tick_params(axis="x", which="both", bottom=False, top=False)
+ax.set_ylabel(r"$\nu$ ESPE [MeV]")
 ax.set_ylim(-25, 0)
+ax.set_xlim(-1.5, 2.6)
 
 # # Grid?
 # ax.grid(axis="y", which="major", lw=0.5)
@@ -101,8 +103,9 @@ ax.set_ylim(-25, 0)
 # )
 
 # Annotations
-ax.set_xlim(-0.85)
-for q in [dt.qs12, dt.qd52, dt.qp12, dt.qp32]:
+qs = [dt.qs12, dt.qd52, dt.qp12, dt.qp32]
+magic = [14, 8, 6]
+for i, q in enumerate(qs):
     color = sty.barplot[q]["ec"]
     y = un.nominal_value(espe_gated[0][q])
     ax.annotate(
@@ -113,8 +116,13 @@ for q in [dt.qs12, dt.qd52, dt.qp12, dt.qp32]:
         fontsize=14,
         color=color,
     )
+    if i < 3:
+        yc = (y + un.nominal_value(espe_gated[0][qs[i + 1]])) / 2
+        ax.annotate(
+            f"N = {magic[i]}", xy=(-1.05, yc), ha="center", va="center", fontsize=12
+        )
 
-ax.set_ylabel("ESPE [MeV]")
+
 
 fig.savefig("../paper/Outputs/espes.pdf", dpi=300)
 
