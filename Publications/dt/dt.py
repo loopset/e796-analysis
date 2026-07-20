@@ -270,7 +270,9 @@ def print_uncs(x: un.Variable):
 maxExtheo = 20
 
 
-def build_theos(gated: bool = False, c2s_thresh: float = 0.04) -> List[phys.ShellModel]:
+def build_theos(
+    gated: bool = False, c2s_thresh: float = 0.04, with_ysox: bool = False
+) -> List[phys.ShellModel]:
     path = "/media/Data/E796v2/Fits/dt/Inputs/"
     sfo = phys.ShellModel(
         [
@@ -292,7 +294,17 @@ def build_theos(gated: bool = False, c2s_thresh: float = 0.04) -> List[phys.Shel
             path + "SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1p.txt",
         ]
     )
+
+    # YSOX
+    ysox = phys.ShellModel(
+        [
+            path + "SM/log_O20_O19_ysox_tr_j0p_m1n.txt",
+            path + "SM/log_O20_O19_ysox_tr_j0p_m1p.txt",
+        ]
+    )
     models = [sfo, sfo1, sfo2]
+    if with_ysox:
+        models.append(ysox)
 
     # Force an agreement between Exs of theo models
     if not gated:
