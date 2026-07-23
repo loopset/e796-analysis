@@ -1,0 +1,19 @@
+# --- Verbosity control (keep output clean) ---
+/control/verbose 0
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/process/verbose 0
+/process/em/verbose 0
+/process/had/verbose 0
+/analysis/verbose 1
+
+# --- Initialize run (builds physics tables, geometry) ---
+# /run/setCutForAGivenParticle e- 40 cm
+/run/initialize
+# Printing of events
+/run/printProgress 100
+
+# --- Run the simulation ---
+/run/beamOn 5
+
