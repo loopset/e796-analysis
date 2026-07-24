@@ -9,11 +9,11 @@
 /analysis/verbose 1
 
 # --- Initialize run (builds physics tables, geometry) ---
-# /run/setCutForAGivenParticle e- 40 cm
+# Disable secondary e-
+/run/setCutForAGivenParticle e- 40 cm
 /run/initialize
 # Printing of events
-/run/printProgress 100
+/run/printProgress 1000
 
 # --- Run the simulation ---
-/run/beamOn 5
-
+/run/beamOn 100000
