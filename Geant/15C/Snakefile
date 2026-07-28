@@ -1,0 +1,35 @@
+exs = ["0", "0.74"]
+forts = [202, 203]
+dic = dict(zip(exs, forts))
+
+rule all:
+    input:
+        expand("geant_15C_{ex}.done", ex=exs)
+
+rule edit_config:
+    input:
+        "geant_15C.conf"
+    output:
+        "geant_15C_{ex}.conf"
+    params:
+        ex=lambda wc : wc.ex,
+        fort=lambda wc : dic[wc.ex]
+    run:
+        with open(input[0]) as f:
+            lines = f.readlines()
+        with open(output[0], "w") as f:
+            for line in lines:
+                if line.startswith("Reaction:"):
+                    f.write(f"Reaction:16N(d,3He)15C@640|{params.ex}\n")
+                elif line.startswith("CrossSection:"):
+                    f.write(f"CrossSection:/media/Data/E796v2/Geant/15C/Inputs/xs/gs/fort.{params.fort}\n")
+                else:
+                    f.write(line)
+
+rule call_geant:
+    input:
+        "geant_15C_{ex}.conf"
+    output:
+        touch("geant_15C_{ex}.done")
+    shell:
+        "actgeant -m run.mac -t 4 -g {input}"
