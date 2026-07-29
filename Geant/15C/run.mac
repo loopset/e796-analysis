@@ -6,14 +6,15 @@
 /process/verbose 0
 /process/em/verbose 0
 /process/had/verbose 0
+/run/particle/verbose 0
 /analysis/verbose 1
 
 # --- Initialize run (builds physics tables, geometry) ---
 # Disable secondary e-
-/run/setCutForAGivenParticle e- 40 cm
+/run/setCutForAGivenParticle e- 2 m
 /run/initialize
 # Printing of events
-/run/printProgress 1000
+/run/printProgress 10000
 
 # --- Run the simulation ---
-/run/beamOn 200000
+/run/beamOn 300000

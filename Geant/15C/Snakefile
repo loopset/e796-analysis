@@ -1,17 +1,34 @@
-exs = ["0", "0.74"]
-forts = [202, 203]
-dic = dict(zip(exs, forts))
+# Get from config file
+reaction = config["reaction"]
+exs = config["exs"]
+xspath = config["xspath"]
+dic = config["dic"]
+iterOn = config["iterOn"]
+
+# Apply iter procedure
+if iterOn:
+    iterWhat = config["iterWhat"]
+    iterDict = config["iterDict"]
+    iterKeys = list(iterDict.keys())
+else:
+    iterWhat = "final"
+    iterDict = {".": None}
+    iterKeys = ["."]
+
+# Build template for output dir
+OUT_DIR = f"{iterWhat}/{{iter}}"
 
 rule all:
     input:
-        expand("geant_15C_{ex}.done", ex=exs)
+        expand(f"{OUT_DIR}/geant_{{ex}}.done", iter=iterKeys, ex=exs)
 
 rule edit_config:
     input:
-        "geant_15C.conf"
+        "geant.conf"
     output:
-        "geant_15C_{ex}.conf"
+        f"{OUT_DIR}/geant_{{ex}}.conf"
     params:
+        iter=lambda wc : iterDict[wc.iter],
         ex=lambda wc : wc.ex,
         fort=lambda wc : dic[wc.ex]
     run:
@@ -19,17 +36,28 @@ rule edit_config:
             lines = f.readlines()
         with open(output[0], "w") as f:
             for line in lines:
+                # Ex variation
                 if line.startswith("Reaction:"):
-                    f.write(f"Reaction:16N(d,3He)15C@640|{params.ex}\n")
+                    f.write(f"Reaction: 16N{reaction}@640|{params.ex}\n")
                 elif line.startswith("CrossSection:"):
-                    f.write(f"CrossSection:/media/Data/E796v2/Geant/15C/Inputs/xs/gs/fort.{params.fort}\n")
+                    if xspath:
+                        f.write(f"CrossSection: {xspath}/fort.{params.fort}\n")
+                    else:
+                        f.write(f"CrossSection:\n")
+                # Fraction of gas variation
+                elif iterOn and line.startswith(iterWhat + ":"):
+                    f.write(f"{iterWhat}: {params.iter}\n")
                 else:
                     f.write(line)
 
 rule call_geant:
     input:
-        "geant_15C_{ex}.conf"
+        f"{OUT_DIR}/geant_{{ex}}.conf"
     output:
-        touch("geant_15C_{ex}.done")
+        temp(touch(f"{OUT_DIR}/geant_{{ex}}.done"))
     shell:
-        "actgeant -m run.mac -t 4 -g {input}"
+        """
+        cd {iterWhat}/{wildcards.iter}
+        mkdir -p Outputs/dedx
+        actgeant -m ../../run.mac -t 4 -g ./geant_{wildcards.ex}.conf
+        """

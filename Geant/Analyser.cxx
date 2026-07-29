@@ -1,20 +1,27 @@
 #ifndef Analyser_cxx
 #define Analyser_cxx
 
+#include "ActColors.h"
 #include "ActKinematics.h"
 #include "ActSRIM.h"
 
 #include "ROOT/RDataFrame.hxx"
+#include "ROOT/RVec.hxx"
 
-#include "TCanvas.h"
 #include "TEfficiency.h"
+#include "TEnv.h"
+#include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
 #include "TString.h"
-#include "TStyle.h"
+#include "TTree.h"
 
 #include "Math/Point3D.h"
+#include "Math/Point3Dfwd.h"
 #include "Math/Vector3D.h"
+
+#include <iostream>
+#include <string>
 
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
 
@@ -32,39 +39,66 @@ public:
 
 using LambdaFilter = std::function<bool(int, double, int, double)>;
 
-LambdaFilter lambdPunch0 {[](int idx0, double eafter0, int idx1, double eafter1)
-                          { return (idx0 != -1) && (eafter0 <= 0); }};
+LambdaFilter lambdaPunch0 {[](int idx0, double eafter0, int idx1, double eafter1)
+                           { return (idx0 != -1) && (eafter0 <= 0); }};
 
-LambdaFilter lambdPunch1 {[](int idx0, double eafter0, int idx1, double eafter1)
-                          {
-                              if(idx0 != -1)
-                              {
-                                  if(eafter0 > 0)
-                                  {
-                                      if(eafter1 <= 0)
-                                          return idx0 == idx1;
-                                      return false;
-                                  }
-                                  return true;
-                              }
-                              return false;
-                          }};
+LambdaFilter lambdaPunch1 {[](int idx0, double eafter0, int idx1, double eafter1)
+                           {
+                               if(idx0 != -1)
+                               {
+                                   if(eafter0 > 0)
+                                   {
+                                       if(eafter1 <= 0)
+                                           return idx0 == idx1;
+                                       return false;
+                                   }
+                                   return true;
+                               }
+                               return false;
+                           }};
 
+std::string ToStandardName(const std::string& name)
+{
+    if(name == "d")
+        return "2H";
+    if(name == "t")
+        return "3H";
+    return name;
+}
 
 TString
 GetSimuFile(const std::string& beam, const std::string& target, const std::string& light, double ebeam, double ex)
 {
-    return TString::Format("./Outputs/simu_%s_%s_%s_ebeam_%.2f_ex_%.2f.root", beam.c_str(), target.c_str(),
-                           light.c_str(), ebeam, ex);
+    TString iterPath {gEnv->GetValue("IterPath", "./")};
+    std::cout << BOLDMAGENTA << "Open simu in :" << iterPath << '\n';
+    std::cout << "  for : "
+              << TString::Format("%s(%s,%s)@%.2f|%.2f", beam.c_str(), target.c_str(), light.c_str(), ebeam, ex) << RESET
+              << '\n';
+    return TString::Format("./%s/Outputs/simu_%s_%s_%s_ebeam_%.2f_ex_%.2f.root", iterPath.Data(), beam.c_str(),
+                           ToStandardName(target).c_str(), ToStandardName(light).c_str(), ebeam, ex);
 }
 
-RetAna analyse(const std::string& beam, const std::string& target, const std::string& light, double ebeam, double ex,
-               const std::string& others = "", const LambdaFilter& lambdaFilter = lambdPunch0)
+TString
+GetAnaFile(const std::string& beam, const std::string& target, const std::string& light, double ebeam, double ex)
 {
+    TString iterPath {gEnv->GetValue("IterPath", "./")};
+    std::cout << BOLDGREEN << "Open ana in :" << iterPath << '\n';
+    std::cout << "  for : "
+              << TString::Format("%s(%s,%s)@%.2f|%.2f", beam.c_str(), target.c_str(), light.c_str(), ebeam, ex) << RESET
+              << '\n';
+    return TString::Format("./%s/Outputs/ana_%s_%s_%s_ebeam_%.2f_ex_%.2f.root", iterPath.Data(), beam.c_str(),
+                           target.c_str(), light.c_str(), ebeam, ex);
+}
+
+RetAna Analyse(const std::string& beam, const std::string& target, const std::string& light, double ebeam, double ex,
+               const std::string& others = "", const LambdaFilter& lambdaFilter = lambdaPunch0)
+{
+    // Is elastic?
+    bool isEl {target == light};
+
     ROOT::EnableImplicitMT();
-    ROOT::RDataFrame df {"ActGeant", GetSimuFile(beam, target, light, ebeam, ex)};
-    // Book histogram with all thetaCM
-    auto hCMAll {df.Histo1D(HistConfig::ThetaCM, "thetaCM")};
+    auto infile {GetSimuFile(beam, target, light, ebeam, ex)};
+    ROOT::RDataFrame df {"ActGeant", infile};
 
     std::string aux {};
     if(light == "d" || light == "2H")
@@ -80,16 +114,40 @@ RetAna analyse(const std::string& beam, const std::string& target, const std::st
 
     // SRIM
     ActPhysics::SRIM srim;
-    srim.ReadTable("light", TString::Format("./Outputs/dedx/table_%s_GasMixture.txt", aux.c_str()).Data());
+    // Geant4 table
+    TString iterPath {gEnv->GetValue("IterPath", "./")};
+    srim.ReadTable("light",
+                   TString::Format("./%s/Outputs/dedx/table_%s_GasMixture.txt", iterPath.Data(), aux.c_str()).Data(),
+                   false);
 
     // Kinematics
-    ActPhysics::Kinematics kin {"20O(d,d)@700|0"};
+    ActPhysics::Kinematics kin {
+        TString::Format("%s(%s,%s)@%.2f|%.2f", beam.c_str(), target.c_str(), light.c_str(), ebeam, ex).Data()};
     std::vector<ActPhysics::Kinematics> vkins {df.GetNSlots()};
     for(auto& k : vkins)
         k = kin;
 
     // Gate on events
-    auto gated {df.Filter(lambdaFilter, {"SilIdx0", "SilEAfter0", "SilIdx1", "SilEAfter1"})};
+    auto gated {df.Filter(lambdaFilter, {"SilIdx0", "SilEAfter0", "SilIdx1", "SilEAfter1"})
+                    .Filter(
+                        [&](ROOT::RVecC& layer0)
+                        {
+                            // Fucking GEANT4 writes string as a vector and on top of that
+                            // adds a fucking empty space at the end...............
+                            std::string aux {layer0.begin(), layer0.begin() + 2};
+                            if(isEl) // do not count front layers for elastic reactions
+                                return (aux == "l0") || (aux == "r0");
+                            else // ignore zd silicons for transfer
+                            {
+                                // Index of layer
+                                auto it {aux.find_first_of("0123456789")};
+                                int idx {-1};
+                                if(it != std::string::npos)
+                                    idx = std::stoi(aux.substr(it));
+                                return (idx == 0) || (idx == 1);
+                            }
+                        },
+                        {"SilLayer0"})};
     // Define variables
     auto def {gated
                   .Define("TL",
@@ -138,31 +196,57 @@ RetAna analyse(const std::string& beam, const std::string& target, const std::st
                                   return k.ReconstructExcitationEnergy(e, theta * TMath::DegToRad());
                               },
                               {"thetaLab", "EVertex", "EBeam"})
+                  .Define("Qave",
+                          [](double deltae, ROOT::RVecD& ini, ROOT::RVecD& end)
+                          {
+                              // TL in drift region
+                              ROOT::Math::XYZPoint rp {ini[0], ini[1], ini[2]};
+                              ROOT::Math::XYZPoint bp {end[0], end[1], end[2]};
+                              auto tl {(rp - bp).R()};
+                              return deltae / tl;
+                          },
+                          {"TPCDeltaE", "TPCIni", "TPCEnd"})
                   .Define("Diff", "T3 - EVertex")};
 
     // Book histograms
-    auto hKin {def.Histo2D(HistConfig::KinSimu, "theta3", "T3")};
-    auto hKinRec {def.Histo2D(HistConfig::KinSimu, "thetaLab", "EVertex")};
+    // ThetaCM all goes WITH ALL STATS
+    auto hCMAll {df.Histo1D(HistConfig::ThetaCM, "thetaCM")};
+    auto hKinSampled {def.Histo2D(HistConfig::KinSimu, "theta3", "T3")};
+    hKinSampled->SetName("hKinSampled");
+    auto hKin {def.Histo2D(HistConfig::KinSimu, "thetaLab", "EVertex")};
     auto hEx {def.Histo1D(HistConfig::Ex, "Ex")};
     auto hDiff {def.Histo1D("Diff")};
     auto hCMAfter {def.Histo1D(HistConfig::ThetaCM, "thetaCM")};
-    ROOT::RDF::TH2DModel mPID {"hPID", "PID;E_{Sil} [MeV];#DeltaE_{gas} [MeV]", 200, 0, 20, 200, 0, 2};
-    auto hPID {def.Histo2D(mPID, "SilDeltaE0", "TPCDeltaE")};
+    ROOT::RDF::TH2DModel mPID {"hPID", "PID;E_{Sil} [MeV];#DeltaE_{gas} / TL_{drift} [MeV]", 400, 0, 80, 200, 0, 0.1};
+    auto hPID {def.Histo2D(mPID, "SilDeltaE0", "Qave")};
     // Fit to a gaussian
     hEx->Fit("gaus", "0QR+");
     // hEx->GetFunction("gaus")->ResetBit(TF1::kNotDraw);
 
     // Compute efficiency
     auto* eff {new TEfficiency {*hCMAfter, *hCMAll}};
+    eff->SetTitle(TString::Format("%.2f", ex));
 
     // Define return value
-    RetAna ret {.hKinSampled = (TH2D*)hKin->Clone(),
-                .hKin = (TH2D*)hKinRec->Clone(),
+    RetAna ret {.hKinSampled = (TH2D*)hKinSampled->Clone(),
+                .hKin = (TH2D*)hKin->Clone(),
                 .hPID = (TH2D*)hPID->Clone(),
                 .hCMAll = (TH1D*)hCMAll->Clone(),
                 .hCMAfter = (TH1D*)hCMAfter->Clone(),
                 .hEx = (TH1D*)hEx->Clone(),
                 .eff = eff};
+
+    // Write
+    auto anafile {GetAnaFile(beam, target, light, ebeam, ex)};
+    auto fout {std::make_unique<TFile>(anafile, "recreate")};
+    ret.hKinSampled->Write("hKinSampled");
+    ret.hKin->Write("hKin");
+    ret.hPID->Write("hPID");
+    ret.hCMAll->Write("hCMAll");
+    ret.hCMAfter->Write("hCMAfter");
+    ret.hEx->Write("hEx");
+    ret.eff->Write("eff");
+
     return ret;
 }
 
