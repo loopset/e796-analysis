@@ -1,0 +1,54 @@
+16N(d,3He)15C @ 20AMeV Haixia (d) + HT1p (3He)
+NAMELIST
+ &FRESCO
+    hcm=0.05 rmatch=25.000 rintp=0.50
+    hnl=0.200 rnl=5.00 centre=0.8
+    jtmin=0.0 jtmax=40.0 absend=-0.1000
+    thmin=0.00 thmax=180.00 thinc=2.00
+    iter=1
+    chans=1 listcc=0 treneg=0 cdetr=0 smats=2 xstabl= 1
+    elab(1)=40 / ! for deuterium beam
+
+ &PARTITION namep='d' massp=2.0135532 zp=1 nex=1 namet='16N' masst=16.002262 zt=7 qval=0/
+ &STATES jp=1 bandp=1 ep=0.0  cpot=1 jt=2.0 bandt=-1 et=0.0/
+
+ &PARTITION namep='3He' massp=3.0155007 zp=2 nex=1 namet='15C' masst=15.007308 zt=6 qval=-5.9847/
+ &STATES jp=0.5 bandp=1 ep=0.0  cpot=2 jt=0.5 bandt=+1 et=0.0/ ! g.s.
+ &partition /
+
+! Incoming potential: Haixia
+&pot kp=1 type=0 p(1:3)= 16.0000  0.0000  1.3030 /
+&pot kp=1 type=1 p(1:6)= 83.8574  1.1489  0.7508  3.5920  1.3446  0.6030 /
+&pot kp=1 type=2 p(1:6)= 0.0000  0.0000  0.0000  9.6060  1.3943  0.6872 /
+&pot kp=1 type=3 p(1:6)= 1.7785  0.9720  1.0110  0.0000  0.0000  0.0000 /
+
+! Outgoing HT1p for g.s.
+&pot kp=2 type=0 p(1:3)= 15.0000  0.0000  1.3000 /
+&pot kp=2 type=1 p(1:6)= 135.4365  1.0002  0.7920  2.6893  1.3651  0.8010 /
+&pot kp=2 type=2 p(1:6)= 0.0000  0.0000  0.0000  12.3131  1.3651  0.8010 /
+&pot kp=2 type=3 p(1:6)= 0.0000  0.0000  0.0000  0.0000  0.0000  0.0000 /
+
+! Light-particle overlap from GFMC
+&pot kp= 3 type= 0 p(1:7)=1.000  0.0000  2.00  0.00  0.0000  0.0000  0.0000 /
+&pot kp= 3 type= 1 p(1:3)=179.94  0.54  0.6800 /
+&pot kp= 3 type= 1 shape=2 p(1:3)=    -203.33  0.00  0.64 /
+
+! Heavy-particle overlap
+&pot kp= 4 type= 0 p(1:7)=15.00  0.0000  1.2500  0.000  0.0000  0.0000  0.0000 /
+&pot kp= 4 type= 1 p(1:3)=60.000  1.2500  0.6500 /
+&pot kp= 4 type= 3 p(1:3)=6.000  1.1000  0.6500 /
+&pot /
+
+
+! Light overlap
+&OVERLAP kn1=1 kn2=0 ic1=1 ic2=2 in=-1 kind=0 nn=1 l=0 sn=0.5 j=0.5 kbpot=3 krpot=0 be=5.4934 isc=1 ipc=4 nfl=0 nam=1 ampl=1.0 /
+! Heavy overlap
+! j should be 0.5 but otherwise we cannot build 16N(2-) <-- 15C(1/2+) x pi(3/2-)
+&OVERLAP kn1=2 kn2=0 ic1=1 ic2=2 in=-2 kind=0 nn=1 l=1 sn=0.5 j=1.5 kbpot=4 krpot=0 be=11.4783 isc=1 ipc=4 nfl=0 nam=1 ampl=1.0 /
+&overlap /   ! END OF DEFINING OVERLAPS
+
+! Spectroscopic amplitudes
+&COUPLING icto=2 icfrom=1 kind=7 ip1=1 ip2=0 ip3=0 /
+&cfp  in=1 ib=1 ia=1 kn=1  a=1.1446 /
+&cfp  in=-2 ib=1 ia=1 kn=2  a=1.0 /
+&COUPLING /

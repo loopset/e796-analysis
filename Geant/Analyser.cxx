@@ -8,11 +8,14 @@
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RVec.hxx"
 
+#include "TCanvas.h"
 #include "TEfficiency.h"
 #include "TEnv.h"
+#include "TF1.h"
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TRandom.h"
 #include "TString.h"
 #include "TTree.h"
 
@@ -90,11 +93,17 @@ GetAnaFile(const std::string& beam, const std::string& target, const std::string
                            target.c_str(), light.c_str(), ebeam, ex);
 }
 
+
 RetAna Analyse(const std::string& beam, const std::string& target, const std::string& light, double ebeam, double ex,
-               const std::string& others = "", const LambdaFilter& lambdaFilter = lambdaPunch0)
+               bool draw = false, const LambdaFilter& lambdaFilter = lambdaPunch0)
 {
     // Is elastic?
     bool isEl {target == light};
+
+    // Angular uncertainty arising from reconstruction
+    // Estimated from 20O(d,d) analysis, where its effects should be more prominent
+    // and then validated using 20O(d,t)
+    double sigmaTheraRec {0.25}; // deg
 
     ROOT::EnableImplicitMT();
     auto infile {GetSimuFile(beam, target, light, ebeam, ex)};
@@ -159,7 +168,7 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
                           },
                           {"TPCIni", "SilIni0"})
                   .Define("thetaLab",
-                          [](ROOT::RVecD& window, ROOT::RVecD& vertex, ROOT::RVecD& sil0)
+                          [&](ROOT::RVecD& window, ROOT::RVecD& vertex, ROOT::RVecD& sil0)
                           {
                               ROOT::Math::XYZPoint wp {window[0], window[1], window[2]};
                               ROOT::Math::XYZPointD rp {vertex[0], vertex[1], vertex[2]};
@@ -167,7 +176,10 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
                               auto beamDir {rp - wp};
                               auto lightDir {sp - rp};
                               auto dot {lightDir.Unit().Dot(beamDir.Unit())};
-                              return TMath::ACos(dot) * TMath::RadToDeg();
+                              auto theta {TMath::ACos(dot) * TMath::RadToDeg()};
+                              // Add reconstruction impact on theta
+                              theta = gRandom->Gaus(theta, sigmaTheraRec);
+                              return theta;
                           },
                           {"WP", "TPCIni", "SilIni0"})
                   .Define("EVertex",
@@ -238,7 +250,8 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
 
     // Write
     auto anafile {GetAnaFile(beam, target, light, ebeam, ex)};
-    auto fout {std::make_unique<TFile>(anafile, "recreate")};
+    def.Snapshot("AnaTree", anafile);
+    auto fout {std::make_unique<TFile>(anafile, "update")};
     ret.hKinSampled->Write("hKinSampled");
     ret.hKin->Write("hKin");
     ret.hPID->Write("hPID");
@@ -246,6 +259,32 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
     ret.hCMAfter->Write("hCMAfter");
     ret.hEx->Write("hEx");
     ret.eff->Write("eff");
+
+    if(draw)
+    {
+        static int cAnaIdx {0};
+        auto* c {new TCanvas {TString::Format("c%d", cAnaIdx), TString::Format("Simu canvas Ex = %.2f", ex)}};
+        cAnaIdx++;
+        c->DivideSquare(6);
+        c->cd(1);
+        ret.hKinSampled->Draw("colz");
+        c->cd(2);
+        ret.hKin->Draw("colz");
+        ActPhysics::Kinematics k {
+            TString::Format("%s(%s,%s)@%.2f|%.2f", beam.c_str(), target.c_str(), light.c_str(), ebeam, ex).Data()};
+        k.GetKinematicLine3()->Draw("l");
+        c->cd(3);
+        ret.hPID->Draw("colz");
+        c->cd(4);
+        ret.hEx->Draw();
+        c->cd(5);
+        ret.eff->Draw("apl");
+        c->cd(6);
+        // Divide by sin (thetaCM)
+        auto* fsolid {new TF1 {"fsolid", "TMath::Sin(x * TMath::DegToRad())", 0, 180}};
+        ret.hCMAll->Divide(fsolid);
+        ret.hCMAll->Draw();
+    }
 
     return ret;
 }

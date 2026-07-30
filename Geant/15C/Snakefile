@@ -52,12 +52,14 @@ rule edit_config:
 
 rule call_geant:
     input:
-        f"{OUT_DIR}/geant_{{ex}}.conf"
+        f"{OUT_DIR}/geant_{{ex}}.conf",
+        macro="run.mac"
     output:
         temp(touch(f"{OUT_DIR}/geant_{{ex}}.done"))
     shell:
         """
+        MACRO=$(realpath {input.macro})
         cd {iterWhat}/{wildcards.iter}
         mkdir -p Outputs/dedx
-        actgeant -m ../../run.mac -t 4 -g ./geant_{wildcards.ex}.conf
+        actgeant -m $MACRO -t 4 -g ./geant_{wildcards.ex}.conf
         """
