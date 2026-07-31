@@ -39,8 +39,8 @@ void Runner(TString what = "plot")
     std::string light {"3He"};
     double ebeam {640.0};
     // Parameters of exp
-    double intensity {2e3};
-    double duration {8 * 3600 * 3 * 5}; // 7 days (1 day = 3 UTs; 1 UT = 8h)
+    double intensity {5e3};
+    double duration {8 * 3600 * 3 * 5}; // X days (1 day = 3 UTs; 1 UT = 8h)
     double Nb {intensity * duration};
     double Nt {(90. * 2) / (90 * 2 + 10 * 4 + 10 * 10) * 1.92e21}; // LISE++ calculation
     // Parameters of simu
