@@ -271,7 +271,10 @@ maxExtheo = 20
 
 
 def build_theos(
-    gated: bool = False, c2s_thresh: float = 0.04, with_ysox: bool = False
+    gated: bool = False,
+    c2s_thresh: float = 0.04,
+    with_ysox: bool = False,
+    with_wbt: bool = False,
 ) -> List[phys.ShellModel]:
     path = "/media/Data/E796v2/Fits/dt/Inputs/"
     sfo = phys.ShellModel(
@@ -294,17 +297,22 @@ def build_theos(
             path + "SFO_tls_2/log_O20_O19_sfotls_modtsp3015_tr_m0p_m1p.txt",
         ]
     )
+    models = [sfo, sfo1, sfo2]
 
     # YSOX
-    ysox = phys.ShellModel(
-        [
-            path + "SM/log_O20_O19_ysox_tr_j0p_m1n.txt",
-            path + "SM/log_O20_O19_ysox_tr_j0p_m1p.txt",
-        ]
-    )
-    models = [sfo, sfo1, sfo2]
     if with_ysox:
+        ysox = phys.ShellModel(
+            [
+                path + "SM/log_O20_O19_ysox_tr_j0p_m1n.txt",
+                path + "SM/log_O20_O19_ysox_tr_j0p_m1p.txt",
+            ]
+        )
         models.append(ysox)
+
+    # WBT
+    if with_wbt:
+        wbt = phys.ShellModel([path + "WBT/o_19-o_20t.lsf"], is_lsf=True)
+        models.append(wbt)
 
     # Force an agreement between Exs of theo models
     if not gated:

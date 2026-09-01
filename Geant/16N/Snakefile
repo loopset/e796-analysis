@@ -1,0 +1,65 @@
+# Get from config file
+reaction = config["reaction"]
+exs = config["exs"]
+xspath = config["xspath"]
+dic = config["dic"]
+iterOn = config["iterOn"]
+
+# Apply iter procedure
+if iterOn:
+    iterWhat = config["iterWhat"]
+    iterDict = config["iterDict"]
+    iterKeys = list(iterDict.keys())
+else:
+    iterWhat = "final"
+    iterDict = {".": None}
+    iterKeys = ["."]
+
+# Build template for output dir
+OUT_DIR = f"{iterWhat}/{{iter}}"
+
+rule all:
+    input:
+        expand(f"{OUT_DIR}/geant_{{ex}}.done", iter=iterKeys, ex=exs)
+
+rule edit_config:
+    input:
+        "geant.conf"
+    output:
+        f"{OUT_DIR}/geant_{{ex}}.conf"
+    params:
+        iter=lambda wc : iterDict[wc.iter],
+        ex=lambda wc : wc.ex,
+        fort=lambda wc : dic[wc.ex]
+    run:
+        with open(input[0]) as f:
+            lines = f.readlines()
+        with open(output[0], "w") as f:
+            for line in lines:
+                # Ex variation
+                if line.startswith("Reaction:"):
+                    f.write(f"Reaction: 16N{reaction}@640|{params.ex}\n")
+                elif line.startswith("CrossSection:"):
+                    if xspath:
+                        f.write(f"CrossSection: {xspath}/fort.{params.fort}\n")
+                    else:
+                        f.write(f"CrossSection:\n")
+                # Fraction of gas variation
+                elif iterOn and line.startswith(iterWhat + ":"):
+                    f.write(f"{iterWhat}: {params.iter}\n")
+                else:
+                    f.write(line)
+
+rule call_geant:
+    input:
+        f"{OUT_DIR}/geant_{{ex}}.conf",
+        macro="run.mac"
+    output:
+        temp(touch(f"{OUT_DIR}/geant_{{ex}}.done"))
+    shell:
+        """
+        MACRO=$(realpath {input.macro})
+        cd {iterWhat}/{wildcards.iter}
+        mkdir -p Outputs/dedx
+        actgeant -m $MACRO -t 4 -g ./geant_{wildcards.ex}.conf
+        """

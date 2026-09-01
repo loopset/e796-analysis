@@ -32,11 +32,11 @@ std::vector<double> GetExsFromYAML(const std::string& file)
 
 void Runner(TString what = "plot")
 {
-    gEnv->SetValue("IterPath", "./Pressure/p200/");
+    gEnv->SetValue("IterPath", "./Pressure/p200");
 
     std::string beam {"16N"};
     std::string target {"d"};
-    std::string light {"3He"};
+    std::string light {"d"};
     double ebeam {640.0};
     // Parameters of exp
     double intensity {5e3};
@@ -106,7 +106,6 @@ void Runner(TString what = "plot")
             ret.hKins->SetTitle(dir.c_str());
             ret.hExs->SetTitle(dir.c_str());
             ret.gsigmas->SetTitle(dir.c_str());
-            ret.hPID->SetTitle(dir.c_str());
             // And push back
             rets.push_back(ret);
         }
@@ -146,17 +145,6 @@ void Comparator(const std::vector<RetPlot>& rets)
         ret.hExs->Draw();
         c->cd(p + rets.size());
         ret.gsigmas->Draw("apl");
-        p++;
-    }
-    // PID
-    c = new TCanvas {"cComp2", "PID"};
-    c->DivideSquare(rets.size());
-    p = 1;
-    for(int i = 0; i < rets.size(); i++)
-    {
-        auto& ret {rets[i]};
-        c->cd(p);
-        ret.hPID->Draw();
         p++;
     }
 }

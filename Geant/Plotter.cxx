@@ -38,6 +38,7 @@ public:
     TH2D* hKins {};
     TH1D* hExs {};
     TGraphErrors* gsigmas {};
+    TH2D* hPID {};
 };
 
 RetPlot Plotter(const std::string& beam, const std::string& target, const std::string& light, double ebeam,
@@ -57,7 +58,8 @@ RetPlot Plotter(const std::string& beam, const std::string& target, const std::s
                     .hCMAll = f->Get<TH1D>("hCMAll"),
                     .hCMAfter = f->Get<TH1D>("hCMAfter"),
                     .hEx = f->Get<TH1D>("hEx"),
-                    .eff = f->Get<TEfficiency>("eff")};
+                    .eff = f->Get<TEfficiency>("eff"),
+                    .hEStragg = f->Get<TH2D>("hEStragg")};
         rets.push_back(ret);
         // Fit
         Fit(ret.hEx, gsigmas);
@@ -70,6 +72,8 @@ RetPlot Plotter(const std::string& beam, const std::string& target, const std::s
     hPID->Reset();
     auto hEx {(TH1D*)rets[0].hEx->Clone()};
     hEx->Reset();
+    auto hEStragg {(TH2D*)rets[0].hEStragg->Clone()};
+    hEStragg->Reset();
     auto* mEffs {new TMultiGraph};
 
     for(auto& ret : rets)
@@ -78,6 +82,7 @@ RetPlot Plotter(const std::string& beam, const std::string& target, const std::s
         hPID->Add(ret.hPID);
         hEx->Add(ret.hEx);
         mEffs->Add(ret.eff->CreateGraph());
+        hEStragg->Add(ret.hEStragg);
     }
 
     // Plot
@@ -112,9 +117,11 @@ RetPlot Plotter(const std::string& beam, const std::string& target, const std::s
     c0->cd(5);
     gsigmas->SetMarkerStyle(24);
     gsigmas->Draw("apl");
+    c0->cd(6);
+    hEStragg->Draw("colz");
 
     // Build ret
-    RetPlot ret {.mEffs = mEffs, .hKins = hKin, .hExs = hEx, .gsigmas = gsigmas};
+    RetPlot ret {.mEffs = mEffs, .hKins = hKin, .hExs = hEx, .gsigmas = gsigmas, .hPID = hPID};
     return ret;
 }
 

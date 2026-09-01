@@ -5,6 +5,7 @@
 #include "ActKinematics.h"
 #include "ActSRIM.h"
 
+#include "ROOT/RDF/HistoModels.hxx"
 #include "ROOT/RDataFrame.hxx"
 #include "ROOT/RVec.hxx"
 
@@ -38,6 +39,7 @@ public:
     TH1D* hCMAfter {};
     TH1D* hEx {};
     TEfficiency* eff {};
+    TH2D* hEStragg {};
 };
 
 using LambdaFilter = std::function<bool(int, double, int, double)>;
@@ -101,9 +103,15 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
     bool isEl {target == light};
 
     // Angular uncertainty arising from reconstruction
-    // Estimated from 20O(d,d) analysis, where its effects should be more prominent
-    // and then validated using 20O(d,t)
-    double sigmaTheraRec {0.25}; // deg
+    // Estimated from 20O(d,t) analysis in 20O folder
+    // (d,t) results should be extensible for (d,3he) as they mainly depend on the kinematic regime
+    // that is: lateral or front Si
+    // UPDATE: (d,t) value (sigma = 0.65 def) is too large -> defaulting to (d,d) value
+    double sigmaThetaRec {0}; // deg
+    if(isEl)
+        sigmaThetaRec = 0.25;
+    else
+        sigmaThetaRec = 0.25;
 
     ROOT::EnableImplicitMT();
     auto infile {GetSimuFile(beam, target, light, ebeam, ex)};
@@ -178,7 +186,7 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
                               auto dot {lightDir.Unit().Dot(beamDir.Unit())};
                               auto theta {TMath::ACos(dot) * TMath::RadToDeg()};
                               // Add reconstruction impact on theta
-                              theta = gRandom->Gaus(theta, sigmaTheraRec);
+                              theta = gRandom->Gaus(theta, sigmaThetaRec);
                               return theta;
                           },
                           {"WP", "TPCIni", "SilIni0"})
@@ -218,6 +226,7 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
                               return deltae / tl;
                           },
                           {"TPCDeltaE", "TPCIni", "TPCEnd"})
+                  .Define("EStragg", [&](double t3, double evertex) { return evertex - t3; }, {"T3", "EVertex"})
                   .Define("Diff", "T3 - EVertex")};
 
     // Book histograms
@@ -234,6 +243,9 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
     // Fit to a gaussian
     hEx->Fit("gaus", "0QR+");
     // hEx->GetFunction("gaus")->ResetBit(TF1::kNotDraw);
+    // Straggling histo
+    ROOT::RDF::TH2DModel mEStragg {"hEStragg", "E straggling;T_{3} [MeV];T_{3, rec} [MeV]", 2000, 0, 100, 400, -1, 1};
+    auto hEStragg {def.Histo2D(mEStragg, "T3", "EStragg")};
 
     // Compute efficiency
     auto* eff {new TEfficiency {*hCMAfter, *hCMAll}};
@@ -246,7 +258,8 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
                 .hCMAll = (TH1D*)hCMAll->Clone(),
                 .hCMAfter = (TH1D*)hCMAfter->Clone(),
                 .hEx = (TH1D*)hEx->Clone(),
-                .eff = eff};
+                .eff = eff,
+                .hEStragg = (TH2D*)hEStragg->Clone()};
 
     // Write
     auto anafile {GetAnaFile(beam, target, light, ebeam, ex)};
@@ -259,6 +272,7 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
     ret.hCMAfter->Write("hCMAfter");
     ret.hEx->Write("hEx");
     ret.eff->Write("eff");
+    ret.hEStragg->Write("hEStragg");
 
     if(draw)
     {

@@ -65,7 +65,10 @@ void getAngularStraggling()
                             // Fucking GEANT4 writes string as a vector and on top of that
                             // adds a fucking empty space at the end...............
                             std::string aux {layer0.begin(), layer0.begin() + 2};
-                            return (aux == "l0") || (aux == "r0");
+                            if(isEl)
+                                return (aux == "l0") || (aux == "r0");
+                            else
+                                return aux == "f0";
                         },
                         {"SilLayer0"})};
     // Define variables
@@ -88,7 +91,7 @@ void getAngularStraggling()
                               auto lightDir {sp - rp};
                               auto dot {lightDir.Unit().Dot(beamDir.Unit())};
                               auto theta {TMath::ACos(dot) * TMath::RadToDeg()};
-                              theta = gRandom->Gaus(theta, 0.25); // this is the required sigma arising from
+                              theta = gRandom->Gaus(theta, 0.27); // this is the required sigma arising from
                                                                   // RECONSTRUCTION to match exp 20O g.s. Ex res
                               return theta;
                           },
@@ -148,6 +151,8 @@ void getAngularStraggling()
     f->ResetBit(TF1::kNotDraw);
     double sigmaGeant {f->GetParameter("Sigma")};
     double sigmaExp {0.300}; // from thesis
+    if(!isEl)
+        sigmaExp = 0.340; // from thesis
     // So the remaining part must be the contribution of RECONSTRUCTION in the angle
     auto sigmaRec {TMath::Sqrt(sigmaExp * sigmaExp - sigmaGeant * sigmaGeant)};
     std::cout << "=============================" << '\n';
