@@ -140,7 +140,7 @@ bg.annotate(
     va="center",
 )
 bg.annotate(
-    "Front\nSi detectors",
+    "Forward\nSi detectors",
     xy=(0.165, 0.925),
     fontsize=fontsize,
     fontweight=fontweight,

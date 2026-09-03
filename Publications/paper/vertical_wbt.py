@@ -83,7 +83,7 @@ t32 = dt.plot_bars(  # type: ignore
     width=0.6,
     right_padding=-1,
     left_padding=0.15,
-    ann_fontsize=11,
+    ann_fontsize=10,
 )
 # T = 5 / 2
 t52 = dt.plot_bars(  # type: ignore
@@ -95,26 +95,30 @@ t52 = dt.plot_bars(  # type: ignore
     hatch="/////",
     right_padding=-1,
     left_padding=0.15,
-    ann_fontsize=11,
+    ann_fontsize=10,
     # lw=1.25,
 )
 
 # Draw 0p1/2 centroids
-for i, cent in enumerate(cents):
-    c = cent.get(dt.qp12, 0)  # type: ignore
-    print(labels[i], ", ", c)
-    ax.plot(
-        [i + 0.0, i + 0.85],
-        [un.nominal_value(c)] * 2,
-        ls="--",
-        color=sty.barplot[dt.qp12]["ec"],  # type: ignore
-        lw=2,
-    )
+# for i, cent in enumerate(cents):
+#     c = cent.get(dt.qp12, 0)  # type: ignore
+#     print(labels[i], ", ", c)
+#     ax.plot(
+#         [i + 0.0, i + 0.85],
+#         [un.nominal_value(c)] * 2,
+#         ls="--",
+#         color=sty.barplot[dt.qp12]["ec"],  # type: ignore
+#         lw=2,
+#     )
 
 # Legend
 y_leg = 0.85
 main_leg = ax.legend(
-    loc="lower left", bbox_to_anchor=(0.015, y_leg, 0.4, 0.15), columnspacing=1, ncols=2
+    loc="lower left",
+    bbox_to_anchor=(0.015, y_leg, 0.4, 0.15),
+    columnspacing=1,
+    ncols=2,
+    fontsize=12,
 )
 # Second with hatch coding
 color = "dimgrey"
@@ -126,7 +130,7 @@ handles_hatch = [
 second_leg = ax.legend(
     handles=handles_hatch,
     loc="lower left",
-    fontsize=14,
+    fontsize=12,
     bbox_to_anchor=(0.6, y_leg, 0.2, 0.15),
 )
 ax.add_artist(main_leg)
@@ -145,9 +149,12 @@ adjust_text(
     target_x=[p[0] for p in positions],
     target_y=[p[1] for p in positions],
     avoid_self=False,
+    force_pull=(0.2, 0.2),
+    pull_threshold=15,
+    expand=(1, 1.1),
     only_move=dict(text="y", static="y", explode="y", pull="y"),
     # arrowprops=dict(arrowstyle="-", color="crimson", ls="dotted"),
 )
 
-# fig.savefig("../paper/Outputs/vertical.pdf", dpi=300)
+fig.savefig("./Outputs/vertical_wbt.pdf", dpi=300)
 plt.show()
