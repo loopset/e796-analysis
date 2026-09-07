@@ -44,6 +44,8 @@ print(estimate_12be(i1))
 i2 = get_neutron_rms_be(4.327, 3.201, 2.659)
 print(estimate_12be(i2))
 
+print("==================== 11Li")
+
 
 # 11LI
 # r0 = 2.64 fm
