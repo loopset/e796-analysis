@@ -8,6 +8,7 @@
 #include "TF1.h"
 #include "TFile.h"
 #include "TGraphErrors.h"
+#include "THStack.h"
 #include "TMultiGraph.h"
 #include "TString.h"
 #include "TVirtualPad.h"
@@ -22,8 +23,8 @@ void Fit(TH1* h, TGraphErrors* g)
     auto* f {new TF1 {"f", "gaus", -5, 20}};
     auto binOfMax {h->GetMaximumBin()};
     auto xOfMax {h->GetBinCenter(binOfMax)};
-    f->SetParameters(10, xOfMax, 0.2);
-    h->Fit(f, "0QR+");
+    f->SetParameters(10, xOfMax, 0.1);
+    h->Fit(f, "0QMR+");
     f->ResetBit(TF1::kNotDraw);
 
     // And push fit results to graph
@@ -76,11 +77,15 @@ RetPlot Plotter(const std::string& beam, const std::string& target, const std::s
     hEStragg->Reset();
     auto* mEffs {new TMultiGraph};
 
+    // Histo stack
+    auto* stack {new THStack};
+
     for(auto& ret : rets)
     {
         hKin->Add(ret.hKin);
         hPID->Add(ret.hPID);
         hEx->Add(ret.hEx);
+        stack->Add(ret.hEx);
         mEffs->Add(ret.eff->CreateGraph());
         hEStragg->Add(ret.hEStragg);
     }
@@ -102,13 +107,15 @@ RetPlot Plotter(const std::string& beam, const std::string& target, const std::s
         g->Draw("l");
     }
     c0->cd(2);
+    hEx->SetLineWidth(2);
     hEx->Draw();
-    for(int i = 0; i < rets.size(); i++)
-    {
-        auto& h {rets[i].hEx};
-        h->SetLineColor(i + 2);
-        h->Draw("same");
-    }
+    stack->Draw("nostack plc pmc same");
+    // for(int i = 0; i < rets.size(); i++)
+    // {
+    //     auto& h {rets[i].hEx};
+    //     h->SetLineColor(i + 2);
+    //     h->Draw("same");
+    // }
     c0->cd(3);
     mEffs->Draw("apl plc pmc");
     gPad->BuildLegend();

@@ -141,11 +141,11 @@ void Plot()
     // auto* f {new TF1 {"f", "0 + 1 * x", 80, 160}};
     // f->Draw("same");
 
-    // Save for thesis
-    auto fthesis {std::make_unique<TFile>("../../Publications/analysis/Inputs/emittance.root", "recreate")};
-    hYthetaXY->Write();
-    hYthetaXZ->Write();
-    fthesis->Close();
+    // // Save for thesis
+    // auto fthesis {std::make_unique<TFile>("../../Publications/analysis/Inputs/emittance.root", "recreate")};
+    // hYthetaXY->Write();
+    // hYthetaXZ->Write();
+    // fthesis->Close();
 
 
     // // Save objects to file

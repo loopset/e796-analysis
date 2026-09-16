@@ -43,7 +43,7 @@ void ParseYAML(const std::string& file, std::vector<double>& exs, std::vector<st
     for(const auto& ex : exsString)
     {
         exs.push_back(std::stod(ex));
-        auto xsfile {xspath + "/fort." + dict[ex]};
+        auto xsfile {xspath + "/" + dict[ex] + ".dat"};
         xs.push_back(xsfile);
     }
 }
@@ -55,8 +55,13 @@ void ResetBinErrors(TH1* h)
 }
 
 void Yield(const std::string& beam, const std::string& target, const std::string& light, double ebeam,
-           const std::string& yaml, double Nb, double Nt, double Nit)
+           const std::string& yaml, double Nb, double Nt, double Nit, double averageSF)
 {
+    std::cout << "--- Yield ----" << '\n';
+    std::cout << " Nb : " << Nb << '\n';
+    std::cout << " Nt : " << Nt << '\n';
+    std::cout << " Nit : " << Nit << '\n';
+    std::cout << " averageSF : " << averageSF << '\n';
     ROOT::EnableImplicitMT();
 
     // Parse config file
@@ -69,9 +74,9 @@ void Yield(const std::string& beam, const std::string& target, const std::string
     std::vector<TH2D*> hsKin {};
     // And build intervals
     std::deque<Angular::Intervals> ivs {}; // deque bc vector has issues with mutex inside Intervals
-    double thetaCMMin {5};
-    double thetaCMMax {40};
-    double thetaCMStep {2};
+    double thetaCMMin {2};
+    double thetaCMMax {60};
+    double thetaCMStep {4};
     // Efficiencies
     std::vector<Interpolators::Efficiency> effs;
     for(const auto& ex : exs)
@@ -81,7 +86,7 @@ void Yield(const std::string& beam, const std::string& target, const std::string
         auto hEx {df.Histo1D(HistConfig::Ex, "Ex")};
         hEx->SetTitle(TString::Format("E_{x} = %.2f", ex));
         // Kin
-        auto hKin {df.Histo2D(HistConfig::KinSimu, "thetaLab", "EVertex")};
+        auto hKin {df.Histo2D(HistConfig::KinEl, "thetaLab", "EVertex")};
 
         // Fill ivs
         ivs.emplace_back(thetaCMMin, thetaCMMax, HistConfig::Ex, thetaCMStep, 0);
@@ -114,6 +119,7 @@ void Yield(const std::string& beam, const std::string& target, const std::string
     // Scale, add and store
     auto* gall {new TGraphErrors};
     gall->SetTitle("Total counts per state;E_{x} [MeV];Counts");
+    auto* gallXS {new TGraphErrors};
     auto* mgtheta {new TMultiGraph};
     mgtheta->SetTitle("Rec xs;#theta_{CM} [#circ];xs [mb/sr]");
     auto* mgtheo {new TMultiGraph};
@@ -126,6 +132,8 @@ void Yield(const std::string& beam, const std::string& target, const std::string
     std::vector<TGraphErrors*> recxs;
     // Resolution
     auto* gres {new TGraphErrors};
+    // Counts according to theoretical xs
+    std::vector<TGraphErrors*> theocounts;
     for(int i = 0; i < exs.size(); i++)
     {
         const auto& ex {exs[i]};
@@ -138,7 +146,8 @@ void Yield(const std::string& beam, const std::string& target, const std::string
         mgtheo->Add(xs.GetTheoXSGraph());
         theoxs.push_back(xs.GetTheoXSGraph());
         auto xsIntegral {xs.GetTotalXScm2()};
-        auto alpha {xsIntegral * Nb * Nt / Nit};
+        std::cout << "Integrated xs : " << xs.GetTotalXSmbarn() << '\n';
+        auto alpha {averageSF * xsIntegral * Nb * Nt / Nit};
         std::cout << "Scaling factor for Ex = " << exs[i] << " : " << alpha << '\n';
 
 
@@ -151,7 +160,11 @@ void Yield(const std::string& beam, const std::string& target, const std::string
         gall->AddPointError(ex, integral, 0, TMath::Sqrt(integral));
 
         // Also for Intervals
+        // std::cout << "===================" << '\n';
         auto* git {new TGraphErrors};
+        auto* gtheo {new TGraphErrors};
+        gtheo->SetTitle(TString::Format("#sigma(N)/N for E_{x} = %.2f;#theta_{CM} [#circ];#sigma(N)/N [percent]", ex).Data());
+        double sum {};
         for(int j = 0; j < iv.GetSize(); j++)
         {
             auto hiv {iv.GetHistos()[j]};
@@ -159,6 +172,9 @@ void Yield(const std::string& beam, const std::string& target, const std::string
             ResetBinErrors(hiv);
             auto integral {hiv->Integral()};
             auto uintegral {TMath::Sqrt(integral)};
+            // std::cout << ".............." << '\n';
+            // std::cout << "theta : " << iv.GetCenter(j) << '\n';
+            // std::cout << " N : " << integral << " uN : " << uintegral << '\n';
             auto Omega {iv.GetOmega(j)};
             auto eps {eff.GetPointEff("g0", iv.GetCenter(j))};
             if(eps == 0)
@@ -166,9 +182,20 @@ void Yield(const std::string& beam, const std::string& target, const std::string
             integral /= (Nt * Nb * eps * Omega * 1e-27);
             uintegral /= (Nt * Nb * eps * Omega * 1e-27);
             git->AddPointError(iv.GetCenter(j), integral, 0, uintegral);
+            // std::cout << "Eval xs : " << integral << " +/- " << uintegral << '\n';
+            // std::cout << " eps : " << eps << " Omega : " << Omega
+            //           << " theo xs : " << averageSF * xs.GetTheoXSGraph()->Eval(iv.GetCenter(j)) << '\n';
+            // Theoretical counts per bin
+            auto theoN {Nt * Nb * eps * Omega * 1e-27 * averageSF * xs.GetTheoXSGraph()->Eval(iv.GetCenter(j))};
+            // std::cout << " theoN : " << theoN << '\n';
+            sum += theoN;
+            gtheo->AddPoint(iv.GetCenter(j), TMath::Sqrt(theoN) / theoN * 100);
         }
+        // std::cout<< "Total theo counts : " << sum << '\n';
+        gallXS->AddPointError(ex, sum, 0, TMath::Sqrt(sum));
         mgtheta->Add(git);
         recxs.push_back(git);
+        theocounts.push_back(gtheo);
 
         // Eval once again resolution
         Fit(h, gres);
@@ -225,6 +252,8 @@ void Yield(const std::string& beam, const std::string& target, const std::string
     stack->Draw("histe same nostack plc pmc");
     c0->cd(3);
     gall->Draw("a*l");
+    gallXS->SetLineColor(kRed);
+    gallXS->Draw("pl same");
     c0->cd(4);
     mgtheta->Draw("a*l plc pmc");
     c0->cd(5);
@@ -236,6 +265,14 @@ void Yield(const std::string& beam, const std::string& target, const std::string
     {
         c1->cd(i + 1);
         comps[i].Draw("", false, true, 3, gPad);
+    }
+
+    auto* c2 {new TCanvas {"c2", "Theo counts canvas"}};
+    c2->DivideSquare(theocounts.size());
+    for(int i = 0; i < theocounts.size(); i++)
+    {
+        c2->cd(i + 1);
+        theocounts[i]->Draw("apl");
     }
 }
 #endif

@@ -1,0 +1,23 @@
+# Macro file for the initialization of example B4
+# in interactive session
+#
+# Set some default verbose
+#
+/control/verbose 1
+/control/saveHistory
+/run/verbose 1
+/tracking/verbose 1
+#/process/verbose 0
+#/process/em/verbose 0
+#/process/had/verbose 0
+
+#
+# Change the default number of threads (in multi-threaded mode)
+#/run/numberOfThreads 4
+#
+# Initialize kernel
+/run/setCutForAGivenParticle e- 40 cm
+/run/initialize
+#
+# Visualization setting
+/control/execute vis.mac
