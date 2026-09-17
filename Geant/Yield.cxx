@@ -74,9 +74,9 @@ void Yield(const std::string& beam, const std::string& target, const std::string
     std::vector<TH2D*> hsKin {};
     // And build intervals
     std::deque<Angular::Intervals> ivs {}; // deque bc vector has issues with mutex inside Intervals
-    double thetaCMMin {2};
+    double thetaCMMin {0};
     double thetaCMMax {60};
-    double thetaCMStep {4};
+    double thetaCMStep {5};
     // Efficiencies
     std::vector<Interpolators::Efficiency> effs;
     for(const auto& ex : exs)
@@ -86,7 +86,7 @@ void Yield(const std::string& beam, const std::string& target, const std::string
         auto hEx {df.Histo1D(HistConfig::Ex, "Ex")};
         hEx->SetTitle(TString::Format("E_{x} = %.2f", ex));
         // Kin
-        auto hKin {df.Histo2D(HistConfig::KinEl, "thetaLab", "EVertex")};
+        auto hKin {df.Histo2D(HistConfig::KinGeant, "thetaLab", "EVertex")};
 
         // Fill ivs
         ivs.emplace_back(thetaCMMin, thetaCMMax, HistConfig::Ex, thetaCMStep, 0);
@@ -132,8 +132,10 @@ void Yield(const std::string& beam, const std::string& target, const std::string
     std::vector<TGraphErrors*> recxs;
     // Resolution
     auto* gres {new TGraphErrors};
-    // Counts according to theoretical xs
-    std::vector<TGraphErrors*> theocounts;
+    // Relative uncertainty on counts
+    std::vector<TGraphErrors*> unccounts;
+    // Reconstructed counts
+    std::vector<TGraphErrors*> reccounts;
     for(int i = 0; i < exs.size(); i++)
     {
         const auto& ex {exs[i]};
@@ -162,8 +164,11 @@ void Yield(const std::string& beam, const std::string& target, const std::string
         // Also for Intervals
         // std::cout << "===================" << '\n';
         auto* git {new TGraphErrors};
-        auto* gtheo {new TGraphErrors};
-        gtheo->SetTitle(TString::Format("#sigma(N)/N for E_{x} = %.2f;#theta_{CM} [#circ];#sigma(N)/N [percent]", ex).Data());
+        auto* gunc {new TGraphErrors};
+        gunc->SetTitle(
+            TString::Format("#sigma(N)/N for E_{x} = %.2f;#theta_{CM} [#circ];#sigma(N)/N [percent]", ex).Data());
+        auto* grec {new TGraphErrors};
+        grec->SetTitle(TString::Format("Rec counts E_{x} = %.2f;#theta_{CM} [#circ];Counts", ex).Data());
         double sum {};
         for(int j = 0; j < iv.GetSize(); j++)
         {
@@ -172,12 +177,18 @@ void Yield(const std::string& beam, const std::string& target, const std::string
             ResetBinErrors(hiv);
             auto integral {hiv->Integral()};
             auto uintegral {TMath::Sqrt(integral)};
+            // To avoid rel unc > 100 %
+            if(integral > 2)
+            {
+                grec->AddPointError(iv.GetCenter(j), integral, 0, uintegral);
+                gunc->AddPoint(iv.GetCenter(j), TMath::Sqrt(integral) / integral * 100);
+            }
             // std::cout << ".............." << '\n';
             // std::cout << "theta : " << iv.GetCenter(j) << '\n';
             // std::cout << " N : " << integral << " uN : " << uintegral << '\n';
             auto Omega {iv.GetOmega(j)};
-            auto eps {eff.GetPointEff("g0", iv.GetCenter(j))};
-            if(eps == 0)
+            auto eps {eff.GetMeanEff("g0", iv.GetLow(j), iv.GetUp(j))};
+            if(eps <= 0.05)
                 continue;
             integral /= (Nt * Nb * eps * Omega * 1e-27);
             uintegral /= (Nt * Nb * eps * Omega * 1e-27);
@@ -189,13 +200,13 @@ void Yield(const std::string& beam, const std::string& target, const std::string
             auto theoN {Nt * Nb * eps * Omega * 1e-27 * averageSF * xs.GetTheoXSGraph()->Eval(iv.GetCenter(j))};
             // std::cout << " theoN : " << theoN << '\n';
             sum += theoN;
-            gtheo->AddPoint(iv.GetCenter(j), TMath::Sqrt(theoN) / theoN * 100);
         }
         // std::cout<< "Total theo counts : " << sum << '\n';
         gallXS->AddPointError(ex, sum, 0, TMath::Sqrt(sum));
         mgtheta->Add(git);
         recxs.push_back(git);
-        theocounts.push_back(gtheo);
+        unccounts.push_back(gunc);
+        reccounts.push_back(grec);
 
         // Eval once again resolution
         Fit(h, gres);
@@ -258,6 +269,8 @@ void Yield(const std::string& beam, const std::string& target, const std::string
     mgtheta->Draw("a*l plc pmc");
     c0->cd(5);
     mgtheo->Draw("a*l plc pmc");
+    c0->cd(6);
+    gres->Draw("apl");
 
     auto* c1 {new TCanvas {"c1", "Comparator canvas"}};
     c1->DivideSquare(comps.size());
@@ -267,12 +280,25 @@ void Yield(const std::string& beam, const std::string& target, const std::string
         comps[i].Draw("", false, true, 3, gPad);
     }
 
-    auto* c2 {new TCanvas {"c2", "Theo counts canvas"}};
-    c2->DivideSquare(theocounts.size());
-    for(int i = 0; i < theocounts.size(); i++)
+    auto* c2 {new TCanvas {"c2", "Uncertainty counts canvas"}};
+    c2->DivideSquare(unccounts.size());
+    for(int i = 0; i < unccounts.size(); i++)
     {
         c2->cd(i + 1);
-        theocounts[i]->Draw("apl");
+        unccounts[i]->Draw("apl");
+    }
+
+    auto* c3 {new TCanvas {"c3", "Rec counts canvas"}};
+    c3->DivideSquare(reccounts.size());
+    for(int i = 0; i < reccounts.size(); i++)
+    {
+        c3->cd(i + 1);
+        reccounts[i]->Fit("pol0", "Q");
+        reccounts[i]->Draw("apl");
+        auto* f {reccounts[i]->GetFunction("pol0")};
+        auto counts {f->GetParameter(0)};
+        std::cout << "Ex = " << exs[i] << " counts " << counts << " +/- " << TMath::Sqrt(counts) / counts * 100 << " %"
+                  << '\n';
     }
 }
 #endif

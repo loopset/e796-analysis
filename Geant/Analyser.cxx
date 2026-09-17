@@ -191,7 +191,7 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
                     {
                         auto yEnd {tpcEnd[1]};
                         double ycenter {0};
-                        double exclusionWidth {15 * 2}; // 16 mm up and down center
+                        double exclusionWidth {12 * 2}; // 12 pads up and down center
                         return TMath::Abs(yEnd) > (ycenter + exclusionWidth);
                     }
                     else // gate on Si layer for Si triggers
@@ -270,7 +270,15 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
                         }
                         else
                             EAtSil = DeltaE0;
-                        return srim.EvalInitialEnergy("light", EAtSil, tl);
+                        auto EAtVertex {srim.EvalInitialEnergy("light", EAtSil, tl)};
+                        // WARNING: this is just for a proposal so we must be conservatives
+                        // Since this is a Geant4 simu and I still dont trust it, I will add
+                        // SRIM-estimated straggling to it. This likely will be an overestimation
+                        EAtVertex =
+                            gRandom->Gaus(EAtVertex, 0.5 * 0.1); // roughly 0.1 MeV of sigma found across [5,20] MeV of
+                                                           // initial energy for a proton going through 300 mm of gas
+                                                           // Here we assume Geant4 missing 1/2 of the straggling, so we add it
+                        return EAtVertex;
                     }
                 },
                 {"IsL1", "TPCDeltaE", "SilEAfter0", "SilDeltaE0", "SilIni0", "SilIdx1", "SilDeltaE1", "SilIni1", "TL"})
@@ -298,13 +306,13 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
     // Book histograms
     // ThetaCM all goes WITH ALL STATS
     auto hCMAll {df.Histo1D(HistConfig::ThetaCM, "thetaCM")};
-    auto hKinSampled {def.Histo2D(HistConfig::KinEl, "theta3", "T3")};
+    auto hKinSampled {def.Histo2D(HistConfig::KinGeant, "theta3", "T3")};
     hKinSampled->SetName("hKinSampled");
-    auto hKin {def.Histo2D(HistConfig::KinEl, "thetaLab", "EVertex")};
+    auto hKin {def.Histo2D(HistConfig::KinGeant, "thetaLab", "EVertex")};
     auto hEx {def.Histo1D(HistConfig::Ex, "Ex")};
     auto hDiff {def.Histo1D("Diff")};
     auto hCMAfter {def.Histo1D(HistConfig::ThetaCM, "thetaCM")};
-    ROOT::RDF::TH2DModel mPID {"hPID", "PID;E_{Sil} [MeV];#DeltaE_{gas} / TL_{drift} [MeV]", 400, 0, 80, 200, 0, 0.1};
+    ROOT::RDF::TH2DModel mPID {"hPID", "PID;E_{Sil} [MeV];#DeltaE_{gas} / TL_{drift} [MeV]", 400, 0, 80, 400, 0, 0.1};
     auto hPID {def.Histo2D(mPID, "SilDeltaE0", "Qave")};
     // Fit to a gaussian
     hEx->Fit("gaus", "0Q+");

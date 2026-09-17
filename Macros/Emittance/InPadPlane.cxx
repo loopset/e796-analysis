@@ -29,9 +29,12 @@ void InPadPlane()
     ROOT::RDataFrame df {*chain};
 
     // Filter by GATCONF and only one BL in cluster vector
-    auto gated {df.Filter([](ActRoot::ModularData& m) { return m.Get("GATCONF") == 1; }, {"ModularData"})
-                    .Filter("fClusters.fIsBeamLike.size() == 1")
-                    .Filter("fClusters.fIsBeamLike.front() == true")};
+    auto gated {
+        df.Filter([](ActRoot::ModularData& m) { return m.Get("GATCONF") == 1; }, {"ModularData"})
+            .Filter("fClusters.size() == 1")
+        // .Filter("fClusters.fIsBeamLike.size() == 1")
+        // .Filter("fClusters.fIsBeamLike.front() == true")
+    };
 
     ROOT::TThreadedObject<TH2D> hPad {"hPad", "Pad;X [pad];Y [pad]", 128, 0, 128, 128, 0, 128};
     gated.Foreach(

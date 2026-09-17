@@ -29,6 +29,8 @@ const TH2DModel KinSimu {"hKin", "Simulation kinematics;#theta_{Lab} [#circ];E_{
 
 const TH2DModel KinCM {"hKinCM", "CM kinematics;#theta_{CM} [#circ];E_{Vertex} [MeV]", 400, 0, 60, 400, 0, 20};
 
+const TH2DModel KinGeant {"hKinGeant", "Simu kinematics;#theta_{lab} [#circ];E_{Vertex} [MeV]", 600, 0, 180, 800, 0, 60};
+
 const TH1DModel Ex {
     "hEx", TString::Format("Excitation energy;E_{x} [MeV];Counts / %.f keV", (35. - (-10.)) / 300 * 1e3), 200, -10, 35};
 
