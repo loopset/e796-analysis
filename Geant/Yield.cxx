@@ -31,20 +31,28 @@
 void ParseYAML(const std::string& file, std::vector<double>& exs, std::vector<std::string>& xs)
 {
     auto node {YAML::LoadFile(file)};
+
     // Exs as string
-    auto exsString {node["exs"].as<std::vector<std::string>>()};
+    auto exsString {node["exs"] ? node["exs"].as<std::vector<std::string>>() : std::vector<std::string> {}};
+
     // xs path
-    auto xspath {node["xspath"].as<std::string>()};
+    auto xspath {node["xspath"] ? node["xspath"].as<std::string>() : std::string {}};
+
     // Dict
-    auto dict {node["dic"].as<std::map<std::string, std::string>>()};
+    auto dict {node["dic"] ? node["dic"].as<std::map<std::string, std::string>>()
+                           : std::map<std::string, std::string> {}};
+
     // Build vector with xs and exs as doubles
     exs.clear();
     xs.clear();
     for(const auto& ex : exsString)
     {
         exs.push_back(std::stod(ex));
-        auto xsfile {xspath + "/" + dict[ex] + ".dat"};
-        xs.push_back(xsfile);
+        if(xspath.length())
+        {
+            auto xsfile {xspath + "/" + dict[ex] + ".dat"};
+            xs.push_back(xsfile);
+        }
     }
 }
 
@@ -68,6 +76,7 @@ void Yield(const std::string& beam, const std::string& target, const std::string
     std::vector<double> exs;
     std::vector<std::string> xsfiles;
     ParseYAML(yaml, exs, xsfiles);
+    // if no theo xs provided in simu, xsfiles is EMPTY
 
     // Parse each ex
     std::vector<TH1D*> hsEx {};
@@ -136,21 +145,29 @@ void Yield(const std::string& beam, const std::string& target, const std::string
     std::vector<TGraphErrors*> unccounts;
     // Reconstructed counts
     std::vector<TGraphErrors*> reccounts;
+
+    // If theoretical xs
     for(int i = 0; i < exs.size(); i++)
     {
         const auto& ex {exs[i]};
         auto& iv {ivs[i]};
         auto& eff {effs[i]};
 
-        // Compute scaling factor
+        // Compute scaling factor alpha
+        double alpha {1.};
         ActSim::CrossSection xs;
-        xs.ReadUsingTGraph(xsfiles[i]);
-        mgtheo->Add(xs.GetTheoXSGraph());
-        theoxs.push_back(xs.GetTheoXSGraph());
-        auto xsIntegral {xs.GetTotalXScm2()};
-        std::cout << "Integrated xs : " << xs.GetTotalXSmbarn() << '\n';
-        auto alpha {averageSF * xsIntegral * Nb * Nt / Nit};
-        std::cout << "Scaling factor for Ex = " << exs[i] << " : " << alpha << '\n';
+        if(xsfiles.size())
+        {
+            xs.ReadUsingTGraph(xsfiles[i]);
+            mgtheo->Add(xs.GetTheoXSGraph());
+            theoxs.push_back(xs.GetTheoXSGraph());
+            auto xsIntegral {xs.GetTotalXScm2()};
+            std::cout << "Integrated xs : " << xs.GetTotalXSmbarn() << '\n';
+            alpha = averageSF * xsIntegral * Nb * Nt / Nit;
+            std::cout << "Scaling factor for Ex = " << exs[i] << " : " << alpha << '\n';
+        }
+        else
+            std::cout << "Assuming alpha = 1 as no theo xs provided" << '\n';
 
 
         // Scale
@@ -169,7 +186,6 @@ void Yield(const std::string& beam, const std::string& target, const std::string
             TString::Format("#sigma(N)/N for E_{x} = %.2f;#theta_{CM} [#circ];#sigma(N)/N [percent]", ex).Data());
         auto* grec {new TGraphErrors};
         grec->SetTitle(TString::Format("Rec counts E_{x} = %.2f;#theta_{CM} [#circ];Counts", ex).Data());
-        double sum {};
         for(int j = 0; j < iv.GetSize(); j++)
         {
             auto hiv {iv.GetHistos()[j]};
@@ -197,12 +213,11 @@ void Yield(const std::string& beam, const std::string& target, const std::string
             // std::cout << " eps : " << eps << " Omega : " << Omega
             //           << " theo xs : " << averageSF * xs.GetTheoXSGraph()->Eval(iv.GetCenter(j)) << '\n';
             // Theoretical counts per bin
-            auto theoN {Nt * Nb * eps * Omega * 1e-27 * averageSF * xs.GetTheoXSGraph()->Eval(iv.GetCenter(j))};
+            // auto theoN {Nt * Nb * eps * Omega * 1e-27 * averageSF * xs.GetTheoXSGraph()->Eval(iv.GetCenter(j))};
             // std::cout << " theoN : " << theoN << '\n';
-            sum += theoN;
+            // sum += theoN;
         }
         // std::cout<< "Total theo counts : " << sum << '\n';
-        gallXS->AddPointError(ex, sum, 0, TMath::Sqrt(sum));
         mgtheta->Add(git);
         recxs.push_back(git);
         unccounts.push_back(gunc);
@@ -213,9 +228,12 @@ void Yield(const std::string& beam, const std::string& target, const std::string
 
         // Comparator
         Angular::Comparator comp {TString::Format("E_{x} = %.2f", ex).Data(), git};
-        comp.Add("fresco", xsfiles[i]);
-        comp.Fit();
-        comps.push_back(comp);
+        if(xsfiles.size())
+        {
+            comp.Add("theo", xsfiles[i]);
+            comp.Fit();
+            comps.push_back(comp);
+        }
 
         // Kinematics
         // hsKin[i]->Scale(alpha);
@@ -297,8 +315,9 @@ void Yield(const std::string& beam, const std::string& target, const std::string
         reccounts[i]->Draw("apl");
         auto* f {reccounts[i]->GetFunction("pol0")};
         auto counts {f->GetParameter(0)};
-        std::cout << "Ex = " << exs[i] << " counts " << counts << " +/- " << TMath::Sqrt(counts) / counts * 100 << " %"
-                  << '\n';
+        std::cout << "Ex = " << exs[i] << " counts in " << thetaCMStep << " : " << counts << " +/- "
+                  << TMath::Sqrt(counts) / counts * 100 << " % " << " and total counts : " << gall->GetPointY(i)
+                  << " +/- " << gall->GetErrorY(i) << '\n';
     }
 }
 #endif

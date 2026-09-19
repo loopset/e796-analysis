@@ -24,12 +24,15 @@ void Fit(TH1* h, TGraphErrors* g)
     auto binOfMax {h->GetMaximumBin()};
     auto xOfMax {h->GetBinCenter(binOfMax)};
     f->SetParameters(10, xOfMax, 0.1);
-    h->Fit(f, "0QMR+");
+    std::cout<<"X of max : "<<xOfMax<<'\n';
+    double width {0.5};
+    h->Fit(f, "0QMR+", "", xOfMax - width, xOfMax + width);
     f->ResetBit(TF1::kNotDraw);
 
     // And push fit results to graph
     g->AddPoint(f->GetParameter(1), f->GetParameter(2));
     g->SetPointError(g->GetN() - 1, f->GetParError(1), f->GetParError(2));
+    std::cout<<"Fit results : "<<f->GetParameter(1)<<" +/- "<<f->GetParError(1)<<" and "<<f->GetParameter(2)<<" +/- "<<f->GetParError(2)<<'\n';
 }
 
 class RetPlot

@@ -63,7 +63,18 @@ for l in ["s", "p", "d"]:
     data = phys.utils.parse_txt(f"../Inputs/dp/{l}.dat", ncols=3)
     theoxs.append(data)
 
+# Comparators
+comps = []
+labels = ["l = 0", "l = 1", "l = 2"]
+for i, (exp, theo) in enumerate(xs):
+    arr = np.array([exp.member("fX"), exp.member("fY"), exp.member("fEY")]).T
+    comp = phys.Comparator(arr)
+    for j, model in enumerate(theoxs):
+        comp.add_model(labels[j], "", model)
+    comp.fit()
+    comps.append(comp)
 
+####################################################################################
 # Plot with kinematics, ex and resolution
 fig, axs = plt.subplots(1, 2, figsize=(9, 4))
 # Kinematics
@@ -136,9 +147,15 @@ for i, eff in enumerate(effs):
     x = eff.values(0)
     y = eff.values(1)
     n = 2
-    x = np.append(x[:len(x)-len(x)%n].reshape(-1, n).mean(axis=1), x[len(x)-len(x)%n:].mean() if len(x)%n else [])
-    y = np.append(y[:len(y)-len(y)%n].reshape(-1, n).mean(axis=1), y[len(y)-len(y)%n:].mean() if len(y)%n else [])
-    label = fr"$E_{{x}} = ${exs[i]:.1f} MeV" if i > 0 else "g.s."
+    x = np.append(
+        x[: len(x) - len(x) % n].reshape(-1, n).mean(axis=1),
+        x[len(x) - len(x) % n :].mean() if len(x) % n else [],
+    )
+    y = np.append(
+        y[: len(y) - len(y) % n].reshape(-1, n).mean(axis=1),
+        y[len(y) - len(y) % n :].mean() if len(y) % n else [],
+    )
+    label = rf"$E_{{x}} = ${exs[i]:.1f} MeV" if i > 0 else "g.s."
     ax.plot(x, y, label=label)
 
 # L1 region
@@ -154,8 +171,8 @@ ax.set_ylabel("Efficiency")
 
 # Theoretical cross sections from twofnr
 label = ["l = 0 (3.44 MeV)", "l = 1", "l = 2 (g.s., 10 MeV)"]
-colors=["crimson", "green", "dodgerblue"]
-ls=["-", ":", "--"]
+colors = ["crimson", "green", "dodgerblue"]
+ls = ["-", ":", "--"]
 ax = axs[1]
 ax.set_yscale("log")
 for i, theo in enumerate(theoxs):
@@ -178,27 +195,51 @@ fig.savefig("./Outputs/eff_theoxs.png", dpi=300)
 ##############################################################
 # Reconstructed cross sections
 averageSF = 0.25
-label = ["g.s. l = 2", "3.44 MeV l = 0", "10 MeV l = 2"]
-colors=["dodgerblue", "crimson", "dodgerblue"]
+titles = ["g.s. l = 2", "3.44 MeV l = 0", "10 MeV l = 2"]
 
-fig, axs = plt.subplots(1, 3, figsize=(9, 3))
+fig, axs = plt.subplots(1, 3, figsize=(9, 3), sharey=True, constrained_layout=True)
 for i, (exp, theo) in enumerate(xs):
     ax = axs[i]
     ax.set_yscale("log")
-    ax.errorbar(exp.member("fX"), exp.member("fY"), yerr=exp.member("fEY"), **errorbar_nols, mec="black", color="black", ms=4)
-    ax.plot(theo.values(0), averageSF * theo.values(1), ls="-", color=colors[i], label=label[i])
+    ax.errorbar(
+        exp.member("fX"),
+        exp.member("fY"),
+        yerr=exp.member("fEY"),
+        **errorbar_nols,
+        mec="black",
+        color="black",
+        ms=4,
+    )
+    ## Plot fitted from comparator
+    for j, fit in enumerate(comps[i].fFitted.values()):
+        x = np.linspace(fit[:, 0].min(), fit[:, 0].max(), 200)
+        spe = phys.utils.create_spline3(fit[:, 0], fit[:, 1])
+        y = spe(x)
+        ax.plot(x, y, ls=ls[j], color=colors[j], label=f"l = {j}" if i == 0 else None)
+    # ax.plot(
+    #     theo.values(0),
+    #     averageSF * theo.values(1),
+    #     ls="-",
+    #     color=colors[i],
+    #     label=label[i],
+    # )
 
     # L1 region
     l1 = 17
     ax.axvline(l1, lw=1, ls="--", color="gray")
     ax.axvspan(0, l1, color="gray", alpha=0.1)
 
-    ax.legend(fontsize=12)
-    ax.set_xlim(0, 180)
-    ax.set_xlabel(r"$\theta_{CM}$ [$\circ$]")
-    ax.set_ylabel(r"d$\sigma$/d$\Omega$ [mb/sr]")
+    if i == 0:
+        ax.legend(fontsize=12)
+    ax.set_title(titles[i], fontsize=12)
+    ax.set_xlim(0, 100)
+    ax.set_ylim(5e-3)
+    if i == 0:
+        ax.set_ylabel(r"d$\sigma$/d$\Omega$ [mb/sr]")
 
-fig.tight_layout()
+fig.supxlabel(
+    r"$\theta_{CM}$ [$\circ$]", x=0.55, fontsize=plt.rcParams["axes.labelsize"]
+)
 fig.savefig("./Outputs/xs_reco.png", dpi=300)
 
 plt.show()

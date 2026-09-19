@@ -36,7 +36,7 @@ void Runner(TString what = "plot")
 
     std::string beam {"17C"};
     std::string target {"d"};
-    std::string light {"p"};
+    std::string light {"t"};
     double ebeam {255.};
     // Parameters of exp
     double intensity {1e3};
@@ -56,6 +56,8 @@ void Runner(TString what = "plot")
             yaml = "./dd.yaml";
         else if(light == "p")
             yaml = "dp.yaml";
+        else if(light == "t")
+            yaml = "dt.yaml";
         else
             throw std::runtime_error("No YAML config for this channel");
     }

@@ -1,9 +1,9 @@
 # Get from config file
 reaction = config["reaction"]
 exs = config["exs"]
-xspath = config["xspath"]
-dic = config["dic"]
-iterOn = config["iterOn"]
+xspath = config.get("xspath", None)
+dic = config.get("dic", None)
+iterOn = config.get("iterOn", False)
 
 # Apply iter procedure
 if iterOn:
@@ -26,11 +26,11 @@ rule edit_config:
     input:
         "geant.conf"
     output:
-        f"{OUT_DIR}/geant_{{ex}}.conf"
+        temp(f"{OUT_DIR}/geant_{{ex}}.conf")
     params:
         iter=lambda wc : iterDict[wc.iter],
         ex=lambda wc : wc.ex,
-        fort=lambda wc : dic[wc.ex]
+        fort=lambda wc : dic[wc.ex] if dic else ""
     run:
         with open(input[0]) as f:
             lines = f.readlines()
@@ -43,7 +43,7 @@ rule edit_config:
                     if xspath:
                         f.write(f"CrossSection: {xspath}/{params.fort}.dat\n")
                     else:
-                        f.write(f"CrossSection:\n")
+                        f.write(f"#CrossSection:\n")
                 # Fraction of gas variation
                 elif iterOn and line.startswith(iterWhat + ":"):
                     f.write(f"{iterWhat}: {params.iter}\n")

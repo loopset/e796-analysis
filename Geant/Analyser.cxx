@@ -140,10 +140,19 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
         sigmaThetaRecSi = 0.6;
         sigmaThetaRecL1 = 1.5;
     }
-    else
+    else if(light == "p")
     {
         sigmaThetaRecSi = 0.6;
         sigmaThetaRecL1 = 2.6;
+    }
+    else if(light == "t")
+    {
+        sigmaThetaRecSi = 0.6;
+        sigmaThetaRecL1 = sigmaThetaRecSi * 1.25; // no L1 trigger for triton; estimation based on scaling of previous
+    }
+    else
+    {
+        throw std::runtime_error("No angular uncertainty defined for this channel");
     }
 
     ROOT::EnableImplicitMT();
@@ -274,10 +283,10 @@ RetAna Analyse(const std::string& beam, const std::string& target, const std::st
                         // WARNING: this is just for a proposal so we must be conservatives
                         // Since this is a Geant4 simu and I still dont trust it, I will add
                         // SRIM-estimated straggling to it. This likely will be an overestimation
-                        EAtVertex =
-                            gRandom->Gaus(EAtVertex, 0.5 * 0.1); // roughly 0.1 MeV of sigma found across [5,20] MeV of
-                                                           // initial energy for a proton going through 300 mm of gas
-                                                           // Here we assume Geant4 missing 1/2 of the straggling, so we add it
+                        EAtVertex = gRandom->Gaus(
+                            EAtVertex, 0.5 * 0.1); // roughly 0.1 MeV of sigma found across [5,20] MeV of
+                                                   // initial energy for a proton going through 300 mm of gas
+                                                   // Here we assume Geant4 missing 1/2 of the straggling, so we add it
                         return EAtVertex;
                     }
                 },
