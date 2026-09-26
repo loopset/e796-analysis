@@ -1,0 +1,205 @@
+\documentclass[a4paper, 12pt]{article}
+\usepackage{graphicx} % Required for inserting images
+\usepackage[T1]{fontenc}
+\usepackage{stix}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{parskip}
+\usepackage[version=4]{mhchem}
+\usepackage{xspace}
+\usepackage{siunitx}
+\usepackage[font=small, labelfont={bf,it}]{caption}
+\usepackage[voffset=-10pt, headsep=10pt, margin=2cm]{geometry}
+\usepackage{authblk}
+\usepackage[
+backend=biber,
+style=phys,
+articletitle=false,
+minnames=1,
+maxnames=1,
+biblabel=brackets,
+%style=draft,
+]{biblatex}
+\addbibresource{PAC2026.bib}
+
+% siunitx
+\sisetup{
+group-digits = false,
+%detect-all,% same font as text
+exponent-product = \cdot,
+product-units = bracket-power,
+list-pair-separator= {\text{, }},
+range-phrase = --,
+range-units = single,
+% table settings
+table-alignment-mode = none,
+table-number-alignment = center,
+table-text-alignment = center
+}
+\DeclareSIUnit{\barn}{b}
+\DeclareSIUnit{\deuteron}{d}
+\DeclareSIUnit{\counts}{counts}
+\DeclareSIUnit{\atomicmassunit}{u}
+
+% hyperref
+\hypersetup{
+colorlinks=true,
+linkcolor=NavyBlue,
+citecolor=ForestGreen,
+urlcolor=Maroon,
+pdfstartview=FitH,
+bookmarksopen=true,
+bookmarksnumbered=true,
+}
+
+
+\newcommand{\iso}[2]{\ce{^{#1}#2}}
+\newcommand{\elab}{\ensuremath{E_{\text{lab}}}\xspace}
+\newcommand{\ex}{\ensuremath{E_{\text{x}}}\xspace}
+\newcommand{\jpi}{\ensuremath{J^{\pi}}\xspace}
+\newcommand{\thetacm}{\ensuremath{\theta_{\text{CM}}}\xspace}
+\newcommand{\thetalab}{\ensuremath{\theta_{\text{lab}}}\xspace}
+\newcommand{\vd}{\ensuremath{v_{\text{d}}}\xspace}
+\newcommand{\sn}{\ensuremath{S_{\text{n}}}\xspace}
+\newcommand{\spp}{\ensuremath{S_{\text{p}}}\xspace}
+\newcommand{\stwon}{\ensuremath{S_{\text{2n}}}\xspace}
+\newcommand{\mnmp}{\ensuremath{M_{\text{n}}/M_{\text{p}}}\xspace}
+\newcommand{\tnotex}[1]{\hyperref[tn#1]{\textsuperscript{#1}}} % threeparttable with hyperref
+\newcommand{\ctwos}{\ensuremath{\text{C}^2\text{S}}\xspace}
+\newcommand{\rs}{\ensuremath{R_{\text{s}}}\xspace}
+\newcommand{\deltas}{\ensuremath{\Delta S}\xspace}
+\newcommand{\tbme}[3]{\ensuremath{V^{\text{#1}}_{#2,#3}}\xspace}
+
+\title{$\nu$\textit{sd} strength in \iso{18}{C} through the \iso{17}{C}(d,p) reaction using ACTAR TPC}
+\renewcommand{\Authfont}{\small}
+% List collaborators
+\author[1]{M. Lozano-González}
+\author[1]{B. Fernández-Domínguez}
+\author[2]{J. Lois-Fuentes}
+\author[3]{T. Roger}
+
+% List affiliations
+\affil[1]{IGFAE and Dpt. of Particle Physics, University of Santiago de Compostela (Spain)}
+\affil[2]{LPC-Caen (France)}
+\affil[3]{GANIL (France)}
+\date{\empty}
+
+
+\begin{document}
+\maketitle
+
+\section{Motivation}
+Neutron-rich carbon and oxygen isotopes are prominent examples of systems dramatically affected by shell-structure migration driven by the residual NN forces. Several experiments have highlighted the breakdown of the $N=20$ closure into two new $N=14$ and $N=16$ closures due to the changing tensor force between $\pi psd$ and $\nu psd$ shells \cite{otsuka2020}. The carbon isotopic chain manifests many exotic properties arising from this underlying rearrangement of shell gaps; for instance, the large deformation lengths of \iso{16}{C} \cite{elekes2004} and \iso{17}{C} \cite{elekes2005}, as well as the halo character of \iso{19}{C} \cite{nakamura1999} and the drip-line \iso{22}{C} \cite{tanaka2010}. The $N=16$ gap, determined between $\nu1s_{1/2}$ and $\nu0d_{3/2}$ orbits, is essential to establish the properties of the most neutron-rich C isotopes. While studying this gap in \iso{22}{C} remains challenging for current facilities, mapping its evolution in less exotic C isotopes is feasible. Benchmarking and improving advanced shell-model interactions in these systems is then essential to extend their predictive power later for the most exotic C isotopes. In this sense, \iso{18}{C} is an excellent testbench for which experimental knowledge of \textit{sd} strength is limited. We propose, therefore, to study its single-particle structure through the neutron-adding transfer reaction \iso{17}{C}(d,p)\iso{18}{C} profiting from the \iso{17}{C} beam available at GANIL.
+
+\subsection{Available experimental data}
+Spectroscopy of \iso{18}{C} is limited to in-beam $\gamma$ spectroscopy \cite{stanoiu2008}, lifetime measurements \cite{ong2008,voss2012}, and one-neutron removal from \iso{9}{C} \cite{kondo2009}. Only the ground-state spectroscopic factor is known from \textcolor{red}{what... explain discrepancies and find solution with newer literature that I am unable to find}.
+
+The current experimental knowledge of \iso{18}{C} is summarised in Figure XX.
+
+\subsection{Novelty of the proposed research}
+Explain what we will able to measure and its impact. Talk here about the 3-body force thing and the Efimov states.
+
+\section{Experiment details}
+The experiment will employ a LISE beam of \iso{17}{C} slowed down to \qty{15}{A\MeV} and sent to the active target ACTAR TPC, in which reactions will occur and light particles will be detected. Profiting from the recently developed zero-degree detector (ZDD), heavy recoils will be detected simultaneously in it. A scheme of the experiment is shown in Figure XX. Each part is described in more detail below.
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=\linewidth]{figures/setup_pac_ganil_crop.pdf}
+    \caption{Scheme of the experimental setup. The secondary \iso{17}{C} impinges on ACTAR TPC, where reactions take place. Emitted light particles are then measured in the TPC using the \textit{L1} trigger (see text below) and in three Si detector walls. Finally, the ZDD is used to detect in coincidence the heavy recoil. Optimal distances and gas settings are also shown.}
+    \label{fig:setup}
+\end{figure}
+
+\subsection{Beam production}
+The \iso{17}{C} beam will be produced by fragmentation of a primary \iso{22}{Ne} beam at \qty{60}{\MeV\per\atomicmassunit} in a Be primary target. Subsequently, it will be slowed down to the final beam energy of \qty{15}{A\MeV} using a XX wedge in the XX focal plane of the LISE spectrometer. The secondary beam is expected to be \qty{100}{\percent} pure and present $\Delta$E/E$= \qty{2.5}{\percent}$, suitable for our purposes.
+
+\textcolor{red}{Add more information here}
+
+\subsection{Light-particle detection with ACTAR TPC}
+The active target ACTAR TPC will be used as both the reaction target and the light-particle detector. The proposed ACTAR TPC configuration is based on the successful setup of the \iso{11}{Li}(d,p)\iso{12}{Li} experiment carried out at TRIUMF in 2025. Here, the ACTAR will be filled with a mixture of \qty{95}{\percent} D$_2$ and \qty{5}{\percent} CF$_4$ at \qty{900}{\milli\bar}, equivalent to a solid CD$_2$ target of \qty{12}{\milli\g\per\cm\squared} thickness. As in previous transfer experiments \cite{loisfuentes2026}, auxiliary Si detector walls will be placed in both lateral and frontal flanges to stop and measure the residual energies of protons escaping the active-area region. However, as the (d,p) cross sections peak at large laboratory angles (or equivalently, low $\theta_{\text{CM}}$, see \autoref{fig:simu_kin_ex}), in which protons have low energies, the most relevant part of the angular distribution will be measured by detecting protons stopped within the pad-plane region. This requires making use of the internal multiplicity trigger of ACTAR (\textit{L1} trigger), which was also commissioned during the TRIUMF campaign. As such, the proposed experiment will exploit the full kinematic capabilities recently achieved with ACTAR TPC.
+
+Detailed simulations accounting for detector geometry, resolution, straggling, and beam emittance were performed to determine the optimal detector configuration and expected yields. The results are shown in \autoref{fig:simu_kin_ex}, where the simulated kinematic lines and excitation-energy (\ex) spectrum for the \iso{17}{C}(d,p)\iso{18}{C} reaction are displayed for selected \ex states. The characteristic (d,p) shape of kinematic lines, in which higher \ex states present lower proton laboratory energies, makes the \textit{L1} trigger essential for accessing  the $\ex \geq \qty{3.5}{\MeV}$ range. The inset in \autoref{fig:simu_kin_ex} shows the evolution of the experimental resolution with excitation energy, yielding an overall constant resolution of $\sigma \simeq \qty{250}{\keV}$.
+
+The left panel of \autoref{fig:eff_theoxs} presents the calculated efficiencies for representative \ex states in \iso{18}{C}. As underscored above, the \textit{L1} trigger will be essential to access the low-angle part of the angular distribution, even though its efficiency highly depends on the beam emittance (here assumed to be similar to the previous \iso{20}{O} experiment) and trigger exclusion zone. In this proposal, a conservative exclusion region of twelve rows up and below the central row was assumed. These settings could be tweaked during the experiment running to maximise the cross section coverage while avoiding triggering on beam particles with large emittance. The right panel of the same figure displays the theoretical angular distributions for $l=0,1, \text{and}\, 2$ transfer calculated with the TWOFNR code. They were included in the generation of random $\theta_{\text{CM}}$ events to make the simulation as realistic as possible.
+
+% and displayed in the right panel of \autoref{fig:eff_theoxs} were included in the generation of random $\theta_{\text{CM}}$ events. 
+% and in \autoref{fig:eff_theoxs}, which shows the estimated efficiency alongside the theoretical angular distributions used in the calculations. Only a selection of excited states from the predictions in Table XX were included in the simulations. The higher the \ex of the state, the lower the proton energies, and thus the multiplicity trigger becomes more essential in terms of efficiency, as highlighted in the left panel of \autoref{fig:eff_theoxs}. For states starting at $\ex \sim \qty{5}{\MeV}$, $\theta_{\text{CM}}$ as low as \qty{0}{\degree} could be reached depending on the beam emittance (assumed here to be similar to the previous \iso{20}{O} experiment) and the defined trigger exclusion zone. In this proposal, as illustrated in Figure XX, a conservative exclusion region of twelve rows up and below the central row was assumed. These settings could be tweaked during the experiment running to maximise the cross section coverage while avoiding triggering on beam particles with large emittance. 
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=1\textwidth]{./figures/kin_ex_res.pdf}
+    \caption{\textbf{Left}: simulated laboratory kinematic lines of the \iso{17}{C}(d,p)\iso{18}{C} reaction to different excited states of \iso{18}{C}. The shaded grey band indicates the region to which the \textit{L1} trigger contributes. \textbf{Right}: Reconstructed \ex peaks, with one- and two-neutron thresholds indicated. The inset shows the experimental resolution evolution for each simulated state in \iso{18}{C}, with an average of $\sigma = \qty{250}{\keV}$.}
+    \label{fig:simu_kin_ex}
+\end{figure}
+
+\begin{figure}[!htbp]
+    \centering
+    \includegraphics[width=1\linewidth]{figures/eff_theoxs.pdf}
+    \caption{\textbf{Left:} efficiency as a function of centre-of-mass angle for representative states in \iso{18}{C}. The shaded grey band indicates the contribution of the internal multiplicity trigger. \textbf{Right:} theoretical angular distributions obtained for $l = 0, 1\, \text{and}\, 2$ transfer using TWOFNR.}
+    \label{fig:eff_theoxs}
+\end{figure}
+
+Regarding the Si detector setup, this experiment uses the newly deployed \qty{1.5}{\mm}-thick Si modules on both left and right walls to enlarge the $\theta_{\text{CM}}$ coverage by increasing the range of proton energies stopped in the Si material. Bearing in mind the availability of just 18 modules (each with two Si pads), each lateral wall will use 8 modules disposed in two columns and four rows. The front wall will use the legacy Si detector setup, composed of four columns and four rows of \qty{0.5}{\mm}-thick Si pads, resembling the \iso{20}{O}(d,\iso{3}{He})\iso{19}{N} experiment configuration and enabling also the simultaneous study of the interesting \iso{17}{C}(d,t)\iso{16}{C} reaction. 
+
+All Si walls will be placed as close as possible to the pad plane, with typical distances of \qtyrange{5}{7}{\cm}, while ensuring minimum disturbance to the drift electric field. In light of \autoref{fig:eff_theoxs}, the combined Si and pad-plane coverage will allow measuring $\theta_{\text{CM}} \leq \qty{60}{\degree}$ angles, with an average efficiency of \qty{20}{\percent} across the full range. These estimates ensure a correct distinction of the different characteristic $l$ shapes of the angular distributions, as shown in
+
+\subsection{Heavy-particle detection in the ZDD}
+\autoref{fig:simu_kin_ex} right shows that both one- and two-neutron emission thresholds in \iso{18}{C} are close in energy, at around \qty{4.5}{\MeV}. As such, an important part of the $d$ strength lies in the unbound region, presenting intrinsic widths $\Gamma$ in the \qtyrange{0.1}{2.5}{\MeV} range. The study of their partial widths $\Gamma_{\text{1n}}$ and $\Gamma_{\text{2n}}$ offers then valuable information of each state's underlying structure. However, this requires both a mass $A$ and charge $Z$ identification of the heavy fragments, which is not possible solely with ACTAR TPC. For this reason, we propose to couple ACTAR TPC with the recently developed zero-degree detector (ZDD) for LISE \cite{girard-alcindor2023}, enabling a clear identification of the different heavy recoils. Recent experiments with the ZDD achieved only an identification in charge owing to diverse problems. Here, we expect that the low mass of our ejectiles, together with the lower beam intensity, will allow us to use the E-$\Delta$E method to tag also their mass. An example of the identification capabilities of the ZDD is shown in \autoref{fig:zdd}.
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=0.6\linewidth]{figures/zdd.png}
+    \caption{E-$\Delta$E identification matrix obtained after low-intensity \iso{50}{Cr} fragmentation at \qty{30}{\MeV\per\atomicmassunit}, taken from \cite{girard-alcindor2023}. A good resolution separation in $(Z,A)$ is obtained for the different fragments.}
+    \label{fig:zdd}
+\end{figure}
+
+This will not be the first time that ACTAR has not been the last element in the beam line; the \textit{brochette} mode at LISE for the measurement of $\beta$ deformation lengths in \iso{34}{Si} using both hadronic and electromagnetic excitations (CoulEx) being a prominent example. Nevertheless, the coupling to the ZDD has not been done before and might require some adaptations. The ZDD will be placed downstream ACTAR TPC, as closer as possible to maximise geometric efficiency, and using a specifically designed flange. Active discussions are ongoing concerning the technical challenges posed by the coupling. Similarly, we are in contact with the ACTAR TPC team for merging the ZDD's NUMEXO2 acquisition with ACTAR's GET/VXI systems.
+
+\section{Beam time request}
+The theoretical cross sections shown in the left panel of \autoref{fig:eff_theoxs} present an average value of \qty{1}{\milli\barn\per\steradian}, assuming a $\ctwos = \qty{1}{}$. Then, the yield can be calculated from the formula $Y = I_{\text{17C}}\cdot N_{\text{d}}\cdot \epsilon \cdot \Omega \cdot \ctwos\cdot\text{d}\sigma/\text{d}\Omega$, where we will assume an average beam intensity of $I_{\text{17C}} = \qty{1e3}{pps}$, a deuteron number from the gas mixture of $N_{\text{d}} = \qty{1.1e21}{\deuteron\per\cm\squared}$, a mean efficiency of $\epsilon = \qty{17}{\percent}$, a typical solid angle interval at $\thetacm = \qty{25}{\degree}$ with a width of \qty{5}{\degree} ($\Omega = \qty{0.23}{\steradian}$), and a more realistic $\ctwos = \qty{0.25}{}$. This results in a yield of $Y = \qty{1.1e-5}{\counts\per\s}$, and therefore we request 21 UT (7 days) to reach statistical uncertainties of \qty{40}{\percent} in \qty{5}{\degree} bins across the covered \thetacm range.
+\begin{figure}[!htb]
+    \centering
+    \includegraphics[width=\linewidth]{figures/xs_reco.pdf}
+    \caption{Reconstructed angular distributions with the simulation algorithm accounting for experimental deffects. Three representative states are illustrated, with predicted $l = 0$ or $l=2$ shapes according to the panel title. In all cases, the reconstructed cross section identifies unambigously the predicted $l$ shape despite the uncertainty bars.}
+    \label{fig:rec_xs}
+\end{figure}
+
+With this settings, the same simulation described above predicts the angular distributions shown in \autoref{fig:rec_xs}, showcasing the ability of the proposed experiment to recontruct the characteristic $l$ shapes in spite of the predict statistical uncertainties. The total expected counts per state are summarised in \autoref{tab:stats}.
+
+
+
+\begin{table}[!htb]
+    \centering
+    \begin{tabular}{@{}cccccc@{}}
+    \toprule
+    {$E_{x}$ / MeV} & $J^{\pi}$ & {Dominant $\nu$$nl_{j}$} & {$\text{Counts} / \qty{5}{\degree}_{\text{CM}}$} & Relative unc [\unit{\percent}] & {Total counts} \\ \midrule
+    g.s. & $0^+_1$ & $0d_{3/2}$ & 5.5 & 42 & 42 \\
+    2.2 & $2^+_1$ & $0d_{5/2}$ & 5.6 & 42 & 50\\
+    3.4 & $2^+_2$ & $1s_{1/2}$ & 5.6 & 42 & 61\\
+    5.7 & $4^+_1$ & $0d_{5/2}$ & 6.0 & 40 & 92\\
+    6.4 & $2^+_3$ & $0d_{3/2}$& 6.9 & 38 & 104\\
+    10.0 & $0^+_5$ & $0d_{3/2}$& 8.1 & 35 & 162\\ \bottomrule
+    \end{tabular}
+    \caption{Simulated states in \iso{18}{C} and their expected counts using the domint $l$ transfer component predicted from shell-model calculations in Table XX. Relative statistic uncertainties of \qty{40}{\percent} are reached. The total counts per state are also listed.}
+    \label{tab:stats}
+\end{table}
+
+\begin{equation}
+    \sisetup{per-mode=fraction}
+    \text{Yield} \left[\unit{\counts\per\s}\right] = \qty{1e3}{pps}\; \times \qty{1.1e21}{\deuteron\per\cm\squared} \times \qty{0.17}{} \times \qty{0.23}{\steradian} \times \left(\qty{0.25}{} \cdot \qty{1}{\milli\barn\per\steradian}\right) \times  \qty{e-27}{\cm\squared\per\milli\barn}
+\end{equation}
+
+\begin{table}[!htb]
+    \centering
+    \begin{tabular}{@{}cc@{}}
+    \toprule
+    Purpose & Requested time \\ \midrule
+    Tunning and electronic testing & 3 UT (1 day) \\
+    Data taking & 21 UT (7 days) \\ \midrule
+    Total & 24 UT (8 days) \\ \bottomrule
+    \end{tabular}
+    \caption{Requested beam time. 1 UT $=$ \qty{8}{\hour}.}
+    \label{tab:request}
+\end{table}
+
+\printbibliography
+
+\end{document}

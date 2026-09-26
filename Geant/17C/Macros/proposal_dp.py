@@ -136,6 +136,7 @@ axins.set_ylabel(r"$\sigma$ [MeV]")
 
 fig.tight_layout()
 fig.savefig("./Outputs/kin_ex_res.png", dpi=300)
+fig.savefig("./Outputs/kin_ex_res.pdf", dpi=300)
 
 # plt.close("all")
 #####################################################################
@@ -190,7 +191,7 @@ ax.legend(fontsize=12)
 
 fig.tight_layout()
 fig.savefig("./Outputs/eff_theoxs.png", dpi=300)
-
+fig.savefig("./Outputs/eff_theoxs.pdf", dpi=300)
 # plt.close("all")
 ##############################################################
 # Reconstructed cross sections
@@ -208,6 +209,7 @@ for i, (exp, theo) in enumerate(xs):
         **errorbar_nols,
         mec="black",
         color="black",
+        ls="none",
         ms=4,
     )
     ## Plot fitted from comparator
@@ -241,5 +243,6 @@ fig.supxlabel(
     r"$\theta_{CM}$ [$\circ$]", x=0.55, fontsize=plt.rcParams["axes.labelsize"]
 )
 fig.savefig("./Outputs/xs_reco.png", dpi=300)
+fig.savefig("./Outputs/xs_reco.pdf", dpi=300)
 
 plt.show()
