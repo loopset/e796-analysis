@@ -1,6 +1,7 @@
 # Get from config file
 reaction = config["reaction"]
 exs = config["exs"]
+gammas = config.get("gammas", None)
 xspath = config.get("xspath", None)
 dic = config.get("dic", None)
 iterOn = config.get("iterOn", False)
@@ -30,20 +31,25 @@ rule edit_config:
     params:
         iter=lambda wc : iterDict[wc.iter],
         ex=lambda wc : wc.ex,
-        fort=lambda wc : dic[wc.ex] if dic else ""
+        fort=lambda wc : dic[wc.ex] if dic else "",
+        gamma=lambda wc : gammas[wc.ex] if gammas else 0,
     run:
         with open(input[0]) as f:
             lines = f.readlines()
         with open(output[0], "w") as f:
             for line in lines:
-                # Ex variation
+                # Change Ex
                 if line.startswith("Reaction:"):
                     f.write(f"Reaction: 17C{reaction}@255|{params.ex}\n")
+                # Change cross section
                 elif line.startswith("CrossSection:"):
                     if xspath:
                         f.write(f"CrossSection: {xspath}/{params.fort}.dat\n")
                     else:
                         f.write(f"#CrossSection:\n")
+                # Change Gamma
+                elif line.startswith("Gamma:"):
+                    f.write(f"Gamma: {params.gamma}\n")
                 # Fraction of gas variation
                 elif iterOn and line.startswith(iterWhat + ":"):
                     f.write(f"{iterWhat}: {params.iter}\n")

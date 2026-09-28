@@ -18,21 +18,43 @@
 
 #include "/media/Data/E796v2/Geant/Analyser.cxx"
 
-void Fit(TH1* h, TGraphErrors* g)
+void Fit(TH1* h, TGraphErrors* g, double gamma)
 {
-    auto* f {new TF1 {"f", "gaus", -5, 20}};
     auto binOfMax {h->GetMaximumBin()};
+    auto yOfMax {h->GetBinContent(binOfMax)};
     auto xOfMax {h->GetBinCenter(binOfMax)};
-    f->SetParameters(10, xOfMax, 0.1);
-    std::cout<<"X of max : "<<xOfMax<<'\n';
-    double width {0.5};
-    h->Fit(f, "0QMR+", "", xOfMax - width, xOfMax + width);
+    TF1* f {};
+    double width {};
+    if(gamma == 0)
+    {
+        f = new TF1 {"f", "gaus", -5, 20};
+        f->SetParameters(10, xOfMax, 0.1);
+        f->SetParNames("Amp", "Mean", "Sigma");
+        f->SetParLimits(0, 0, 1e8);
+        f->SetParLimits(2, 0, 2);
+        width = 0.5;
+    }
+    else
+    {
+        f = new TF1 {"f", "[0] * TMath::Voigt(x - [1], [2], [3])", -10, 40};
+        f->SetParameters(yOfMax, xOfMax, 0.1, gamma);
+        f->SetParNames("Amp", "Mean", "Sigma", "Gamma");
+        f->SetParLimits(0, 0, 1e8);
+        f->SetParLimits(2, 0, 2);
+        f->FixParameter(3, gamma);
+        width = 15;
+    }
+    h->Fit(f, "0R+", "", xOfMax - width, xOfMax + width);
     f->ResetBit(TF1::kNotDraw);
 
     // And push fit results to graph
-    g->AddPoint(f->GetParameter(1), f->GetParameter(2));
-    g->SetPointError(g->GetN() - 1, f->GetParError(1), f->GetParError(2));
-    std::cout<<"Fit results : "<<f->GetParameter(1)<<" +/- "<<f->GetParError(1)<<" and "<<f->GetParameter(2)<<" +/- "<<f->GetParError(2)<<'\n';
+    auto mu {f->GetParameter(1)};
+    auto umu {f->GetParError(1)};
+    auto sigma {f->GetParameter(2)};
+    auto usigma {f->GetParError(2)};
+    g->AddPointError(mu, sigma, umu, usigma);
+    std::cout << "Fit results : " << f->GetParameter(1) << " +/- " << f->GetParError(1) << " and " << f->GetParameter(2)
+              << " +/- " << f->GetParError(2) << '\n';
 }
 
 class RetPlot
@@ -46,11 +68,12 @@ public:
 };
 
 RetPlot Plotter(const std::string& beam, const std::string& target, const std::string& light, double ebeam,
-                const std::vector<double>& exs)
+                const std::vector<double>& exs, const std::vector<double>& gammas)
 {
     std::vector<RetAna> rets;
     auto* gsigmas {new TGraphErrors};
     gsigmas->SetTitle("#sigma with E_{x};E_{x} [MeV];#sigma [MeV]");
+    int idx {};
     for(const auto& ex : exs)
     {
         auto file {GetAnaFile(beam, target, light, ebeam, ex)};
@@ -66,7 +89,8 @@ RetPlot Plotter(const std::string& beam, const std::string& target, const std::s
                     .hEStragg = f->Get<TH2D>("hEStragg")};
         rets.push_back(ret);
         // Fit
-        Fit(ret.hEx, gsigmas);
+        Fit(ret.hEx, gsigmas, gammas[idx]);
+        idx++;
     }
 
     // Create copies to add

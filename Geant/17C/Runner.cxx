@@ -23,11 +23,28 @@ namespace fs = std::filesystem;
 
 void Comparator(const std::vector<RetPlot>& ret);
 
-std::vector<double> GetExsFromYAML(const std::string& file)
+std::pair<std::vector<double>, std::vector<double>> GetExsFromYAML(const std::string& file)
 {
     YAML::Node config = YAML::LoadFile(file);
+    // Ex as string
+    auto exsString {config["exs"] ? config["exs"].as<std::vector<std::string>>() : std::vector<std::string> {}};
+    // Ex as double
     auto exs {config["exs"].as<std::vector<double>>()};
-    return exs;
+    // Gamma dict
+    auto gammaDict {config["gammas"] ? config["gammas"].as<std::map<std::string, std::string>>()
+                                : std::map<std::string, std::string> {}};
+    std::vector<double> gammas;
+    if(gammaDict.size())
+    {
+        for(const auto& ex : exsString)
+        {
+            auto gamma {gammaDict[ex]};
+            gammas.push_back(std::stod(gamma));
+        }
+    }
+    else
+        gammas = std::vector<double>(0, exs.size());
+    return std::make_pair(exs, gammas);
 }
 
 void Runner(TString what = "plot")
@@ -36,7 +53,7 @@ void Runner(TString what = "plot")
 
     std::string beam {"17C"};
     std::string target {"d"};
-    std::string light {"t"};
+    std::string light {"p"};
     double ebeam {255.};
     // Parameters of exp
     double intensity {1e3};
@@ -61,7 +78,7 @@ void Runner(TString what = "plot")
         else
             throw std::runtime_error("No YAML config for this channel");
     }
-    auto exs {GetExsFromYAML(yaml)};
+    auto [exs, gammas] {GetExsFromYAML(yaml)};
 
     if(what.Contains("ana") || what.Contains("+"))
     {
@@ -72,7 +89,7 @@ void Runner(TString what = "plot")
     if(what.Contains("plot") || what.Contains("+"))
     {
         // Call plotter function
-        Plotter(beam, target, light, ebeam, exs);
+        Plotter(beam, target, light, ebeam, exs, gammas);
     }
     if(what.Contains("comp"))
     {
@@ -104,7 +121,7 @@ void Runner(TString what = "plot")
             auto dir {dirs[i]};
             std::cout << "Processing dir : " << dir << '\n';
             gEnv->SetValue("IterPath", dir.c_str());
-            auto ret {Plotter(beam, target, light, ebeam, exs)};
+            auto ret {Plotter(beam, target, light, ebeam, exs, gammas)};
             // Set title
             ret.mEffs->SetTitle(dir.c_str());
             ret.hKins->SetTitle(dir.c_str());

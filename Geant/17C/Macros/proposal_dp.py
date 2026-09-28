@@ -6,11 +6,9 @@ import hist
 import uproot
 
 # Styles
-
 plt.rcParams["axes.labelsize"] = 16
 plt.rcParams["xtick.labelsize"] = 14
 plt.rcParams["ytick.labelsize"] = 14
-
 base2d = {
     "flow": "none",
     "cmin": 1,
@@ -20,15 +18,11 @@ base2d = {
     "cbarsize": 0.2,
     "cbarextend": False,
 }
-
 ann = {"ha": "center", "va": "center", "fontsize": 14}
-
 arrowprops = {"arrowstyle": "->", "lw": 0.75}
-
 errorbar_line = {"ls": "-", "marker": "o", "ms": 4, "capsize": 3}
 errorbar = {"ls": "none", "marker": "s", "capsize": 3}
 errorbar_nols = {"marker": "s", "capsize": 3}
-
 base1d = {
     "histtype": "step",
     "yerr": False,
@@ -38,6 +32,7 @@ base1d = {
     # "marker": "none",
 }
 
+# Read file
 file = uproot.open("../Outputs/yield_17C_d_p_255.0.root")
 
 hEx = file.get("hExAll").to_hist()  # type: ignore
@@ -48,8 +43,12 @@ hExs = []
 for key in file.keys():
     if key.startswith("hEx") and "All" not in key:
         hExs.append(file.get(key).to_hist())  # type: ignore
-exs = [0, 3.44, 10]
-idxs = [0, 2, 5]
+# All exs
+all_exs = [0, 1.59, 2.50, 5.20, 6.43, 10, 15]
+
+# Selected ex for eff and xs
+exs = [0, 2.50, 5.20, 10.0]
+idxs = [0, 2, 3, 5]
 effs = []
 xs = []
 for idx in idxs:
@@ -82,9 +81,9 @@ ax = axs[0]
 ret = hKin.plot(ax=ax, **base2d)
 ret[1].set_ticks([])
 # Theo kin
-for ex in exs:
+for ex in all_exs:
     theo = phys.Kinematics(f"17C(d,p)@255|{ex}").get_line3()
-    label = f"{ex:.1f} MeV" if ex > 0 else "g.s."
+    label = f"{ex:.1f}" if ex > 0 else "g.s."
     ax.plot(theo[0], theo[1], lw=1, ls="-", label=label)
 
 # L1 region
@@ -92,7 +91,7 @@ l1 = 2.07
 ax.axhline(l1, lw=1, ls="--", color="gray")
 ax.axhspan(0, l1, color="gray", alpha=0.2)
 
-ax.legend(fontsize=12)
+ax.legend(fontsize=12, title=r"$E_{x}$ [MeV]", title_fontsize=12)
 
 ax.set_xlim(30, 180)
 ax.set_ylim(0, 25)
@@ -106,7 +105,7 @@ for h in hExs:
 
 hEx.plot(ax=ax, **{**base1d, "lw": 1, "color": "black"})
 
-ax.set_xlim(-5, 15)
+ax.set_xlim(-5, 20)
 ax.set_xlabel(r"$E_{x}$ [MeV]")
 ax.set_ylabel("Counts / 150 keV")
 
@@ -117,20 +116,21 @@ ax.axvline(
     lw=1,
     ls="--",
     color="crimson",
-    label=rf"$S_n$ = {c18.get_sn():.1f} MeV",
+    label=rf"1n : {c18.get_sn():.1f}",
 )
 ax.axvline(
     c18.get_s2n(),
     lw=1,
     ls=":",
     color="crimson",
-    label=rf"$S_{{2n}}$ = {c18.get_s2n():.1f} MeV",
+    label=rf"2n : {c18.get_s2n():.1f}",
 )
-ax.legend(fontsize=12, loc="center left")
+ax.legend(fontsize=12, loc="center left", handlelength=1.5, handletextpad=0.5, borderpad=0.5, title="S [MeV]", title_fontsize=12)
 
 # Inset for resolution
 axins = ax.inset_axes([0.225, 0.675, 0.4, 0.275])
-axins.errorbar(gRes.member("fX"), gRes.member("fY"), yerr=gRes.member("fEY"), **errorbar_line, color="black")  # type: ignore
+yerr = gRes.member("fEY") * 0 #type: ignore
+axins.errorbar(gRes.member("fX"), gRes.member("fY"), yerr=yerr, **errorbar_line, color="black")  # type: ignore
 axins.set_ylim(0.1, 0.4)
 axins.set_ylabel(r"$\sigma$ [MeV]")
 
@@ -171,7 +171,7 @@ ax.set_xlabel(r"$\theta_{CM}$ [$\circ$]")
 ax.set_ylabel("Efficiency")
 
 # Theoretical cross sections from twofnr
-label = ["l = 0 (3.44 MeV)", "l = 1", "l = 2 (g.s., 10 MeV)"]
+label = ["l = 0", "l = 1", "l = 2"]
 colors = ["crimson", "green", "dodgerblue"]
 ls = ["-", ":", "--"]
 ax = axs[1]
@@ -187,18 +187,19 @@ ax.axvspan(0, l1, color="gray", alpha=0.1)
 ax.set_xlim(0, 180)
 ax.set_xlabel(r"$\theta_{CM}$ [$\circ$]")
 ax.set_ylabel(r"d$\sigma$/d$\Omega$ [mb/sr]")
-ax.legend(fontsize=12)
+ax.legend(fontsize=12, title="ADWA", title_fontsize=12)
 
 fig.tight_layout()
 fig.savefig("./Outputs/eff_theoxs.png", dpi=300)
 fig.savefig("./Outputs/eff_theoxs.pdf", dpi=300)
 # plt.close("all")
-##############################################################
+
+#########################################################################################################
 # Reconstructed cross sections
 averageSF = 0.25
-titles = ["g.s. l = 2", "3.44 MeV l = 0", "10 MeV l = 2"]
+titles = [r"g.s. $0^+_1$ l = 2", r"1.6 MeV $2^+_2$ l = 0", r"5.2 MeV $1^-$ l = 1", "10 MeV l = 2"]
 
-fig, axs = plt.subplots(1, 3, figsize=(9, 3), sharey=True, constrained_layout=True)
+fig, axs = plt.subplots(1, 4, figsize=(9, 3), sharey=True, constrained_layout=True)
 for i, (exp, theo) in enumerate(xs):
     ax = axs[i]
     ax.set_yscale("log")

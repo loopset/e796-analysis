@@ -28,12 +28,27 @@
 #include "/media/Data/E796v2/PostAnalysis/HistConfig.h"
 #include "yaml-cpp/yaml.h"
 
-void ParseYAML(const std::string& file, std::vector<double>& exs, std::vector<std::string>& xs)
+void ParseYAML(const std::string& file, std::vector<double>& exs, std::vector<double>& gammas,
+               std::vector<std::string>& xs)
 {
     auto node {YAML::LoadFile(file)};
 
     // Exs as string
     auto exsString {node["exs"] ? node["exs"].as<std::vector<std::string>>() : std::vector<std::string> {}};
+
+    // Gamma dict
+    auto gammaDict {node["gammas"] ? node["gammas"].as<std::map<std::string, std::string>>()
+                                   : std::map<std::string, std::string> {}};
+    if(gammaDict.size())
+    {
+        for(const auto& ex : exsString)
+        {
+            auto gamma {gammaDict[ex]};
+            gammas.push_back(std::stod(gamma));
+        }
+    }
+    else
+        gammas = std::vector<double>(0, exs.size());
 
     // xs path
     auto xspath {node["xspath"] ? node["xspath"].as<std::string>() : std::string {}};
@@ -74,8 +89,9 @@ void Yield(const std::string& beam, const std::string& target, const std::string
 
     // Parse config file
     std::vector<double> exs;
+    std::vector<double> gammas;
     std::vector<std::string> xsfiles;
-    ParseYAML(yaml, exs, xsfiles);
+    ParseYAML(yaml, exs, gammas, xsfiles);
     // if no theo xs provided in simu, xsfiles is EMPTY
 
     // Parse each ex
@@ -224,7 +240,7 @@ void Yield(const std::string& beam, const std::string& target, const std::string
         reccounts.push_back(grec);
 
         // Eval once again resolution
-        Fit(h, gres);
+        Fit(h, gres, gammas[i]);
 
         // Comparator
         Angular::Comparator comp {TString::Format("E_{x} = %.2f", ex).Data(), git};
