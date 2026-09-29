@@ -13,8 +13,12 @@ NAMELIST
  &STATES jp=1 bandp=1 ep=0.0  cpot=1 jt=2.0 bandt=1 et=0.0000/
 
 ! Outgoing partition: 3He + 7He
- &PARTITION namep='3He' massp=3.01493 zp=2 nex=1 namet='7He' masst=7.02689 zt=2 qval=-6.9227/ ! qvalue is for g.s. transition
- &STATES jp=0.5 bandp=1 ep=0.0000  cpot=2 jt=1.5 bandt=+1 et=17.0000/
+ &PARTITION namep='3He' massp=3.01493 zp=2 nex=5 namet='7He' masst=7.02689 zt=2 qval=-6.9227/ ! qvalue is for g.s. transition
+ &STATES jp=0.5 bandp=1 ep=0.0000  cpot=2 jt=1.5 bandt=+1 et=17.0000/ ! l = 0 removal
+ &STATES copyp=1  cpot=2 jt=1.5 bandt=-1 et=17.0000/ ! l = 1 removal
+ &STATES copyp=1  cpot=2 jt=1.5 bandt=+1 et=17.0000/ ! l = 2 removal
+ &STATES copyp=1  cpot=2 jt=1.5 bandt=+1 et=17.0000/ ! l = 0 removal but from 1s1/2
+ &STATES copyp=1  cpot=2 jt=2.5 bandt=+1 et=17.0000/ ! l = 0 removal but from 0s1/2 but assuming jcore = 5/2+
  ! FAKE 7He state at 17 MeV 3/2+ so that coupling to 0s1/2 proton yields 2+ for 8Li g.s.
  &partition /
 
@@ -50,12 +54,25 @@ NAMELIST
  &OVERLAP kn1=1 kn2=0 ic1=1 ic2=2 in=-1 kind=0 nn=1 l=0 sn=0.5 j=0.5 kbpot=3 krpot=0 be=5.4936 isc=1 ipc=4 nfl=0 nam=1 ampl=1.0 /
  ! Heavy one: here you put the nlj of the transferred nucleon 0s1/2 -> nn = 1; l = 0; j = 1/2; spin (s) = 1/2
  ! be = binding energy of the transferred proton in compound nucleus: depends on Ex: BE_eff = BE0 + Ex... assuming Ex = 17 for now
+ ! l = 0 from 0s1/2
  &OVERLAP kn1=2 kn2=0 ic1=1 ic2=2 in=-2 kind=0 nn=1 l=0 sn=0.5 j=0.5 kbpot=4 krpot=0 be=29.4163 isc=1 ipc=4 nfl=0 nam=1 ampl=1.0 /
+ ! l = 1 from 0p3/2
+ &OVERLAP kn1=3 kn2=0 ic1=1 ic2=2 in=-2 kind=0 nn=1 l=1 sn=0.5 j=1.5 kbpot=4 krpot=0 be=29.4163 isc=1 ipc=4 nfl=0 nam=1 ampl=1.0 /
+ ! l = 2 from 0d5/2
+ &OVERLAP kn1=4 kn2=0 ic1=1 ic2=2 in=-2 kind=0 nn=1 l=2 sn=0.5 j=2.5 kbpot=4 krpot=0 be=29.4163 isc=1 ipc=4 nfl=0 nam=1 ampl=1.0 /
+ ! l = 0 BUT FROM 1s1/2
+ &OVERLAP kn1=5 kn2=0 ic1=1 ic2=2 in=-2 kind=0 nn=2 l=0 sn=0.5 j=0.5 kbpot=4 krpot=0 be=29.4163 isc=1 ipc=4 nfl=0 nam=1 ampl=1.0 /
+ ! l = 0 BUT FROM 0s1/2 AND ASSUMING JCORE = 5/2+
+ &OVERLAP kn1=6 kn2=0 ic1=1 ic2=2 in=-2 kind=0 nn=1 l=0 sn=0.5 j=0.5 kbpot=4 krpot=0 be=29.4163 isc=1 ipc=4 nfl=0 nam=1 ampl=1.0 /
  &overlap /   ! END OF DEFINING OVERLAPS
 
 ! Couple partitions through overlaps
 ! kind = 7 -> finite-range transfer
  &COUPLING icto=2 icfrom=1 kind=7 ip1=1 ip2=0 ip3= 0 /
    &cfp  in=1 ib=1 ia=1 kn=1  a=1.1446  / ! spec. amplitude from I. Brida et al.
-   &cfp  in=-2 ib=1 ia=1 kn=2  a=1.000   / ! spec. amplitude to be determined experimentally
+   &cfp  in=2 ib=1 ia=1 kn=2  a=1.000   / ! spec. amplitude to be determined experimentally
+   &cfp  in=2 ib=1 ia=2 kn=3  a=1.000   / ! spec. amplitude to be determined experimentally
+   &cfp  in=2 ib=1 ia=3 kn=4  a=1.000   / ! spec. amplitude to be determined experimentally
+   &cfp  in=2 ib=1 ia=4 kn=5  a=1.000   / ! spec. amplitude to be determined experimentally
+   &cfp  in=-2 ib=1 ia=5 kn=6  a=1.000   / ! spec. amplitude to be determined experimentally
  &COUPLING /
