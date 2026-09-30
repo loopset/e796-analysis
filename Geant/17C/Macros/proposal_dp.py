@@ -71,11 +71,29 @@ for i, (exp, theo) in enumerate(xs):
     for j, model in enumerate(theoxs):
         comp.add_model(labels[j], "", model)
     comp.fit()
+    ## Bootstrap for state at 5.20 to estimate uncertainties in C2S
+    if i == 2:
+        h = hist.Hist.new.Reg(200, 0, 0.5).Double()
+        for _ in range(1000):
+            yrand = np.random.normal(exp.member("fY"), exp.member("fEY"))
+            aux_data = np.array([exp.member("fX"), yrand]).T
+            aux_comp = phys.Comparator(aux_data)
+            for j, model in enumerate(theoxs):
+                aux_comp.add_model(labels[j], "", model)
+            aux_comp.fit()
+            # Get C2S for correct model (l=1)
+            h.fill(un.nominal_value(aux_comp.get_sf("l = 1")))
+        print("Boostraping for state at 5.20 MeV")
+        counts = h.values()
+        centers = h.axes[0].centers
+        mean = np.average(centers, weights=counts)
+        std = np.sqrt(np.average((centers - mean) ** 2, weights=counts))
+        print(f"Mean: {mean:.3f}, Std: {std:.3f}")
     comps.append(comp)
 
 ####################################################################################
 # Plot with kinematics, ex and resolution
-fig, axs = plt.subplots(1, 2, figsize=(9, 4))
+fig, axs = plt.subplots(1, 2, figsize=(9, 3.5))
 # Kinematics
 ax = axs[0]
 ret = hKin.plot(ax=ax, **base2d)
@@ -125,11 +143,19 @@ ax.axvline(
     color="crimson",
     label=rf"2n : {c18.get_s2n():.1f}",
 )
-ax.legend(fontsize=12, loc="center left", handlelength=1.5, handletextpad=0.5, borderpad=0.5, title="S [MeV]", title_fontsize=12)
+ax.legend(
+    fontsize=12,
+    loc="upper left",
+    handlelength=1.5,
+    handletextpad=0.5,
+    borderpad=0.5,
+    title="S [MeV]",
+    title_fontsize=12,
+)
 
 # Inset for resolution
-axins = ax.inset_axes([0.225, 0.675, 0.4, 0.275])
-yerr = gRes.member("fEY") * 0 #type: ignore
+axins = ax.inset_axes([0.575, 0.675, 0.4, 0.275])
+yerr = gRes.member("fEY") * 0  # type: ignore
 axins.errorbar(gRes.member("fX"), gRes.member("fY"), yerr=yerr, **errorbar_line, color="black")  # type: ignore
 axins.set_ylim(0.1, 0.4)
 axins.set_ylabel(r"$\sigma$ [MeV]")
@@ -141,7 +167,7 @@ fig.savefig("./Outputs/kin_ex_res.pdf", dpi=300)
 # plt.close("all")
 #####################################################################
 # Effs and theo xs
-fig, axs = plt.subplots(1, 2, figsize=(9, 4))
+fig, axs = plt.subplots(1, 2, figsize=(9, 3.5))
 ax = axs[0]
 # Efficiencies
 for i, eff in enumerate(effs):
@@ -197,9 +223,14 @@ fig.savefig("./Outputs/eff_theoxs.pdf", dpi=300)
 #########################################################################################################
 # Reconstructed cross sections
 averageSF = 0.25
-titles = [r"g.s. $0^+_1$ l = 2", r"1.6 MeV $2^+_2$ l = 0", r"5.2 MeV $1^-$ l = 1", "10 MeV l = 2"]
+titles = [
+    r"g.s. $0^+_1$ l = 2",
+    r"1.6 MeV $2^+_2$ l = 0",
+    r"5.2 MeV $1^-$ l = 1",
+    "10 MeV l = 2",
+]
 
-fig, axs = plt.subplots(1, 4, figsize=(9, 3), sharey=True, constrained_layout=True)
+fig, axs = plt.subplots(1, 4, figsize=(9, 2.5), sharey=True, constrained_layout=True)
 for i, (exp, theo) in enumerate(xs):
     ax = axs[i]
     ax.set_yscale("log")

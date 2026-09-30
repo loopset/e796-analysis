@@ -220,7 +220,7 @@ void Yield(const std::string& beam, const std::string& target, const std::string
             // std::cout << " N : " << integral << " uN : " << uintegral << '\n';
             auto Omega {iv.GetOmega(j)};
             auto eps {eff.GetMeanEff("g0", iv.GetLow(j), iv.GetUp(j))};
-            if(eps <= 0.05)
+            if(eps <= 0.025)
                 continue;
             integral /= (Nt * Nb * eps * Omega * 1e-27);
             uintegral /= (Nt * Nb * eps * Omega * 1e-27);
@@ -248,6 +248,7 @@ void Yield(const std::string& beam, const std::string& target, const std::string
         {
             comp.Add("theo", xsfiles[i]);
             comp.Fit();
+            std::cout << "C2S : " << comp.GetSF("theo") << " +- " << comp.GetuSF("theo") << '\n';
             comps.push_back(comp);
         }
 
