@@ -49,6 +49,7 @@ all_exs = [0, 1.59, 2.50, 5.20, 6.43, 10, 15]
 # Selected ex for eff and xs
 exs = [0, 2.50, 5.20, 10.0]
 idxs = [0, 2, 3, 5]
+correct_l = ["l = 2", "l = 0", "l = 1", "l = 2"]
 effs = []
 xs = []
 for idx in idxs:
@@ -72,7 +73,7 @@ for i, (exp, theo) in enumerate(xs):
         comp.add_model(labels[j], "", model)
     comp.fit()
     ## Bootstrap for state at 5.20 to estimate uncertainties in C2S
-    if i == 2:
+    if i >= 0:
         h = hist.Hist.new.Reg(200, 0, 0.5).Double()
         for _ in range(1000):
             yrand = np.random.normal(exp.member("fY"), exp.member("fEY"))
@@ -82,13 +83,14 @@ for i, (exp, theo) in enumerate(xs):
                 aux_comp.add_model(labels[j], "", model)
             aux_comp.fit()
             # Get C2S for correct model (l=1)
-            h.fill(un.nominal_value(aux_comp.get_sf("l = 1")))
-        print("Boostraping for state at 5.20 MeV")
+            h.fill(un.nominal_value(aux_comp.get_sf(correct_l[i])))
+        print("================================")
+        print(f"Boostraping for state at {exs[i]} MeV")
         counts = h.values()
         centers = h.axes[0].centers
         mean = np.average(centers, weights=counts)
         std = np.sqrt(np.average((centers - mean) ** 2, weights=counts))
-        print(f"Mean: {mean:.3f}, Std: {std:.3f}")
+        print(f"Mean: {mean:.3f}, Std: {std:.3f}, relative : {std/mean*100:.3f} %")
     comps.append(comp)
 
 ####################################################################################
