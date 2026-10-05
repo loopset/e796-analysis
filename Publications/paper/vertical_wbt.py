@@ -19,7 +19,7 @@ import styling as sty
 import dt
 
 # Data
-exp = dt.build_sm(dividebyRs=True)  # type: ignore
+exp = dt.build_sm(dividebyRs=False)  # type: ignore
 
 # Theoretical
 theos = dt.build_theos(gated=True, c2s_thresh=0.07, with_wbt=True)  # type: ignore

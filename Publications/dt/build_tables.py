@@ -18,7 +18,7 @@ import dt
 
 ################## Ex and C2S table
 
-df = dt.build_df(dividebyRs=True)[["ex", "sf", "model"]]
+df = dt.build_df(dividebyRs=False)[["ex", "sf", "model"]]
 
 
 def parity(q: phys.QuantumNumbers):
@@ -72,14 +72,14 @@ gates = ""
 with open(f"./Inputs/strength_centroids{gates}.pkl", "rb") as f:
     stes, cents = pickle.load(f)
 with open(f"./Inputs/espes_gaps{gates}.pkl", "rb") as f:
-    espes, gaps = pickle.load(f)
+    espes, gaps, stres = pickle.load(f)
 
 # Build df
 qs = [dt.qd52, dt.qs12, dt.qp12, dt.qp32]
 top = [q.format_simple() for q in qs]
 bottom = ["Exp", "0", "1", "2"]
 cols = pd.MultiIndex.from_product([top, bottom], names=["q", "m"])
-idxs = ["Ste", "Cent", "ESPE"]
+idxs = ["Ste", "Cent", "ESPE", "Full Ste"]
 
 contents = []
 # Strengths
@@ -100,25 +100,31 @@ for q in qs:
     for i in range(len(bottom)):
         lespes.append(espes[i][q])
 contents.append(lespes)
-
+# Full strengths
+lfull = []
+for q in qs:
+    for i in range(len(bottom)):
+        lfull.append(stres[i][q])
+contents.append(lfull)
 df2 = pd.DataFrame(contents, columns=cols, index=idxs)
 result = df2.loc[:, df2.columns.get_level_values(1).isin(["Exp", "0", "1"])].map(fmt)
-print(("=") * 20, "Centroid ESPE with ", gates, ("=") * 20)
+print(("=") * 20, "Centroid, ESPE and strength with ", gates, ("=") * 20)
 print(result.to_latex())
 
 # Strengths
-df2_ste_exp = df2.loc["Ste"].xs("Exp", level="m") / un.ufloat(0.6, 0.1)
+# df2_ste_exp = df2.loc["Ste"].xs("Exp", level="m") / un.ufloat(0.6, 0.1)
+df2_ste_exp = df2.loc["Ste"].xs("Exp", level="m")
 df2_ste_mod1 = df2.loc["Ste"].xs("1", level="m")
 df2_ste = pd.concat([df2_ste_exp, df2_ste_mod1], axis=1)
-maxx = [6, 2, 2, 4]
+maxx = [4, 2, 2, 4]
 df2_ste["Frac exp"] = df2_ste_exp / maxx * 100
 df2_ste["Frac mod1"] = df2_ste_mod1 / maxx * 100
-print("Strengths corrected for Rs Exp | Mod1")
+print("Strengths NOT corrected for Rs Exp | Mod1")
 print(df2_ste.map(fmt).to_latex())
 
 ####################### Gaps with Baranger's formula
 with open("./Inputs/espes_gaps_nogates.pkl", "rb") as f:
-    _, nogaps = pickle.load(f)
+    _, nogaps, _ = pickle.load(f)
 top = ["6", "8", "14"]
 bottom = ["yes", "no"]
 cols = pd.MultiIndex.from_product([top, bottom], names=["gap", "cond"])

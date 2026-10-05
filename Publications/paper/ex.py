@@ -151,6 +151,7 @@ class HalfHalfHandler(HandlerBase):
 
 isospin = Patch(facecolor="none", edgecolor="C3", hatch="...", label=r"IAS $^{19}$N")
 handles, labels = ax.get_legend_handles_labels()
+# handles[1].set_color("black") #type: ignore
 ax.legend(
     # handles=[handles[-1]] + handles[:-1] + [isospin],
     # labels=[labels[-1]] + labels[:-1] + [isospin.get_label()],

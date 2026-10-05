@@ -79,24 +79,31 @@ def compute(data: List[Union[phys.SMDataDict, phys.ShellModel]]):
             gap = bar.get_gap(top, bottom)
             lis.append(gap)
         gaps.append(lis)
+    # Compute strengths
+    stres: List[Dict[phys.QuantumNumbers, Union[float, unc.Variable]]] = []
+    for bar in bars:
+        dic = {}
+        for q in qs:
+            dic[q] = bar.Results[q].DenAdd + bar.Results[q].DenRem  # type: ignore
+        stres.append(dic)
 
-    return (espes, gaps)
+    return (espes, gaps, stres)
 
 
 # Run calculations
 labels = ["Exp", "SFO-tls", "Mod1", "Mod2"]
 
 # With gates
-espes, gaps = compute(gated)  # type: ignore
+espes, gaps, stres = compute(gated)  # type: ignore
 
 # NO GATES
-noespes, nogaps = compute(notgated)  # type: ignore
+noespes, nogaps, nostres = compute(notgated)  # type: ignore
 
 # Write ESPES and gaps to disk
 with open("./Inputs/espes_gaps.pkl", "wb") as f:
-    pickle.dump((espes, gaps), f)
+    pickle.dump((espes, gaps, stres), f)
 with open("./Inputs/espes_gaps_nogates.pkl", "wb") as f:
-    pickle.dump((noespes, nogaps), f)
+    pickle.dump((noespes, nogaps, nostres), f)
 
 fig, axs = plt.subplots(1, 2, figsize=(8, 3.5), constrained_layout=True)
 # ESPES
@@ -180,7 +187,7 @@ axs[0].legend(
     ],
     handlelength=1.5,
     fontsize=12,
-    loc="upper left"
+    loc="upper left",
 )
 
 # Common settings
