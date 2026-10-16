@@ -46,6 +46,13 @@ for k, vs in wbt.data.items():
     key = copy.deepcopy(k)
     key.t = 1.5
     newdict[key] = vs
+    # Correct WBT: last 1/2- is T=5/2
+    if key.format_simple() == "0p1/2":
+        last = vs.pop(-1)
+        # Add the last value to the T=5/2 data
+        newkey = copy.deepcopy(key)
+        newkey.t = 2.5
+        newdict[newkey] = [last]
 wbt.data = newdict
 
 
@@ -136,9 +143,13 @@ second_leg = ax.legend(
 ax.add_artist(main_leg)
 
 # Axis settings
-ax.set_xlim(-0.175)
+ax.set_xlim(-0.25)
 ax.set_ylim(-0.5, 20)
 ax.set_ylabel(r"$E_{x}$ [MeV]")
+# ax.set_xlabel(r"$^{19}$O", labelpad=10)
+fig.suptitle(r"$^{19}$O", fontsize=16, x=0.55, y=0.94)
+ax.spines["right"].set_visible(True)
+ax.tick_params(axis="y", which="both", right=True)
 
 fig.tight_layout()
 # Adjust texts
@@ -156,5 +167,5 @@ adjust_text(
     # arrowprops=dict(arrowstyle="-", color="crimson", ls="dotted"),
 )
 
-fig.savefig("./Outputs/vertical_wbt.pdf", dpi=300)
+fig.savefig("./Outputs/vertical_wbt.pdf", dpi=300, pad_inches="layout")
 plt.show()

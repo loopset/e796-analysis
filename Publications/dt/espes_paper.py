@@ -82,6 +82,9 @@ ax.tick_params(axis="x", which="both", bottom=False, top=False)
 ax.set_ylabel(r"$\nu$ ESPE [MeV]")
 ax.set_ylim(-25, 0)
 ax.set_xlim(-1.5, 2.6)
+# ax.set_xlabel(r"$^{19}$O", labelpad=0)
+
+fig.suptitle(r"$^{19}$O", fontsize=16, x=0.55, y=1.03)
 
 # # Grid?
 # ax.grid(axis="y", which="major", lw=0.5)
@@ -124,6 +127,6 @@ for i, q in enumerate(qs):
 
 
 
-fig.savefig("../paper/Outputs/espes.pdf", dpi=300)
+fig.savefig("../paper/Outputs/espes.pdf", dpi=300, pad_inches="layout")
 
 plt.show()
