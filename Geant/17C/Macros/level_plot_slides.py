@@ -53,7 +53,7 @@ threeb: LevelSet = [
 columns = [
     ("Exp", exp, "black"),
     # ("WBT", wbt, "dodgerblue"),
-    ("Three-body", threeb, "forestgreen"),
+    # ("Three-body", threeb, "forestgreen"),
     ("SFO-tls", None, "none"),
     # ("CCEI", ccei, "crimson"),
 ]
@@ -93,7 +93,7 @@ y_max = 12
 
 
 plt.rcParams["xtick.labelsize"] = 16
-fig, ax = plt.subplots(figsize=(7, 4), constrained_layout=True)
+fig, ax = plt.subplots(figsize=(6, 4), constrained_layout=True)
 ax.set_xlim(-0.8, len(columns) - 1 + 0.9)
 ax.set_ylim(-0.3, y_max)
 
@@ -131,19 +131,19 @@ ax.tick_params(axis="y", which="both", right=False)
 
 # Sn and S2n
 c18 = phys.Particle("18C")
-ax.axhline(c18.get_sn(), ls="--", color="gray")
-ax.axhline(c18.get_s2n(), ls="--", color="pink")
+ax.axhline(c18.get_sn(), ls="--", color="grey")
+ax.axhline(c18.get_s2n(), ls="--", color="hotpink")
 ax.annotate(
-    r"$S_n$", xy=(-0.55, c18.get_sn() - 0.5), ha="center", va="center", fontsize=12
+    r"$S_n$", xy=(-0.45, c18.get_sn() - 0.5), ha="center", va="center", fontsize=14
 )
 ax.annotate(
-    r"$S_{2n}$", xy=(-0.55, c18.get_s2n() + 0.5), ha="center", va="center", fontsize=12
+    r"$S_{2n}$", xy=(-0.45, c18.get_s2n() + 0.5), ha="center", va="center", fontsize=14
 )
 
 # Axis settings
 ax.set_ylabel(r"$E_x$ [MeV]")
 ax.set_title(r"$^{18}$C", fontweight="bold")
-ax.set_xlim(-0.75, 2.6)
+ax.set_xlim(-0.6, 1.5)
 ax.set_xticks(range(len(columns)))
 ax.set_xticklabels([name for name, _, _ in columns])
 ax.legend(
