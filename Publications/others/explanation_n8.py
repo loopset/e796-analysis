@@ -46,7 +46,9 @@ o15 = phys.Particle("15O")
 o17 = phys.Particle("17O")
 exp_16o = 2 * o16.get_be() - o15.get_be() - o17.get_be()
 print(f"16O gap from BE: {exp_16o:.3f} MeV")
-
+# With Wigner energy corrected
+exp_16o_wigner = exp_16o - 4.91
+print(f"16O gap from BE (Wigner corrected): {exp_16o_wigner:.3f} MeV")
 
 plt.rcParams["xtick.labelsize"] = 12
 plt.rcParams["ytick.labelsize"] = 12
@@ -56,6 +58,7 @@ ax.plot(sfo["A"], mod1_gap, color="green", ls="--", label="Mod1")
 # Exp values
 ax.errorbar(12, exp_20o.n, yerr=exp_20o.s, marker="s", color="dodgerblue", label="Exp")
 ax.errorbar(8, exp_16o, yerr=0, marker="s", color="dodgerblue")
+ax.errorbar(8, exp_16o_wigner, yerr=0, marker="s", color="dodgerblue", mfc="dodgerblue", label="Exp - Wigner")
 
 # Axis settings
 ax.set_ylim(5, 15)
@@ -64,5 +67,7 @@ ax.set_xlabel("Neutron number N", fontsize=14)
 ax.set_ylabel(r"$\Delta_{N = 8}$ [MeV]", fontsize=14)
 
 ax.legend(frameon=True, fancybox=True, loc="upper right", fontsize=10, framealpha=0.9)
+
+fig.savefig("n_8_comparison.pdf", dpi=300)
 
 plt.show()
