@@ -22,9 +22,16 @@ def build_exp():
     o17 = phys.Particle("17O")
     sms = [phys.ShellModel() for _ in range(3)]
     # Minus
+    # 1/2- g.s.
     sms[0].data[phys.Orbital(1, -1, -0.5, 0.5)] = [
         phys.ShellModelData(
             0, 0, phys.StateJpi(0.5, -1), phys.StateJpi(), -o15.get_be()
+        )
+    ]
+    # 3/2- 1st
+    sms[0].data[phys.Orbital(1, -1, -1.5, 0.5)] = [
+        phys.ShellModelData(
+            0, 0, phys.StateJpi(1.5, -1), phys.StateJpi(), -o15.get_be() + 6.176
         )
     ]
     # Ref
@@ -32,9 +39,22 @@ def build_exp():
         phys.ShellModelData(0, 0, phys.StateJpi(0, +1), phys.StateJpi(), -o16.get_be())
     ]
     # Plus
+    # 5/2+ g.s.
     sms[2].data[phys.Orbital(1, -1, 2.5, 0.5)] = [
         phys.ShellModelData(
             0, 0, phys.StateJpi(2.5, +1), phys.StateJpi(), -o17.get_be()
+        )
+    ]
+    # 1/2+ 1st
+    sms[2].data[phys.Orbital(1, -1, 0.5, 0.5)] = [
+        phys.ShellModelData(
+            0, 0, phys.StateJpi(0.5, +1), phys.StateJpi(), -o17.get_be() + 0.870
+        )
+    ]
+    # 3/2+
+    sms[2].data[phys.Orbital(1, -1, 1.5, 0.5)] = [
+        phys.ShellModelData(
+            0, 0, phys.StateJpi(1.5, +1), phys.StateJpi(), -o17.get_be() + 5.087
         )
     ]
     return sms
@@ -54,9 +74,15 @@ it3hw0 = build_theo("it3/0hw")
 it4hw2 = build_theo("it4/2hw")
 it5hw2 = build_theo("it5/2hw")
 it6hw2 = build_theo("it6/2hw")
+# Suzuki's recommendations
+itsuz0hw0 = build_theo("itsuzuki/0hw")
+itsuz0hw4 = build_theo("itsuzuki/4hw")
+# Suzuki + SPE changs
+itsuz0spehw0 = build_theo("itsuzuki_spe/0hw")
+itsuz0spehw4 = build_theo("itsuzuki_spe/4hw")
 
 
-def plot_bars(sms: List[phys.ShellModel], idx: int, ax: Axes):
+def plot_bars(sms: List[phys.ShellModel], idx: int, ax: Axes, label: str = ""):
     states = [-1.5, -0.5, +2.5, +0.5, +1.5]
     labels = ["$3/2^-$", "$1/2^-$", "$5/2^+$", "$1/2^+$", "$3/2^+$"]
     colors = ["grey", "darkgreen", "dodgerblue", "crimson", "darkorange"]
@@ -78,7 +104,7 @@ def plot_bars(sms: List[phys.ShellModel], idx: int, ax: Axes):
     # Gap
     gap = bes[+2.5] - bes[-0.5]
     ygap = (bes[+2.5] + bes[-0.5]) / 2
-    print(f"====== {idx} ======")
+    print(f"====== {idx} : {label} ======")
     for state in states:
         if state in bes:
             print(f"  {state:+.1f} : {bes[state]:.3f} MeV")
@@ -115,31 +141,39 @@ sms = [
     hw0,
     hw2,
     hw4,
-    it0hw0,
-    it1hw0,
-    it2hw0,
-    it3hw0,
-    it4hw2,
-    it5hw2,
-    it6hw2,
+    itsuz0hw0,
+    itsuz0hw4,
+    itsuz0spehw0,
+    itsuz0spehw4,
+    # it0hw0,
+    # it1hw0,
+    # it2hw0,
+    # it3hw0,
+    # it4hw2,
+    # it5hw2,
+    # it6hw2,
 ]
 labels = [
     "Exp",
     "0hw",
     "2hw",
     "4hw",
-    "0hw-0.7+0",
-    "0hw+0.7+0",
-    "0hw+0-10",
-    "0hw+0+10",
-    "2hw+0-10",
-    "2hw+0+10",
-    "2hw+1.2-5",
+    "0hw-0.5-0.5",
+    "4hw-0.5-0.5",
+    "0hw-0.5-0.5[+2.0]",
+    "4hw-0.5-0.5[+2.0]",
+    # "0hw-0.7+0",
+    # "0hw+0.7+0",
+    # "0hw+0-10",
+    # "0hw+0+10",
+    # "2hw+0-10",
+    # "2hw+0+10",
+    # "2hw+1.2-5",
 ]
 
 fig, ax = plt.subplots(figsize=(14, 6), constrained_layout=True)
 for i, sm in enumerate(sms):
-    plot_bars(sm, i, ax)
+    plot_bars(sm, i, ax, label=labels[i])
 
 # Plot experimental
 ax.axhline(-15.664, color="darkgreen", ls="--", alpha=0.5)
