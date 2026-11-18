@@ -78,6 +78,6 @@ def apply(
 
 stn = "sfotls_modtnew"
 input = f"/home/miguel/kshell/snt/{stn}.snt"
-output = f"./itsuzuki_spe/0hw/{stn}.snt"
+output = f"./20O_tbme_spe/4hw/{stn}.snt"
 apply(input, output, shifts_spe, shifts_tbme)
 print(f"Modified {input} -> {output}")

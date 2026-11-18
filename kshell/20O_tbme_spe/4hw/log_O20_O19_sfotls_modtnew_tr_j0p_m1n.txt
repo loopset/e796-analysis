@@ -1,0 +1,148 @@
+OpenMP  # of threads=  8
+&INPUT
+ FN_INT="sfotls_modtnew.snt                                                                                                                                                                                                                                              ",
+ HW_TYPE=1          ,
+ FN_PTN_L="O20_sfotls_modtnew_p.ptn                                                                                                                                                                                                                                        ",
+ FN_LOAD_WAVE_L="O20_sfotls_modtnew_j0p.wav                                                                                                                                                                                                                                      ",
+ FN_PTN_R="O19_sfotls_modtnew_n.ptn                                                                                                                                                                                                                                        ",
+ FN_LOAD_WAVE_R="O19_sfotls_modtnew_m1n.wav                                                                                                                                                                                                                                      ",
+ EFF_CHARGE=  1.5000000000000000     , 0.50000000000000000     ,
+ GL=  1.0000000000000000     ,  0.0000000000000000     ,
+ GS=  5.5850000000000000     , -3.8260000000000001     ,
+ E1_CHARGE= 2*0.0000000000000000       ,
+ E3_CHARGE= 2*0.0000000000000000       ,
+ MASS=0          ,
+ IS_FERMI_TRN=F,
+ IS_OBTD=F,
+ IS_TBTD=F,
+ NPROCS_REDUCE=1          ,
+ NV_SHIFT=1          ,
+ IHW_PROJ=-1         ,
+ N_EIG_LR_PAIR= 2000*-1         ,
+ /
+compile conf. kwf, kdim, kmbit, nmbit =  8  8  8  1
+
+fn_load_wave_l = O20_sfotls_modtnew_j0p.wav
+fn_load_wave_r = O19_sfotls_modtnew_m1n.wav
+
+ proton  core  2, orbit: 0s_1/2
+ neutron core  2, orbit: 0s_1/2
+
+ model space
+   k,  n,  l,  j, tz,  p, 2n+l
+   1   0   1   1  -1  -1   1   p 0p_1/2
+   2   0   1   3  -1  -1   1   p 0p_3/2
+   3   0   2   3  -1   1   2   p 0d_3/2
+   4   0   2   5  -1   1   2   p 0d_5/2
+   5   1   0   1  -1   1   2   p 1s_1/2
+   6   0   1   1   1  -1   1   n 0p_1/2
+   7   0   1   3   1  -1   1   n 0p_3/2
+   8   0   2   3   1   1   2   n 0d_3/2
+   9   0   2   5   1   1   2   n 0d_5/2
+  10   1   0   1   1   1   2   n 1s_1/2
+
+set left partition_file=O20_sfotls_modtnew_p.ptn
+Max 2*J =  24
+
+pn= 1   # of mbits=           1063
+pn= 2   # of mbits=           6745
+
+init_partition  time it took was:     0.116 sec
+
+Memory usage in partition        0.25 MB
+ partition distribution based on counted dim.           1
+ partition distribution based on counted dim.           1
+
+loadbalancing cost max/min      103127.00000      103127.00000
+
+set right partition_file=O19_sfotls_modtnew_n.ptn
+Max 2*J =  27
+
+pn= 1   # of mbits=           5400
+pn= 2   # of mbits=          16258
+
+init_partition  time it took was:     0.014 sec
+
+Memory usage in partition        0.70 MB
+ partition distribution based on counted dim.           1
+ partition distribution based on counted dim.           1
+
+loadbalancing cost max/min      555334.00000      555334.00000
+
+N. of valence protons and neutrons =   6 10   mass= 20   z,n-core     2    2
+ hbar_omega: set by 41A^(-1/3) MeV
+hbar_omega =   15.10453 MeV;     b =    1.65699 fm
+ all combination of states to be computed.
+Memory for left global Lanczos vector:     0.001 GB
+Memory / process is:     0.001 GB 
+
+Memory for right global Lanczos vector:     0.004 GB
+Memory / process is:     0.004 GB 
+
+Total Memory / process is:     0.084 GB 
+
+wave functions load from O20_sfotls_modtnew_j0p.wav # of wf    1
+time I/O      0.001 GB  /      0.000 sec. =      3.95 GB/s
+
+wave functions load from O19_sfotls_modtnew_m1n.wav # of wf   20
+time I/O      0.083 GB  /      0.012 sec. =      7.05 GB/s
+
+
+max. working area for pn-int.:      0.358GB        1000000
+split partition threshold dim.            200  max. # of split ptn   8
+ # of split partitions        0 /         2523
+left  Z,N,A,M,prty:    8  12  20   0   1
+right Z,N,A,M,prty:    8  11  19   1  -1
+
+
+
+ ------------------------------------ 
+ --- Spectroscopic factor , C^2*S --- 
+ ------------------------------------ 
+
+ O20_sfotls_modtnew_j0p.wav=O19_sfotls_modtnew_m1n.wav + n
+
+
+
+         n  l 2j 2tz
+
+orbit :   0  1  1  1    n 0p_1/2
+
+ S-factor parity  1 -1
+ 2xJf      Ef      2xJi     Ei       Ex       C^2*S 
+ 0(   1) -119.928 1(   1) -106.515  13.413    0.8851
+ 0(   1) -119.928 1(   7) -104.296  15.633    0.1681
+ 0(   1) -119.928 1(  11) -103.734  16.194    0.0603
+
+
+         n  l 2j 2tz
+
+orbit :   0  1  3  1    n 0p_3/2
+
+ S-factor parity  1 -1
+ 2xJf      Ef      2xJi     Ei       Ex       C^2*S 
+ 0(   1) -119.928 3(   4) -105.327  14.601    0.0108
+ 0(   1) -119.928 3(   9) -104.029  15.899    0.0803
+ 0(   1) -119.928 3(  12) -103.602  16.326    0.0604
+ 0(   1) -119.928 3(  13) -103.531  16.398    0.0662
+ 0(   1) -119.928 3(  19) -102.871  17.057    0.0676
+
+
+
+
+total elapsed time:     0.210
+
+
+ maximum num of allocated lanczos vec.          22
+ present num of allocated lanczos vec.          21
+
+
+    summary of time, total =     0:00:00
+
+                       time,    ncall, time/ncall,   ratio 
+          total       0.210         1     0.21023   1.0000
+        operate       0.018        29     0.00063   0.0868
+           misc       0.192                         0.9132
+
+           tmp        0.012        21     0.00056   0.0558
+

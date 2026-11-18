@@ -27,7 +27,7 @@ cat > O16_sfotls_modtnew_0.input <<EOF
 EOF
 nice ./kshell.exe O16_sfotls_modtnew_0.input > log_O16_sfotls_modtnew_m0p.txt 2>&1 
 
-rm -f tmp_snapshot_O16_sfotls_modtnew_p.ptn_0_* tmp_lv_O16_sfotls_modtnew_p.ptn_0_* O16_sfotls_modtnew_0.input 
+# rm -f tmp_snapshot_O16_sfotls_modtnew_p.ptn_0_* tmp_lv_O16_sfotls_modtnew_p.ptn_0_* O16_sfotls_modtnew_0.input 
 
 
 ./collect_logs.py log_*O16_sfotls_modtnew* > summary_O16_sfotls_modtnew.txt
