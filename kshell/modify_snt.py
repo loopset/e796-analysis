@@ -5,28 +5,28 @@ TBMEKey = Tuple[int, int, int, int, int]
 
 shifts_spe: Dict[int, float] = {
     # Proton
-    1: +2.0,
-    2: +2.0,
-    3: +2.0,
-    4: +2.0,
-    5: +2.0,
+    1: +2.8,
+    2: +2.8,
+    3: +2.8,
+    4: +2.8,
+    5: +2.8,
     # Neutron
-    6: +2.0,
-    7: +2.0,
-    8: +2.0,
-    9: +2.0,
-    10:+2.0,
+    6: +2.8,
+    7: +2.8,
+    8: +2.8,
+    9: +2.8,
+    10:+2.8,
 }
 
 shifts_tbme: Dict[TBMEKey, float] = {
     # 0p1/2
-    (1, 1, 1, 1, 0): -0.5,
-    (6, 6, 6, 6, 0): -0.5,
-    (1, 6, 1, 6, 0): -0.5,
+    (1, 1, 1, 1, 0): -1.15,
+    (6, 6, 6, 6, 0): -1.15,
+    (1, 6, 1, 6, 0): -1.15,
     # 0d5/2
-    (4, 4, 6, 4, 0): -0.5,
-    (9, 9, 9, 9, 0): -0.5,
-    (4, 9, 4, 9, 0): -0.5,
+    (4, 4, 6, 4, 0): -1.15,
+    (9, 9, 9, 9, 0): -1.15,
+    (4, 9, 4, 9, 0): -1.15,
 }
 
 
@@ -78,6 +78,6 @@ def apply(
 
 stn = "sfotls_modtnew"
 input = f"/home/miguel/kshell/snt/{stn}.snt"
-output = f"./20O_tbme_spe/4hw/{stn}.snt"
+output = f"./itsuzuki_spe/0hw/{stn}.snt"
 apply(input, output, shifts_spe, shifts_tbme)
 print(f"Modified {input} -> {output}")

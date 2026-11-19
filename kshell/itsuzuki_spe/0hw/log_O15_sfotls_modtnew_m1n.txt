@@ -63,7 +63,7 @@ Max 2*J =   3
 pn= 1   # of mbits=              1
 pn= 2   # of mbits=              2
 
-init_partition  time it took was:     0.203 sec
+init_partition  time it took was:     0.104 sec
 
 Memory usage in partition        0.00 MB
 M =   1/2  :  parity = -
@@ -78,7 +78,7 @@ hbar_omega =   16.62469 MeV;     b =    1.57941 fm
 
 loadbalancing cost max/min           2.00000           2.00000
 
- partition distribution algorithm time:   2.1936799748800695E-004
+ partition distribution algorithm time:   1.5914800133032259E-004
  max proton  dim. / a partition                     1
  max neutron dim. / a partition                     1
 
@@ -95,7 +95,7 @@ Total Memory for Lanczos vectors:     0.000 GB
 max. working area for pn-int.:      0.358GB        1000000
 split partition threshold dim.            200  max. # of split ptn   8
  # of split partitions        0 /            2
-init_bp_operator time it took was:     0.011 sec
+init_bp_operator time it took was:     0.000 sec
 
  max/min # of connected ptns / proc           4           4
 
@@ -105,43 +105,42 @@ init_bp_op allocated mem size    0.000000 GB
  *** Lanczos start ***
 
 time diag     0.000 sec
-time re-orth     0.032 sec
-H  lanczos     1    1     -70.148271 1000000.000000 1000000.000000 1000000.000000 1000000.000000 1000000.000000 1000000.000000 1000000.000000 1000000.000000 1000000.000000
-time / thread at rank 0    0     0.00002
+time re-orth     0.000 sec
+H  lanczos     1    1     -62.353412 1000000.000000 1000000.000000 1000000.000000 1000000.000000 1000000.000000 1000000.000000 1000000.000000 1000000.000000 1000000.000000
+time / thread at rank 0    0     0.00001
 time / thread at rank 0    1     0.00000
 time / thread at rank 0    2     0.00000
 time / thread at rank 0    3     0.00000
 time / thread at rank 0    4     0.00000
-time / thread at rank 0    5     0.00000
+time / thread at rank 0    5     0.00001
 time / thread at rank 0    6     0.00000
-time / thread at rank 0    7     0.00003
-max time / a partition    0   0.00003
- H    operate_time      0.023
-H bn converged    2  0.39E-27
+time / thread at rank 0    7     0.00000
+max time / a partition    0   0.00001
+ H    operate_time      0.000
+H bn converged    2  0.28E-31
 time restart     0.001
-time dump_snapshot I/O:     0.000 tmp_snapshot_O15_sfotls_modtnew_n.ptn_1_(myrank)     0.003 GB/s x     1
+time dump_snapshot I/O:     0.000 tmp_snapshot_O15_sfotls_modtnew_n.ptn_1_(myrank)     0.001 GB/s x     1
 
-lanczos eigenvalues     1  -70.357100
-lanczos eigenvalues     2  -63.601950
+lanczos eigenvalues     1  -62.532100
+lanczos eigenvalues     2  -56.751950
 
-total time it took was:     0.570 sec.      0.000 hours
+total time it took was:     0.114 sec.      0.000 hours
 
 
     summary of time, total =     0:00:00
 
                        time,    ncall, time/ncall,   ratio 
-          total       0.570         1     0.57010   1.0000
-    pre-process       0.358         1     0.35834   0.6286
-        operate       0.049         2     0.02450   0.0860
-     re-orthog.       0.067         2     0.03358   0.1178
-  thick-restart       0.001         1     0.00053   0.0009
-   diag tri-mat       0.000         2     0.00004   0.0001
-  dump snapshot       0.000         1     0.00002   0.0000
-           misc       0.095                         0.1666
+          total       0.114         1     0.11385   1.0000
+    pre-process       0.110         1     0.10970   0.9635
+        operate       0.000         2     0.00002   0.0004
+     re-orthog.       0.000         2     0.00003   0.0005
+  thick-restart       0.001         1     0.00110   0.0097
+   diag tri-mat       0.001         2     0.00071   0.0124
+  dump snapshot       0.000         1     0.00011   0.0009
+           misc       0.001                         0.0126
 
-   I/O LV read        0.000        10     0.00001   0.0002
-   I/O LV write       0.001         6     0.00013   0.0014
-           tmp        0.012         1     0.01200   0.0210
+   I/O LV read        0.000        10     0.00001   0.0008
+   I/O LV write       0.001         6     0.00014   0.0074
 
 
  effective charges   1.500  0.500
@@ -149,16 +148,16 @@ total time it took was:     0.570 sec.      0.000 hours
  p orbit 0p_1/2 0p_3/2 0d_3/2 0d_5/2 1s_1/2 
  n orbit 0p_1/2 0p_3/2 0d_3/2 0d_5/2 1s_1/2 
 -------------------------------------------------
-   1  <H>:   -70.35710  <JJ>:     0.75000  J:  1/2  prty -1
+   1  <H>:   -62.53210  <JJ>:     0.75000  J:  1/2  prty -1
     <Hcm>:    -0.00000  <TT>:     0.75000  T:  1/2
  <p Nj>  2.000  4.000  0.000  0.000  0.000
  <n Nj>  1.000  4.000  0.000  0.000  0.000
-   <Lp>    -0.000   <Ln>     0.667
-   <sp>    -0.000   <sn>    -0.167
+   <Lp>     0.000   <Ln>     0.667
+   <sp>     0.000   <sn>    -0.167
    <gm>     0.638   <Jz>     0.500
  hw:  0:1.000
 -------------------------------------------------
-   2  <H>:   -63.60195  <JJ>:     3.75000  J:  3/2  prty -1
+   2  <H>:   -56.75195  <JJ>:     3.75000  J:  3/2  prty -1
     <Hcm>:    -0.00000  <TT>:     0.75000  T:  1/2
  <p Nj>  2.000  4.000  0.000  0.000  0.000
  <n Nj>  2.000  3.000  0.000  0.000  0.000
@@ -176,18 +175,18 @@ time I/O      0.000 GB  /      0.000 sec. =      0.00 GB/s
  present num of allocated lanczos vec.           2
 
 
-    summary of time, total =     0:00:01
+    summary of time, total =     0:00:00
 
                        time,    ncall, time/ncall,   ratio 
-          total       1.027         2     0.51371   1.0000
-    pre-process       0.358         1     0.35834   0.3488
-        operate       0.163        10     0.01630   0.1587
-     re-orthog.       0.067         2     0.03358   0.0654
-  thick-restart       0.001         1     0.00053   0.0005
-   diag tri-mat       0.000         2     0.00004   0.0001
-  dump snapshot       0.000         1     0.00002   0.0000
-           misc       0.438                         0.4266
+          total       0.116         2     0.05777   1.0000
+    pre-process       0.110         1     0.10970   0.9494
+        operate       0.000        10     0.00001   0.0008
+     re-orthog.       0.000         2     0.00003   0.0005
+  thick-restart       0.001         1     0.00110   0.0095
+   diag tri-mat       0.001         2     0.00071   0.0122
+  dump snapshot       0.000         1     0.00011   0.0009
+           misc       0.003                         0.0267
 
-   I/O LV read        0.000        10     0.00001   0.0001
-   I/O LV write       0.001         6     0.00013   0.0008
+   I/O LV read        0.000        10     0.00001   0.0008
+   I/O LV write       0.001         6     0.00014   0.0073
 

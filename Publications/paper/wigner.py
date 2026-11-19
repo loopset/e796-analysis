@@ -60,3 +60,14 @@ print("E_smooth(8, 8) : ", e_smooth_even(Z, N))
 print(f"E_smooth(8,7): {e_smooth_odd(Z, N - 1)}")
 print(f"DeltaN(8,8): {delta_n(Z, N)}")
 print("===================================")
+
+# 20O
+Z = 8
+N = 12
+print("========== 20O ===========")
+print(f"DeltaV(8,12) : {delta_v(Z, N)}")
+print(f"DeltaK(8,11): {delta_k(Z, N - 1)}")
+print("E_smooth(8, 12) : ", e_smooth_even(Z, N))
+print(f"E_smooth(8,11): {e_smooth_odd(Z, N - 1)}")
+print(f"DeltaN(8,12): {delta_n(Z, N)}")
+print("===================================")
