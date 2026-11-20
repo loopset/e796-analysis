@@ -15,7 +15,7 @@ shifts_spe: Dict[int, float] = {
     7: +2.8,
     8: +2.8,
     9: +2.8,
-    10:+2.8,
+    10: +2.8,
 }
 
 shifts_tbme: Dict[TBMEKey, float] = {
@@ -24,9 +24,9 @@ shifts_tbme: Dict[TBMEKey, float] = {
     (6, 6, 6, 6, 0): -1.15,
     (1, 6, 1, 6, 0): -1.15,
     # 0d5/2
-    (4, 4, 6, 4, 0): -1.15,
-    (9, 9, 9, 9, 0): -1.15,
-    (4, 9, 4, 9, 0): -1.15,
+    (4, 4, 4, 4, 0): +0.1,
+    (9, 9, 9, 9, 0): +0.1,
+    (4, 9, 4, 9, 0): +0.1,
 }
 
 
@@ -78,6 +78,6 @@ def apply(
 
 stn = "sfotls_modtnew"
 input = f"/home/miguel/kshell/snt/{stn}.snt"
-output = f"./itsuzuki_spe/0hw/{stn}.snt"
+output = f"./20O/zero/{stn}.snt"
 apply(input, output, shifts_spe, shifts_tbme)
 print(f"Modified {input} -> {output}")

@@ -67,21 +67,11 @@ exp = build_exp()
 hw0 = build_theo("0hw")
 hw2 = build_theo("2hw")
 hw4 = build_theo("4hw")
-it0hw0 = build_theo("it0/0hw")
-it1hw0 = build_theo("it1/0hw")
-it2hw0 = build_theo("it2/0hw")
-it3hw0 = build_theo("it3/0hw")
-it4hw2 = build_theo("it4/2hw")
-it5hw2 = build_theo("it5/2hw")
-it6hw2 = build_theo("it6/2hw")
-# Suzuki's recommendations
-itsuz0hw0 = build_theo("itsuzuki/0hw")
-itsuz0hw4 = build_theo("itsuzuki/4hw")
 # Suzuki + SPE changs
 itsuz0spehw0 = build_theo("itsuzuki_spe/0hw")
-itsuz0spehw4 = build_theo("itsuzuki_spe/4hw")
-# But 2hw
 itsuz0spehw2 = build_theo("itsuzuki_spe/2hw")
+# Different pairing TBME
+itsuz0spehw2diff = build_theo("itsuzuki_spe/2hw_diff")
 
 
 def plot_bars(sms: List[phys.ShellModel], idx: int, ax: Axes, label: str = ""):
@@ -143,36 +133,18 @@ sms = [
     hw0,
     hw2,
     hw4,
-    itsuz0hw0,
+    itsuz0spehw0,
     itsuz0spehw2,
-    itsuz0hw4,
-    # itsuz0spehw0,
-    # itsuz0spehw4,
-    # it0hw0,
-    # it1hw0,
-    # it2hw0,
-    # it3hw0,
-    # it4hw2,
-    # it5hw2,
-    # it6hw2,
+    itsuz0spehw2diff,
 ]
 labels = [
     "Exp",
     "0hw",
     "2hw",
     "4hw",
-    "0hw-1.15-1.15[+2.8]",
+    "0hw-1.15+0.10[+2.8]",
     "2hw-1.15-1.15[+2.8]",
-    "4hw-0.5-0.5",
-    # "0hw-0.5-0.5[+2.0]",
-    # "4hw-0.5-0.5[+2.0]",
-    # "0hw-0.7+0",
-    # "0hw+0.7+0",
-    # "0hw+0-10",
-    # "0hw+0+10",
-    # "2hw+0-10",
-    # "2hw+0+10",
-    # "2hw+1.2-5",
+    "2hw-1.15+0.10[+2.8]",
 ]
 
 fig, ax = plt.subplots(figsize=(14, 6), constrained_layout=True)
